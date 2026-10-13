@@ -9,9 +9,8 @@ package main
 // `DeployContractAttachment`: the module bytes, their keccak256 code hash, and
 // the deployment nonce. The address is
 // `keccak256(keccak256(code) || packed-args || nonce)`, which is what the node's
-// `vm/wasm/util.go` derives. The argument list is empty here because the
-// escrow's `deploy` export takes none, and the binding still marks it with its
-// one format byte, so that byte is part of the address.
+// `vm/wasm/util.go` derives. Historical escrows take no constructor argument;
+// the v6 pool takes one checked 64-byte pair of seed offer IDs.
 //
 // Nothing here reimplements consensus: the signed bytes are decoded again with
 // the node's decoder, the sender is recovered with the node's own recovery, the
@@ -36,6 +35,7 @@ import (
 	"github.com/idena-network/idena-go/blockchain/types"
 	"github.com/idena-network/idena-go/common"
 	"github.com/idena-network/idena-go/crypto"
+	"github.com/idena-network/idena-wasm-binding/lib"
 )
 
 const (
@@ -70,10 +70,9 @@ type PreparedDeploy struct {
 	SignedAt     string `json:"signedAt"`
 }
 
-// packedDeployArgs is the argument list a deploy carries. The escrow's `deploy`
-// export takes none, so this is the binding's format byte alone. A deploy with
-// constructor arguments would need the same protobuf packing the binding does,
-// and is refused rather than guessed at.
+// packedDeployArgs retains the historical no-argument deploy format used by
+// existing tests. The v6 path packs its checked constructor argument with the
+// binding itself.
 func packedDeployArgs() []byte { return []byte{packedArgsFormatByte} }
 
 // deployAddress is the node's own derivation (`vm/wasm/util.go`): the last 20
@@ -95,6 +94,25 @@ func deployAddress(code, packedArgs, deployNonce []byte) common.Address {
 // work with the node's decoder. It returns the raw transaction, the sender, and
 // the address the chain will derive for the module.
 func BuildDeployTransaction(code, deployNonce []byte, identity *ecdsa.PrivateKey, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int) ([]byte, common.Address, common.Address, error) {
+	return buildDeployTransaction(code, deployNonce, nil, identity, nonce, epoch, amount, maxFee, tips)
+}
+
+// BuildDirectV6PoolDeployTransaction pins both original seed offers in the
+// constructor. A v6 deployment never carries the liquidity deposit.
+func BuildDirectV6PoolDeployTransaction(code, deployNonce, seedIDs []byte, identity *ecdsa.PrivateKey, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int) ([]byte, common.Address, common.Address, error) {
+	if len(seedIDs) != directV6PoolDeployArgBytes || amount == nil || amount.Sign() != 0 {
+		return nil, common.Address{}, common.Address{}, errors.New("v6 deploy needs two seed IDs and zero value")
+	}
+	var first, second [32]byte
+	copy(first[:], seedIDs[:32])
+	copy(second[:], seedIDs[32:])
+	if _, err := EncodeDirectV6PoolDeploySeedIDs(first, second); err != nil {
+		return nil, common.Address{}, common.Address{}, err
+	}
+	return buildDeployTransaction(code, deployNonce, [][]byte{seedIDs}, identity, nonce, epoch, amount, maxFee, tips)
+}
+
+func buildDeployTransaction(code, deployNonce []byte, args [][]byte, identity *ecdsa.PrivateKey, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int) ([]byte, common.Address, common.Address, error) {
 	if len(code) == 0 {
 		return nil, common.Address{}, common.Address{}, errors.New("the module is empty")
 	}
@@ -103,7 +121,7 @@ func BuildDeployTransaction(code, deployNonce []byte, identity *ecdsa.PrivateKey
 	}
 
 	codeHash := common.Hash(crypto.Hash(code))
-	attachment := attachments.CreateDeployContractAttachment(codeHash, code, deployNonce)
+	attachment := attachments.CreateDeployContractAttachment(codeHash, code, deployNonce, args...)
 	payload, err := attachment.ToBytes()
 	if err != nil {
 		return nil, common.Address{}, common.Address{}, fmt.Errorf("encode the deploy attachment: %w", err)
@@ -158,8 +176,13 @@ func BuildDeployTransaction(code, deployNonce []byte, identity *ecdsa.PrivateKey
 	if !bytesEqual(parsed.Code, code) {
 		return nil, common.Address{}, common.Address{}, errors.New("the decoded deploy lost the module bytes")
 	}
-	if len(parsed.Args) != 0 {
-		return nil, common.Address{}, common.Address{}, errors.New("the decoded deploy carries constructor arguments this command did not set")
+	if len(parsed.Args) != len(args) {
+		return nil, common.Address{}, common.Address{}, errors.New("the decoded deploy changed its constructor argument count")
+	}
+	for i := range args {
+		if !bytesEqual(parsed.Args[i], args[i]) {
+			return nil, common.Address{}, common.Address{}, errors.New("the decoded deploy changed a constructor argument")
+		}
 	}
 	if !bytesEqual(parsed.Nonce, deployNonce) {
 		return nil, common.Address{}, common.Address{}, errors.New("the decoded deploy lost its deployment nonce")
@@ -181,7 +204,7 @@ func BuildDeployTransaction(code, deployNonce []byte, identity *ecdsa.PrivateKey
 
 	// The address comes from the bytes that survived the round trip, so a
 	// decoding that changed them is caught here rather than on chain.
-	address := deployAddress(parsed.Code, packedDeployArgs(), parsed.Nonce)
+	address := deployAddress(parsed.Code, lib.PackArguments(parsed.Args), parsed.Nonce)
 	return raw, sender, address, nil
 }
 
@@ -208,6 +231,9 @@ func parseDeployNonce(value string) ([]byte, error) {
 // Broadcast deployment needs a manifest bound to the exact measured bytes.
 // An arbitrary module cannot reuse the historical escrow's fee measurement.
 func deployGasForCode(codePath string, code []byte) (operationGas, error) {
+	if filepath.Base(codePath) == "fod_direct_escrow_v6.wasm" {
+		return deployGasForDirectV6Code(codePath, code)
+	}
 	if filepath.Base(codePath) == "fod_direct_escrow_v5.wasm" {
 		return deployGasForDirectV5Code(codePath, code)
 	}
@@ -425,14 +451,28 @@ func deployGasForDirectV5Code(codePath string, code []byte) (operationGas, error
 	return operationGas{Operation: operationDeployModule, WasmGas: manifest.Checks.Deploy.WasmGas, TxBytes: uint64(len(code)), Runs: 1}, nil
 }
 
-func runPrepareDeploy(codePath, nodeKeyPath, deployNonceHex, network, outPath string, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int, broadcast bool, rpcURL, apiKey string, feePerGas *big.Int) {
+func runPrepareDeploy(codePath, nodeKeyPath, deployNonceHex, v6SeedIDsHex, network, outPath string, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int, broadcast bool, rpcURL, apiKey string, feePerGas *big.Int) {
 	code, err := os.ReadFile(codePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "read the module: %v\n", err)
 		os.Exit(1)
 	}
 	var gas operationGas
-	if broadcast || filepath.Base(codePath) == "fod_fast_escrow.wasm" || filepath.Base(codePath) == "fod_direct_escrow.wasm" || filepath.Base(codePath) == "fod_direct_escrow_v3.wasm" || filepath.Base(codePath) == "fod_direct_escrow_v4.wasm" || filepath.Base(codePath) == "fod_direct_escrow_v5.wasm" {
+	isV6 := filepath.Base(codePath) == "fod_direct_escrow_v6.wasm"
+	codeHash := crypto.Hash(code)
+	if isV6 != (hex.EncodeToString(codeHash[:]) == directV6CodeHashHex) {
+		fmt.Fprintln(os.Stderr, "refused: v6 code hash and artifact name disagree")
+		os.Exit(1)
+	}
+	if isV6 != (v6SeedIDsHex != "") {
+		fmt.Fprintln(os.Stderr, "refused: v6 deployment needs -v6-seed-ids; other modules cannot use it")
+		os.Exit(1)
+	}
+	if isV6 && (amount == nil || amount.Sign() != 0) {
+		fmt.Fprintln(os.Stderr, "refused: v6 deployment must carry zero value")
+		os.Exit(1)
+	}
+	if broadcast || isV6 || filepath.Base(codePath) == "fod_fast_escrow.wasm" || filepath.Base(codePath) == "fod_direct_escrow.wasm" || filepath.Base(codePath) == "fod_direct_escrow_v3.wasm" || filepath.Base(codePath) == "fod_direct_escrow_v4.wasm" || filepath.Base(codePath) == "fod_direct_escrow_v5.wasm" {
 		gas, err = deployGasForCode(codePath, code)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "refused: %v\n", err)
@@ -449,7 +489,17 @@ func runPrepareDeploy(codePath, nodeKeyPath, deployNonceHex, network, outPath st
 		fmt.Fprintf(os.Stderr, "refused: %v\n", err)
 		os.Exit(1)
 	}
-	raw, sender, address, err := BuildDeployTransaction(code, deployNonce, identity, nonce, epoch, amount, maxFee, tips)
+	var raw []byte
+	var sender, address common.Address
+	if isV6 {
+		var seedIDs []byte
+		seedIDs, err = hex.DecodeString(strings.TrimPrefix(strings.ToLower(v6SeedIDsHex), "0x"))
+		if err == nil {
+			raw, sender, address, err = BuildDirectV6PoolDeployTransaction(code, deployNonce, seedIDs, identity, nonce, epoch, amount, maxFee, tips)
+		}
+	} else {
+		raw, sender, address, err = BuildDeployTransaction(code, deployNonce, identity, nonce, epoch, amount, maxFee, tips)
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "refused: %v\n", err)
 		os.Exit(1)
@@ -483,7 +533,7 @@ func runPrepareDeploy(codePath, nodeKeyPath, deployNonceHex, network, outPath st
 	fmt.Printf("amount      %s, max fee %s, tips %s\n", deployed.Amount, deployed.MaxFee, deployed.Tips)
 	fmt.Printf("raw tx      %d bytes\n", len(raw))
 	fmt.Println("note        a module that is not an embedded contract needs the chain's upgrade-11 flag, or validation refuses the deploy")
-	fmt.Println("note        the address is derived from the module, the argument format byte, and the deployment nonce; a redeploy of the same three lands on the same address")
+	fmt.Println("note        the address is derived from the module, packed constructor arguments, and deployment nonce")
 
 	if broadcast {
 		node := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
@@ -519,6 +569,12 @@ func runPrepareDeploy(codePath, nodeKeyPath, deployNonceHex, network, outPath st
 		if err := checkAccountAgainstChain(node, deployed.Sender, nonce, epoch); err != nil {
 			fmt.Fprintf(os.Stderr, "refused before broadcasting: %v\n", err)
 			os.Exit(1)
+		}
+		if isV6 {
+			if err := checkDirectSpendBalance(node, deployed.Sender, nonce, amount, tips, maxFee); err != nil {
+				fmt.Fprintf(os.Stderr, "refused before broadcasting: %v\n", err)
+				os.Exit(1)
+			}
 		}
 		var hash string
 		if err := node.call("bcn_sendRawTx", []any{"0x" + hex.EncodeToString(raw)}, &hash); err != nil {

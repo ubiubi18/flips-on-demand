@@ -208,6 +208,7 @@ func main() {
 		codeHashFlag        = flag.String("code-hash", "", "independently verified Keccak-256 hash of deployed contract code (prepare-buy and buy submit)")
 		directVersionFlag   = flag.Int("direct-version", 0, "direct contract version; 4 and 5 select proof-backed direct sales, 6 selects the read-only liquidity pool (default: pinned deployed v3)")
 		deployNonceFlag     = flag.String("deploy-nonce", "", "hex deployment nonce that decides the contract address (prepare-deploy mode; default: a fresh random one)")
+		v6SeedIDsFlag       = flag.String("v6-seed-ids", "", "two 32-byte v6 seed offer IDs concatenated as hex (prepare-deploy mode only)")
 		amountFlag          = flag.String("amount", "0", "base units the deploy sends to the new contract (prepare-deploy mode)")
 		networkFlag         = flag.String("network", "unspecified", "network label recorded in the artefact (prepare-deploy mode)")
 		contractFlag        = flag.String("contract", "", "expected contract address; for buys, independently approved rather than copied from a snapshot")
@@ -562,7 +563,7 @@ func main() {
 		if deployPath == "" && flagWasSet("out") {
 			deployPath = *out
 		}
-		runPrepareDeploy(*codePath, *nodeKeyPath, *deployNonceFlag, *networkFlag, deployPath, nonce, epoch, amount, maxFee, tips, *broadcastFlag, *rpcURL, apiKey, deployFeePerGas)
+		runPrepareDeploy(*codePath, *nodeKeyPath, *deployNonceFlag, *v6SeedIDsFlag, *networkFlag, deployPath, nonce, epoch, amount, maxFee, tips, *broadcastFlag, *rpcURL, apiKey, deployFeePerGas)
 		return
 	}
 

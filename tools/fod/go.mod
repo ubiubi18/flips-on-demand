@@ -10,6 +10,7 @@ require (
 	filippo.io/age v1.3.2
 	github.com/golang/protobuf v1.5.4
 	github.com/idena-network/idena-go v0.0.0
+	github.com/idena-network/idena-wasm-binding v0.0.0-20260710092321-f7c71ce32d86
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/term v0.45.0

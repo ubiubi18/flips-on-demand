@@ -363,7 +363,7 @@ func TestPrepareDeployWritesOwnerOnlySignedArtifact(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			runPrepareDeploy(codePath, keyPath, hex.EncodeToString(deployNonceFixture()), "test", outPath,
+			runPrepareDeploy(codePath, keyPath, hex.EncodeToString(deployNonceFixture()), "", "test", outPath,
 				7, 204, big.NewInt(0), big.NewInt(1_000_000), big.NewInt(0), false, "", "", nil)
 			info, err := os.Lstat(outPath)
 			if err != nil {

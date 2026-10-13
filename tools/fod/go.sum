@@ -1344,6 +1344,8 @@ github.com/tommy-muehle/go-mnd/v2 v2.4.0/go.mod h1:WsUAkMJMYww6l/ufffCD3m+P7LEvr
 github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31/go.mod h1:onvgF043R+lC5RZ8IT9rBXDaEDnpnw/Cl+HFiw+v/7Q=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c/go.mod h1:hzIxponao9Kjc7aWznkXaL4U4TWaDSs8zcsY4Ka08nM=
+github.com/ubiubi18/idena-wasm-binding v0.0.0-20260710092321-f7c71ce32d86 h1:QCLJkNtKcHiZ6UGeMCsSEgrzQ4UbfGsQSFlrX3On6fs=
+github.com/ubiubi18/idena-wasm-binding v0.0.0-20260710092321-f7c71ce32d86/go.mod h1:Gaqs/PYOTw9Jr1VQPlR0Be+CcgsuP4sdGmTzzQ5hvQ0=
 github.com/ucarion/urlpath v0.0.0-20200424170820-7ccc79b76bbb h1:Ywfo8sUltxogBpFuMOFRrrSifO788kAFxmvVw31PtQQ=
 github.com/ucarion/urlpath v0.0.0-20200424170820-7ccc79b76bbb/go.mod h1:ikPs9bRWicNw3S7XpJ8sK/smGwU9WcSVU3dy9qahYBM=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=

@@ -35,6 +35,8 @@ code hashes. This is candidate evidence only; a real seller proof, deployment,
 and funded trade remain unqualified.
 
 The bootstrap sequence is a zero-value deploy with the two seed offer IDs.
+`fod prepare-deploy` requires `-v6-seed-ids` with those two 32-byte IDs
+concatenated as hex and refuses a nonzero deployment amount.
 Each original author qualifies and proves their own bundle, then makes its
 verified keys public. Only after both seeds are public can `activate` accept
 the same 64-byte seed ID argument and exactly 10,000 iDNA. Trading remains
