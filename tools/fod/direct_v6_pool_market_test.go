@@ -391,6 +391,48 @@ func TestPoolV6SnapshotOmitsBuyQuoteWithOneQueuedUnit(t *testing.T) {
 	}
 }
 
+func TestPoolV6SnapshotShowsProvedSeedsBeforeLiquidityActivation(t *testing.T) {
+	node, ids := newPoolV6TestNode()
+	seed := func(author byte, previous, next [32]byte) *mapItem {
+		raw := poolV6TestOffer(author, 2, previous, next, 0, 0, 1)
+		copy(raw[106:122], make([]byte, 16))
+		raw[139] = 0
+		raw[237] = 1
+		return directMarketItem(ids[int(author)-1][:], raw)
+	}
+	node.items[poolV6OfferPrefix] = []*mapItem{
+		seed(1, [32]byte{}, ids[1]),
+		seed(2, ids[0], [32]byte{}),
+	}
+	node.items[poolV6InventoryPrefix] = node.items[poolV6InventoryPrefix][:2]
+	node.items[poolV6OrderPrefix] = nil
+	for _, name := range []string{"reserve", "committed", "buyer-payments", "insurance", "pending"} {
+		node.fields["pool/"+name] = poolV6TestAmount(0)
+	}
+	node.fields["pool/primary-units"] = poolV6TestCounter(0)
+	node.fields["pool/secondary-units"] = poolV6TestCounter(2)
+	node.fields["pool/units"] = poolV6TestCounter(2)
+	node.fields["pool/reserved-units"] = poolV6TestCounter(0)
+	node.fields["pool/seed-count"] = poolV6TestCounter(2)
+	node.fields["pool/next-order"] = poolV6TestCounter(1)
+	node.fields["pool/next-sequence"] = poolV6TestCounter(3)
+	node.fields["pool/primary-head"] = make([]byte, 32)
+	node.fields["pool/primary-tail"] = make([]byte, 32)
+	node.fields["pool/secondary-head"] = ids[0][:]
+	node.fields["pool/secondary-tail"] = ids[1][:]
+	node.fields["pool/seed-first"] = ids[0][:]
+	node.fields["pool/seed-second"] = ids[1][:]
+
+	state, err := buildDirectV6PoolStateWithCall(node.call, testContract, "sample-code-hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Pool.VirtualReserve != "0" || state.Pool.BuyQuote != "" ||
+		state.Pool.NextSellerPayout != "" || state.Pool.SeedCount != 2 || len(state.Offers) != 2 {
+		t.Fatalf("unfunded seed state offered a trade or omitted its queue: %+v", state.Pool)
+	}
+}
+
 func TestPoolV6SnapshotShowsTopUpAndRefundCutoff(t *testing.T) {
 	node, _ := newPoolV6TestNode()
 	oldest := node.items[poolV6OfferPrefix][0]

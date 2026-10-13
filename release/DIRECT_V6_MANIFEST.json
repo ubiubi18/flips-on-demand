@@ -1,0 +1,121 @@
+{
+  "format": "fod.direct-candidate-manifest",
+  "version": 6,
+  "status": "candidate-only",
+  "artifact": {
+    "path": "release/artifacts/fod_direct_escrow_v6.wasm",
+    "bytes": 449728,
+    "sha256": "f2627fd6c753deb8f89ae9a5efacbfbf71ed99959abc1f47f112e0fce51f85e6",
+    "codeHash": "2f922c4c41e6389405e8972e0e0ff9722ec49f42ee64ef947ba91f4869c20d8c"
+  },
+  "source": {
+    "inventorySha256": "69c3fda53f568ffa276e1527a11b771aaf1174339b3d1516f52e8a41eeb702e3",
+    "files": {
+      "contract": "4fecd0bb5f4283ddfc5286a8468158d6924eb43b7ce157f731293e6d9a291791",
+      "curve": "9f04b8ce0ffb62d94aa172461bc6e1076d3c65995b51bbb6b44d29cb351dc19a",
+      "state": "2837fc72340c355153dc8f1ce889bd79a8cbc5a47c145bf5514041b55340b511",
+      "cargoManifest": "6a24d8a0b4e0e3ead42455564d22ec6ec8bb25510594bb78bcf87a86b6483ffa",
+      "cargoLock": "46304142e9fb137e85dad1c2fb109ecae2f3ec74b36b84a26e280e3ad0a9991a",
+      "verifier": "3322f5442c606014e8511855a45e728baf0fd629f3f33640ccf9e47a9800dc1c",
+      "fastGuest": "b0162d64b1a81726cebdd0023f004506036e92b4d2db04d462815263983c6f15",
+      "fastReceipt": "7bb3549fe37925c22fee5844225c7d490a633282e39047af9d1576ce8ddad67b",
+      "syntheticSession": "d61fb53e350b54ac6df4d7dab7f757a51fc12b6f5d1ad1d97f978eee3206649a",
+      "syntheticFlipVector": "230ee51b364bdd3c84907c35ad5da2ac6a0c761a03a8087bf601d8b52250801e",
+      "v5CliImagePin": "931e307a9e05eea05bb78c26cfe47eca583d3e68453343a6ba8dc38110f8376f",
+      "runtimeTest": "000a04c62a0ac62f15fdf7ee6ce32d9b2ea19a8eadf0b33e4c718f1abe47f11c",
+      "runtimeModule": "9e99744d423511c154174abe100137f84e3fa31f0c05e58135660285bfa004f3",
+      "runtimeSums": "013f1de92e969ffc3cbe8ae8bc169f68398962dbff9c60d6260e4e4ae5e00e9e",
+      "proofBuilder": "cb78d2ae8e809bfb02adf98e123547a4abaf12042f4d0ecea2cac667dd78aaad",
+      "builder": "2fff3257e2e6877144ad53a0451d42e0519bad50e4fb78664fdc7d1a20735475"
+    }
+  },
+  "build": {
+    "rust": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+    "binaryen": "wasm-opt version 133",
+    "go": "go version go1.26.5 darwin/arm64",
+    "command": "CARGO_TARGET_DIR=<empty temporary directory> cargo build --locked --offline --release --target wasm32-unknown-unknown; wasm-opt --llvm-memory-copy-fill-lowering -O2 <target directory>/wasm32-unknown-unknown/release/fod_direct_escrow_v6.wasm -o target/fod_direct_escrow_v6.lowered.wasm"
+  },
+  "checks": {
+    "sourceOnlyGuest": "two clean source builds with identical image and ELF; image matches v6 contract, v6 harness, v5 CLI and sealed fixture",
+    "runtime": "pinned idena-wasm-binding f7c71ce32d86c8ed26e74935265c95768b0230d0",
+    "runtimeModuleSum": "h1:QCLJkNtKcHiZ6UGeMCsSEgrzQ4UbfGsQSFlrX3On6fs=",
+    "sealedSyntheticFallback": "genuine fast-content receipt and four-leaf session accepted in the pinned Idena WASM runtime",
+    "fastContentImageId": "4fd124c8cb91370dab60d3e1d7c4e666e79485e210b5f20ed36cc2104883726c",
+    "exports": [
+      "activate",
+      "allocate",
+      "buy",
+      "buyPublicSeed",
+      "cancel",
+      "challenge",
+      "confirm",
+      "deploy",
+      "list",
+      "memory",
+      "proveAndReveal",
+      "proveBundle",
+      "qualify",
+      "refund",
+      "relist",
+      "seedBundle",
+      "slashUnproved",
+      "startFallback",
+      "topUpBond"
+    ],
+    "forbiddenOperators": 0,
+    "deploy": {
+      "wasmGas": 4234882,
+      "payloadBytes": 449728,
+      "conservativeTransactionGas": 4560109
+    },
+    "activate": {
+      "wasmGas": 1255529,
+      "payloadBytes": 64,
+      "conservativeTransactionGas": 33676
+    },
+    "qualify": {
+      "wasmGas": 1104198,
+      "payloadBytes": 892,
+      "conservativeTransactionGas": 40442
+    },
+    "list": {
+      "wasmGas": 1735094,
+      "payloadBytes": 86,
+      "conservativeTransactionGas": 38691
+    },
+    "buy": {
+      "wasmGas": 2123580,
+      "payloadBytes": 97,
+      "conservativeTransactionGas": 42686
+    },
+    "startFallback": {
+      "wasmGas": 196556448,
+      "payloadBytes": 1359,
+      "conservativeTransactionGas": 1999635
+    },
+    "proveAndReveal": {
+      "wasmGas": 2648123,
+      "payloadBytes": 114,
+      "conservativeTransactionGas": 48102
+    },
+    "conservativeFallbackGas": 2047737,
+    "buyerBond": {
+      "gasBudget": 2500000,
+      "feeMargin": 2,
+      "reimbursementGasBudget": 2500000
+    },
+    "sellerBond": {
+      "proofGasBudget": 2500000,
+      "feeMargin": 2
+    },
+    "confirmGraceBlocks": 30,
+    "deadlineMarginBlocks": 120,
+    "refundBoundaryBlocks": 12960,
+    "blockGasLimit": 5120000
+  },
+  "deployment": {
+    "network": null,
+    "contract": null,
+    "note": "Experimental candidate only. Synthetic measurements do not establish a real seller proof, live inclusion, deployment qualification, or funded-trade qualification."
+  }
+}

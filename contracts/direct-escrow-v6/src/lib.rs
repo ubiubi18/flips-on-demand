@@ -1,6 +1,7 @@
 //! Ownerless queued sales of original Idena flip keys, version 6 candidate.
 //!
-//! The seed cannot be withdrawn. A first-sale payout is fixed when
+//! The seed is funded only after both public bundles are proved and queued,
+//! and cannot be withdrawn. A first-sale payout is fixed when
 //! listing, but no payout is due until a buyer confirms or valid keys are
 //! publicly proved and revealed. Buyer funds are isolated pending liabilities.
 //! A buyer cannot select around the oldest first-sale or resale queue head.
@@ -1069,12 +1070,11 @@ pub extern "C" fn deploy(arg: u32) -> u32 {
         if first == [0; 32] || second == [0; 32] || first == second {
             refused();
         }
-        let seed = amount(pay_amount()).unwrap_or_else(|| refused());
-        if seed != PILOT_SEED || read_u128(RESERVE_KEY) != 0 {
+        require_no_payment();
+        if read_u64(NEXT_ORDER_KEY) != 0 {
             refused();
         }
-        require_solvency(seed, 0);
-        write_u128(RESERVE_KEY, seed);
+        write_u128(RESERVE_KEY, 0);
         write_u128(PENDING_KEY, 0);
         write_u128(COMMITTED_KEY, 0);
         write_u128(INSURANCE_KEY, 0);
@@ -1092,6 +1092,64 @@ pub extern "C" fn deploy(arg: u32) -> u32 {
         write_id(PRIMARY_TAIL_KEY, &[0; 32]);
         write_id(SECONDARY_HEAD_KEY, &[0; 32]);
         write_id(SECONDARY_TAIL_KEY, &[0; 32]);
+        ok()
+    }
+}
+
+/// `first seed offer id:32 | second seed offer id:32`. The 10,000 iDNA
+/// liquidity is accepted only after both pinned, independently proved public
+/// bundles have entered the queue. Until this call succeeds, trading is closed.
+#[no_mangle]
+pub extern "C" fn activate(arg: u32) -> u32 {
+    unsafe {
+        let raw = read_region(arg).unwrap_or_else(|| refused());
+        if raw.len() != 64 || read_u64(NEXT_ORDER_KEY) != 1 || read_u128(RESERVE_KEY) != 0 {
+            refused();
+        }
+        let first: [u8; 32] = raw[..32].try_into().unwrap();
+        let second: [u8; 32] = raw[32..].try_into().unwrap();
+        if first != read_id(SEED_FIRST_KEY)
+            || second != read_id(SEED_SECOND_KEY)
+            || read_u64(SEED_COUNT_KEY) != 2
+            || read_u64(POOL_UNITS_KEY) != 2
+            || read_u64(SECONDARY_UNITS_KEY) != 2
+            || read_u64(PRIMARY_UNITS_KEY) != 0
+            || read_u64(RESERVED_UNITS_KEY) != 0
+            || read_u128(PENDING_KEY) != 0
+            || read_u128(COMMITTED_KEY) != 0
+            || read_u128(BUYER_PAYMENTS_KEY) != 0
+            || read_u128(INSURANCE_KEY) != 0
+            || read_id(PRIMARY_HEAD_KEY) != [0; 32]
+            || read_id(PRIMARY_TAIL_KEY) != [0; 32]
+            || read_id(SECONDARY_HEAD_KEY) != first
+            || read_id(SECONDARY_TAIL_KEY) != second
+        {
+            refused();
+        }
+        let first_offer = read_offer(&first).unwrap_or_else(|| refused());
+        let second_offer = read_offer(&second).unwrap_or_else(|| refused());
+        for (id, offer, previous, next) in [
+            (first, first_offer, [0; 32], second),
+            (second, second_offer, first, [0; 32]),
+        ] {
+            if offer.status != QUEUED_SECONDARY
+                || !offer.public_seed
+                || !offer.content_proven
+                || offer.previous != previous
+                || offer.next != next
+                || id != offer_id(&offer.author, offer.epoch)
+                || read_keyed(public_seed_key(&id))
+                    .is_none_or(|secrets| !secrets_match_offer(secrets, &offer))
+            {
+                refused();
+            }
+        }
+        let seed = amount(pay_amount()).unwrap_or_else(|| refused());
+        if seed != PILOT_SEED {
+            refused();
+        }
+        require_solvency(seed, 0);
+        write_u128(RESERVE_KEY, seed);
         ok()
     }
 }
@@ -1301,8 +1359,14 @@ pub extern "C" fn seedBundle(arg: u32) -> u32 {
             || seller_banned(&offer.author)
             || seller_listing(&offer.author) != [0; 32]
             || !secrets_match_offer(&raw[32..], &offer)
-            || (id != read_id(SEED_FIRST_KEY) && id != read_id(SEED_SECOND_KEY))
+            || id
+                != if seed_count == 0 {
+                    read_id(SEED_FIRST_KEY)
+                } else {
+                    read_id(SEED_SECOND_KEY)
+                }
             || seed_count >= 2
+            || read_u128(RESERVE_KEY) != 0
             || read_u64(POOL_UNITS_KEY) != seed_count
             || read_u64(SECONDARY_UNITS_KEY) != seed_count
             || read_u64(RESERVED_UNITS_KEY) != 0

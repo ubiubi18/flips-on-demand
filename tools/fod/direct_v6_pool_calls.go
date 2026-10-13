@@ -25,12 +25,18 @@ const (
 
 func EncodeDirectV6PoolDeploySeedIDs(first, second [32]byte) ([]byte, error) {
 	if first == ([32]byte{}) || second == ([32]byte{}) || first == second {
-		return nil, errors.New("v6 pool deploy needs two distinct nonzero seed offer IDs")
+		return nil, errors.New("v6 pool bootstrap needs two distinct nonzero seed offer IDs")
 	}
 	out := make([]byte, directV6PoolDeployArgBytes)
 	copy(out[:32], first[:])
 	copy(out[32:], second[:])
 	return out, nil
+}
+
+// Activation repeats the pinned deploy IDs and carries the 10,000 iDNA seed
+// as transaction value after both public seed bundles have been proved.
+func EncodeDirectV6PoolActivateSeedIDs(first, second [32]byte) ([]byte, error) {
+	return EncodeDirectV6PoolDeploySeedIDs(first, second)
 }
 
 // Seed bundles are intentionally public. Their canonical epoch secrets must

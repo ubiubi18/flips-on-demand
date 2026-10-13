@@ -199,8 +199,20 @@ function checkPoolMath(pool: DirectPoolTotals, nextPayout: bigint): void {
   const reserve = BigInt(pool.reserve);
   const committed = BigInt(pool.committed);
   const virtualReserve = reserve - committed + BigInt(pool.buyerPayments) - BigInt(pool.insurance);
-  if (reserve < committed || virtualReserve <= 0n || virtualReserve !== BigInt(pool.virtualReserve)) {
+  if (reserve < committed || virtualReserve !== BigInt(pool.virtualReserve) ||
+      (reserve > 0n && (virtualReserve <= 0n || pool.seedCount !== 2))) {
     throw new Error("pool virtual reserve disagrees with its balances");
+  }
+  if (reserve === 0n && (virtualReserve !== 0n || committed !== 0n ||
+      BigInt(pool.pending) !== 0n || BigInt(pool.buyerPayments) !== 0n ||
+      BigInt(pool.insurance) !== 0n || pool.primaryUnits !== 0 ||
+      pool.secondaryUnits !== pool.seedCount || pool.poolUnits !== pool.seedCount ||
+      pool.reservedUnits !== 0 || pool.nextOrderId !== "1" || pool.buyQuote !== undefined ||
+      pool.minimumBuyerBond !== undefined || pool.minimumBuyerTotal !== undefined ||
+      pool.nextSellerPayout !== undefined || pool.minimumProvedSellerBond !== undefined ||
+      pool.minimumUnprovedSellerFunds !== undefined || pool.bondTopUpRequired !== undefined ||
+      pool.buyPausedForBond)) {
+    throw new Error("pool activation state is inconsistent");
   }
   const units = BigInt(pool.primaryUnits + pool.secondaryUnits);
   const curveQuote = units > 1n ? cappedQuote((virtualReserve + units - 2n) / (units - 1n)) : 0n;
@@ -345,6 +357,9 @@ export function parseDirectPoolState(text: string): ParseResult {
       throw new Error("pool.nextOfferId disagrees with the current queue");
     }
     checkPoolMath(state.pool, state.pool.nextOfferId === undefined ? 0n : BigInt(offersById.get(state.pool.nextOfferId)!.payout));
+    if (state.pool.reserve === "0" && state.orders.length !== 0) {
+      throw new Error("an inactive pool cannot have orders");
+    }
     const orderIds = new Set<string>();
     const ordersById = new Map<string, DirectPoolOrder>();
     for (const order of state.orders) {

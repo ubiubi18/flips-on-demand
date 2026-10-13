@@ -83,6 +83,40 @@ test("v6 live snapshot accepts public fields and exact CID links", () => {
   assert.equal(result.state.orders[0].challenged, true);
 });
 
+test("v6 snapshot accepts two proved seeds before liquidity and offers no price", () => {
+  const input = snapshot();
+  const first = input.offers[2];
+  const second = input.offers[0];
+  first.state = "queued-secondary";
+  first.queue = "secondary";
+  first.contentProven = true;
+  first.publicSeed = true;
+  first.everSold = false;
+  first.payout = "0";
+  first.sellerBond = "0";
+  second.contentProven = true;
+  second.publicSeed = true;
+  second.everSold = false;
+  second.payout = "0";
+  second.sellerBond = "0";
+  input.offers = [first, second];
+  input.orders = [];
+  Object.assign(input.pool, {
+    reserve: "0", committed: "0", buyerPayments: "0", insurance: "0", pending: "0",
+    virtualReserve: "0", primaryUnits: 0, secondaryUnits: 2, poolUnits: 2,
+    reservedUnits: 0, seedCount: 2, seedOfferIds: [ids[0], ids[1]],
+    nextOrderId: "1", nextSequence: "3", nextOfferId: ids[0], buyPausedForBond: false,
+  });
+  delete (input.pool as any).buyQuote;
+  delete (input.pool as any).minimumBuyerBond;
+  delete (input.pool as any).minimumBuyerTotal;
+  delete (input.pool as any).nextSellerPayout;
+  const result = parseDirectPoolState(JSON.stringify(input));
+  assert.equal(result.ok, true);
+  input.pool.buyQuote = "1";
+  assert.equal(parseDirectPoolState(JSON.stringify(input)).ok, false);
+});
+
 test("v6 snapshot enforces the 1,000 iDNA ceiling and repeat-sale dividend", () => {
   const capped = snapshot();
   capped.pool.reserve = "10000000000000000000000";

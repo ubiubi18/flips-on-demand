@@ -1,9 +1,9 @@
 # Historical release experiments
 
-This document records earlier contract candidates and their measurements. It
-does not describe the current v6 liquidity-pool candidate or authorize a
-deployment. Some recipes and fee observations refer to older code and may no
-longer work as written. Start with the repository README and verify the exact
+This document records earlier contract candidates and a separate experimental
+v6 build recipe. It does not authorize a deployment. Some recipes and fee
+observations refer to older code and may no longer work as written. Start with
+the repository README and verify the exact
 current source, artifact, chain state, and fees before any funded experiment.
 
 The manifest and artifacts record an earlier dirty-source snapshot. Current
@@ -24,6 +24,21 @@ mainnet actions and funding require separate authorization. `docs/SPEC.md` 10.3
 supersedes 10.2, and the bounded deploy smoke-test allowance recorded in
 `docs/PROGRESS.md` section 0 remains suspended. The recipes below build and
 validate artifacts; they are not approval to execute an on-chain action.
+
+## Experimental v6 candidate build
+
+`node release/build-direct-v6-candidate.mjs` builds lowered v6 WASM and
+`release/DIRECT_V6_MANIFEST.json` offline. It checks the reproduced fast-content
+image, sealed synthetic fixture, exact exports, and deploy, activation, and
+fallback gas in the pinned Idena WASM runtime. The manifest records source and
+code hashes. This is candidate evidence only; a real seller proof, deployment,
+and funded trade remain unqualified.
+
+The bootstrap sequence is a zero-value deploy with the two seed offer IDs.
+Each original author qualifies and proves their own bundle, then makes its
+verified keys public. Only after both seeds are public can `activate` accept
+the same 64-byte seed ID argument and exactly 10,000 iDNA. Trading remains
+closed until activation completes.
 
 The current escrow retains settled public reveal keys for recovery and keeps
 the exact funded+3 refund boundary. Those changes do not retroactively modify

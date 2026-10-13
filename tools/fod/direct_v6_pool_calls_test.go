@@ -53,6 +53,8 @@ func TestDirectV6PoolCallExactRustLayouts(t *testing.T) {
 	seedHex := hex.EncodeToString(seedID[:])
 	got, err = EncodeDirectV6PoolDeploySeedIDs(offerID, seedID)
 	directV6PoolTestBytes(t, "deploy", got, err, offerHex+seedHex, 64)
+	got, err = EncodeDirectV6PoolActivateSeedIDs(offerID, seedID)
+	directV6PoolTestBytes(t, "activate", got, err, offerHex+seedHex, 64)
 	got, err = EncodeDirectV6PoolBuyPublicSeed(seedID)
 	directV6PoolTestBytes(t, "buyPublicSeed", got, err, seedHex, 32)
 	got, err = EncodeDirectV6PoolTopUpBond(offerID)

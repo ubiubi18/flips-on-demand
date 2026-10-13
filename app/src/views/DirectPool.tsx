@@ -287,7 +287,10 @@ export function DirectPoolMarket({ state, snapshotFresh }: { state: DirectPoolSt
         <div><dt>Total to lock</dt><dd>{currentAmount(state.pool.minimumBuyerTotal, snapshotFresh)}</dd></div>
         <div><dt>New primary listing payout quote</dt><dd>{currentAmount(state.pool.nextSellerPayout, snapshotFresh)}</dd></div>
       </dl>
-      <PriceCurve state={state} />
+      {state.pool.reserve === "0" ? <p className="notice">
+        Pool not yet open. {state.pool.seedCount} of 2 original bundles have been independently proved and publicly seeded.
+        The 10,000 iDNA starting liquidity can be added only after both are ready; no purchase or listing quote is available yet.
+      </p> : <PriceCurve state={state} />}
       {state.pool.buyPausedForBond && <p className="notice">
         {snapshotFresh ? "Buying is paused" : "Buying was paused at this snapshot's block"}: the seller bond for{" "}
         {state.pool.nextOfferId === undefined ? "the queue head" : <>queue head <code className="mono">{state.pool.nextOfferId}</code></>} needs{" "}

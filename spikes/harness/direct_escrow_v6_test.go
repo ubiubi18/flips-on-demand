@@ -24,6 +24,7 @@ type directV6Fixture struct {
 	api       *lib.GoAPI
 	code      []byte
 	deployGas uint64
+	activateGas uint64
 	author    lib.Address
 	buyer     lib.Address
 	offerID   [32]byte
@@ -43,6 +44,10 @@ func v6OfferID(author lib.Address, epoch uint16) [32]byte {
 }
 
 func newDirectV6Fixture(t *testing.T) *directV6Fixture {
+	return newDirectV6FixtureWithActivation(t, true)
+}
+
+func newDirectV6FixtureWithActivation(t *testing.T, activate bool) *directV6Fixture {
 	t.Helper()
 	code, err := os.ReadFile(directV6WasmPath)
 	if err != nil {
@@ -59,10 +64,7 @@ func newDirectV6Fixture(t *testing.T) *directV6Fixture {
 		author := addressFromHex(t, hexOf(bytes.Repeat([]byte{byte(0xc1 + i)}, 20)))
 		seedIDs[i] = v6OfferID(author, epoch)
 	}
-	env.SetPayAmount(reserve)
-	env.CreditContractBalance(reserve)
 	deployGas, _, err := lib.Deploy(api, code, [][]byte{join(seedIDs[0][:], seedIDs[1][:])}, lib.Address{}, maxCallGasWasm, false)
-	env.ResetPayAmount()
 	if err != nil {
 		t.Fatalf("v6 deploy rejected by pinned runtime: %v", err)
 	}
@@ -95,6 +97,12 @@ func newDirectV6Fixture(t *testing.T) *directV6Fixture {
 	f.seedQueue(t)
 	f.units(t, "pool/units", 2)
 	f.units(t, "pool/secondary-units", 2)
+	if activate {
+		f.env.SetPayAmount(reserve)
+		f.env.CreditContractBalance(reserve)
+		f.activateGas = f.call(t, "activate", join(seedIDs[0][:], seedIDs[1][:]))
+		f.amount(t, "pool/reserve", reserve)
+	}
 
 	f.offerID = v6OfferID(f.author, 230)
 	f.metadata = join([]byte{0, 230, 0, 0, 0, 1}, bytes.Repeat([]byte{0x11}, 32), bytes.Repeat([]byte{0x22}, 32))
@@ -473,6 +481,7 @@ func TestDirectV6SealedSellerFallbackGas(t *testing.T) {
 		return txGas
 	}
 	measure("deploy", f.deployGas, len(f.code))
+	measure("activate", f.activateGas, 64)
 	measure("qualify", qualifyGas, len(qualifyArg))
 	measure("list", listGas, len(f.metadata)+16)
 	measure("buy", buyGas, 32+65)
@@ -496,7 +505,7 @@ func TestDirectV6SyntheticRuntimeAccounting(t *testing.T) {
 		f.reject(t, "challenge", u64Arg(1), f.buyer, big.NewInt(1))
 		f.call(t, "challenge", u64Arg(1))
 	})
-	t.Run("10,000 iDNA bootstrap deploy fits the pinned block gas budget", func(t *testing.T) {
+	t.Run("zero-value deploy and separately funded activation fit the pinned block gas budget", func(t *testing.T) {
 		f := newDirectV6Fixture(t)
 		// Reserve 2 KiB for signed transaction framing beyond exact WASM
 		// bytes, as in the v5 release measurement.
@@ -504,10 +513,31 @@ func TestDirectV6SyntheticRuntimeAccounting(t *testing.T) {
 		if conservative >= maxUserGasUpgrade11 {
 			t.Fatalf("v6 deploy exceeds one block: wasm gas=%d bytes=%d conservative tx gas=%d", f.deployGas, len(f.code), conservative)
 		}
+		activateConservative := (f.activateGas+wasmGasPerUserGas-1)/wasmGasPerUserGas + uint64(64+2048)*10
+		if activateConservative >= maxUserGasUpgrade11 {
+			t.Fatalf("v6 activate exceeds one block: wasm gas=%d conservative tx gas=%d", f.activateGas, activateConservative)
+		}
 		t.Logf("v6 deploy: wasm gas=%d wasm bytes=%d conservative tx gas=%d", f.deployGas, len(f.code), conservative)
+		t.Logf("v6 activate: wasm gas=%d conservative tx gas=%d", f.activateGas, activateConservative)
+	})
+	t.Run("seed funding is rejected until the two proved public offers are queued", func(t *testing.T) {
+		f := newDirectV6FixtureWithActivation(t, false)
+		ids := join(f.seedIDs[0][:], f.seedIDs[1][:])
+		f.amount(t, "pool/reserve", big.NewInt(0))
+		f.reject(t, "buyPublicSeed", f.seedIDs[0][:], f.buyer, f.quote)
+		f.reject(t, "activate", ids, f.author, big.NewInt(1))
+		f.reject(t, "activate", join(f.seedIDs[1][:], f.seedIDs[0][:]), f.author, f.reserve)
+		f.put([]byte("pool/seed-count"), u64Arg(1))
+		f.reject(t, "activate", ids, f.author, f.reserve)
+		f.put([]byte("pool/seed-count"), u64Arg(2))
+		f.env.SetPayAmount(f.reserve)
+		f.env.CreditContractBalance(f.reserve)
+		f.call(t, "activate", ids)
+		f.amount(t, "pool/reserve", f.reserve)
+		f.reject(t, "activate", ids, f.author, f.reserve)
 	})
 	t.Run("only the two pinned public seed IDs can enter the bootstrap", func(t *testing.T) {
-		f := newDirectV6Fixture(t)
+		f := newDirectV6FixtureWithActivation(t, false)
 		zeroID := make([]byte, 32)
 		f.put([]byte("pool/seed-count"), u64Arg(0))
 		f.put([]byte("pool/units"), u64Arg(0))
@@ -529,6 +559,14 @@ func TestDirectV6SyntheticRuntimeAccounting(t *testing.T) {
 		other[220] = 1 // synthetic proof flag; no actual content proof runs here
 		f.put(join([]byte("pool/offer/"), otherID[:]), other)
 		f.reject(t, "seedBundle", join(otherID[:], otherSecrets), otherAuthor, nil)
+		second := f.offer(t, f.seedIDs[1])
+		second[138] = 0 // qualified, not queued
+		second[237] = 0 // not yet public
+		copy(second[140:204], make([]byte, 64))
+		f.put(join([]byte("pool/offer/"), f.seedIDs[1][:]), second)
+		secondAuthor := addressFromHex(t, hexOf(second[:20]))
+		f.put(join([]byte("pool/seller/"), secondAuthor[:]), zeroID)
+		f.reject(t, "seedBundle", join(f.seedIDs[1][:], f.get(join([]byte("pool/public-seed/"), f.seedIDs[1][:]))), secondAuthor, nil)
 
 		first := f.offer(t, f.seedIDs[0])
 		first[138] = 0 // qualified, not queued

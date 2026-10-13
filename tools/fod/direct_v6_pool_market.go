@@ -539,9 +539,13 @@ func buildDirectV6PoolStateWithCall(call poolV6Call, contract, codeHash string) 
 		return nil, errors.New("v6 pool has invalid pinned seed offers")
 	}
 	firstSeed, secondSeed := ids["seed-first"], ids["seed-second"]
-	if seedCount > 2 || (seedCount < 2 &&
+	if seedCount > 2 || (amounts["reserve"].Sign() == 0 &&
 		(units["units"] != seedCount || units["secondary-units"] != seedCount ||
-			units["primary-units"] != 0 || maxOrderID != 0 || units["next-order"] != 1)) {
+			units["primary-units"] != 0 || units["reserved-units"] != 0 || maxOrderID != 0 ||
+			units["next-order"] != 1 || amounts["committed"].Sign() != 0 ||
+			amounts["buyer-payments"].Sign() != 0 || amounts["insurance"].Sign() != 0 ||
+			amounts["pending"].Sign() != 0)) ||
+		(amounts["reserve"].Sign() > 0 && seedCount != 2) {
 		return nil, errors.New("v6 pool seed initialization is inconsistent")
 	}
 	reserve, committed := amounts["reserve"], amounts["committed"]
@@ -554,7 +558,7 @@ func buildDirectV6PoolStateWithCall(call poolV6Call, contract, codeHash string) 
 		return nil, errors.New("v6 pool virtual reserve overflows or is underfunded")
 	}
 	virtual.Sub(virtual, amounts["insurance"])
-	if virtual.Sign() == 0 {
+	if virtual.Sign() == 0 && reserve.Sign() != 0 {
 		return nil, errors.New("v6 pool virtual reserve is zero")
 	}
 	pool := directV6PoolTotals{
@@ -573,7 +577,7 @@ func buildDirectV6PoolStateWithCall(call poolV6Call, contract, codeHash string) 
 		pool.NextOfferID = hex.EncodeToString(oldest[:])
 	}
 	var fee *big.Int
-	if seedCount == 2 {
+	if seedCount == 2 && reserve.Sign() > 0 {
 		var rawFee json.RawMessage
 		if err := call("bcn_feePerGas", []any{}, &rawFee); err != nil {
 			return nil, fmt.Errorf("read v6 pool fee: %w", err)
@@ -611,7 +615,7 @@ func buildDirectV6PoolStateWithCall(call poolV6Call, contract, codeHash string) 
 			}
 		}
 	}
-	if x > 1 {
+	if x > 1 && virtual.Sign() > 0 {
 		denominator := new(big.Int).SetUint64(x - 1)
 		quote, remainder := new(big.Int).QuoRem(virtual, denominator, new(big.Int))
 		if remainder.Sign() != 0 {
