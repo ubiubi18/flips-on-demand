@@ -1,0 +1,35 @@
+{
+  "format": "fod.flip-pool",
+  "version": 1,
+  "sessionId": "session-example-1",
+  "utilityId": "utility-example",
+  "provenance": {
+    "epoch": 204,
+    "author": "4444444444444444444444444444444444444444",
+    "source": "example pool for the reference integration; answers are synthetic, and c1's content is a real flip encoded with the client's own rlp package over four 8x8 PNGs (docs/SOURCES.md F-98)",
+    "blockRange": "10846921-10847000",
+    "answers": "example answers: the fixture's second sequence is the answer this pool scores"
+  },
+  "rules": {
+    "passThreshold": 2,
+    "opensAt": "2026-09-25T00:00:00Z",
+    "closesAt": "2026-12-31T23:59:59Z"
+  },
+  "answerSalt": "e1d2c3b4a5968778695a4b3c2d1e0f1a2b3c4d5e6f708192a3b4c5d6e7f80123",
+  "challenges": [
+    {
+      "challengeId": "c1",
+      "cid": "bafkreiexampleexampleexampleexampleexampleexampleexample",
+      "answerDigest": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9",
+      "content": {
+        "publicPart": "0xf898b84a89504e470d0a1a0a0000000d49484452000000080000000808020000004b6d29dc0000001149444154789c63b863638315310c2d09005eb75501d9ae15f50000000049454e44ae426082b84a89504e470d0a1a0a0000000d49484452000000080000000808020000004b6d29dc0000001149444154789c63b0e9b98315310c2d0900df206901180393ab0000000049454e44ae426082",
+        "privatePart": "0xf8a3b84a89504e470d0a1a0a0000000d49484452000000080000000808020000004b6d29dc0000001149444154789c6308d8128515310c2d09002e465781e63c96390000000049454e44ae426082b84a89504e470d0a1a0a0000000d49484452000000080000000808020000004b6d29dc0000001149444154789c6378b6cf062b62185a12000e09780175cca6940000000049454e44ae426082cac480010203c402800301"
+      }
+    },
+    {
+      "challengeId": "c2",
+      "cid": "bafkreiexampleexampleexampleexampleexampleexampleexample2",
+      "answerDigest": "1809ed5293a3c146697ad251c8ca297e7887e905d3f5c956be2b6f5eddff2af4"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "author": "45869fd270fbef7a4e3fb8b8d2323cfdbc76fad3",
+  "manifest": [
+    "bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4"
+  ],
+  "sessions": [
+    {
+      "label": "clean",
+      "epoch": 204,
+      "expectedLabel": "clean",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "41d6411e07798748c4d5f252b1d4ca56ce9d2551bd3c40de242ba12e499e4e00",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08cc011801221400000000000000000000000000000000000000002a20000000000000000000000000000000000000000000000000000000000000000070018201020801",
+          "valueHashHex": "05f7066d1316bf672b48d624e9c403b5c9db40eef842933b551a375ffae6a2e7",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "c831b269abcb02e9ab78b3f88e7247e9b33953b96ee06a24eac216cce7527439",
+              "rightHex": ""
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "0245869fd270fbef7a4e3fb8b8d2323cfdbc76fad3",
+          "valueHex": "0a0203e818c80120033a41000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040034a260a240155122015afe1f3dfdcdfb6a3dc86eff7022b2cfa1fc009e08943bedb97af90ea9bf747",
+          "valueHashHex": "875d5c8b7e8faa8183d229b6fa221e97d5725838eeccc437a979ec6a00cabfaa",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "",
+              "rightHex": "bb3e9857c11354fa8e7c92c0cf87e83f5da36236f52d3507255e11d312363b75"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "a8167ec1c781a7438e3f4f54736cd2022dbfd2d7e82cb19fb38a554053137d97",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08cd011801221400000000000000000000000000000000000000002a20000000000000000000000000000000000000000000000000000000000000000070018201020801",
+          "valueHashHex": "7180f79b0b978d87144e7418c1222f0a8f298ede2f90900f33920f68fe473a8b",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "45cf012d5abf5e571f509681cc45e1664fe41b638fa3a8d93ab0515713fb8f40",
+              "rightHex": ""
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "0245869fd270fbef7a4e3fb8b8d2323cfdbc76fad3",
+          "valueHex": "0a0203e818c80120033a4100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004003",
+          "valueHashHex": "e7ae60517f53f65b1f31fc5d31a39f0cf2814a463cf5bff2f6ff50841d093184",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "",
+              "rightHex": "f26815f8a104475f91d59b883ff824f33b301ce17d9e1f8529006a59a81b1e9f"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "source": "Synthetic node state over the original CID in proofs/fast-content/dist/synthetic-one-flip.json; regenerate with FOD_REGENERATE_FAST_SESSION_VECTOR=1."
+}

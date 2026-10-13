@@ -1,0 +1,37 @@
+[package]
+name = "fod-escrow"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = []
+# Test hooks let the harness seed state so accounting can be exercised before the
+# proof programs exist. The release artefact is built without this feature, and
+# without it no hook export is present.
+test-hooks = []
+fast-candidate = ["dep:fod-fast-content-core", "dep:fod-fast-delivery-core", "dep:fod-fast-session-core"]
+
+[dependencies]
+# The delivery verifier: the same crates the prover's host uses, compiled into
+# the contract so a seal can be checked inside the Idena runtime.
+risc0-groth16 = { version = "3.0.5", default-features = false }
+risc0-zkp = { version = "3.0.5", default-features = false }
+# SHA-256 for the claim binding: the runtime offers keccak256 only, and RISC
+# Zero's claim and journal digests are SHA-256 based.
+sha2 = { version = "0.10", default-features = false }
+fod-fast-content-core = { path = "../../proofs/fast-content-core", optional = true }
+fod-fast-delivery-core = { path = "../../proofs/fast-delivery-core", default-features = false, optional = true }
+fod-fast-session-core = { path = "../../proofs/fast-session-core", optional = true }
+
+[dev-dependencies]
+hex-literal = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

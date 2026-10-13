@@ -1,0 +1,17 @@
+[package]
+name = "fast-content-host"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+fast-content-methods = { path = "../methods" }
+fod-fast-content-core = { path = "../../fast-content-core" }
+fod-fast-delivery-core = { path = "../../fast-delivery-core" }
+fod-fast-session-core = { path = "../../fast-session-core" }
+fod-registration-core = { path = "../../registration/core" }
+k256 = "0.13"
+risc0-zkvm = { version = "=3.0.6" }
+serde = "1.0"
+serde_json = "1.0"
+sha2 = "0.10"

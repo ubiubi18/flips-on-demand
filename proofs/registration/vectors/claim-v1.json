@@ -1,0 +1,31 @@
+{
+  "claim": {
+    "version": 1,
+    "contract": "1111111111111111111111111111111111111111",
+    "author": "45869fd270fbef7a4e3fb8b8d2323cfdbc76fad3",
+    "epoch": 204,
+    "coveredFlips": 1,
+    "manifestCommitment": "2209a150a3f7878e373a204d5e8004febba8c82e972f620c4f9b70e9f9bdb636",
+    "keyCommitment": "15ceb91008ed17acd3584eeb451928d897a2a7a238bff8917fcf1c7400607747",
+    "policyDigest": "06b31d891336e0b20fcec9983cfb0303186b04bc0da906c926d57e25a7f3399f",
+    "consensusDigest": "cac2b17b70e112499123c496928e2f8eb9ba1b78560518519c345ffbc1d5efdf"
+  },
+  "contract": "1111111111111111111111111111111111111111",
+  "journalBytes": 178,
+  "journalHex": "00000001111111111111111111111111111111111111111145869fd270fbef7a4e3fb8b8d2323cfdbc76fad300cc000000012209a150a3f7878e373a204d5e8004febba8c82e972f620c4f9b70e9f9bdb63615ceb91008ed17acd3584eeb451928d897a2a7a238bff8917fcf1c740060774706b31d891336e0b20fcec9983cfb0303186b04bc0da906c926d57e25a7f3399fcac2b17b70e112499123c496928e2f8eb9ba1b78560518519c345ffbc1d5efdf",
+  "keyCommitment": "15ceb91008ed17acd3584eeb451928d897a2a7a238bff8917fcf1c7400607747",
+  "manifest": {
+    "format": "fod.bundle-manifest",
+    "version": 1,
+    "network": "idena-local",
+    "author": "45869fd270fbef7a4e3fb8b8d2323cfdbc76fad3",
+    "epoch": 204,
+    "cids": [
+      "bafkreibbftdp7dxcnohj2skhrm4zte2fkb7tow3diysrlxk2hkjl7a26xu"
+    ],
+    "validationAnchor": "b1c962c76bd67c44eceb8a547f5ca790371f3c7e6551df6c5e791bc16dff7824",
+    "consensusVersion": "idena-go@9bc57040337fd19f45ba65323939cac8789b9efd",
+    "eligibilityPolicy": "fod:eligibility:v1"
+  },
+  "note": "Frozen cross-language vector for the registration journal, layout recorded in SOURCES.md F-69. Any implementation must reproduce journalHex from the manifest, the contract, and the key commitment. The bundle is the one blob-v1.json describes."
+}

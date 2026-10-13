@@ -1,0 +1,12 @@
+[package]
+name = "registration-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+fod-anchor-core = { path = "../../../anchor-core" }
+fod-registration-core = { path = "../../core" }
+risc0-zkvm = { version = "^3.0.6", default-features = false, features = ["std"] }
+sha2 = { version = "0.10", default-features = false }

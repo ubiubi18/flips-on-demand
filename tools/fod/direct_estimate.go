@@ -1,0 +1,81 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"math/big"
+	"net"
+	"net/url"
+
+	"github.com/shopspring/decimal"
+)
+
+const directBlockGasCap = 5_120_000
+
+type directEstimate struct {
+	Success bool   `json:"success"`
+	GasUsed uint64 `json:"gasUsed"`
+	Error   string `json:"error"`
+}
+
+// The node runs the exact contract method against current state without
+// broadcasting. Fallback calldata contains the keys, so its simulation must
+// stay on a loopback RPC controlled by the seller.
+func estimateDirectCall(c *client, p *preparedAction, sender string, maxFee, feePerGas *big.Int) (uint64, *big.Int, error) {
+	if !isDirectFormat(p.Format) {
+		return 0, nil, errors.New("not a direct call")
+	}
+	if p.Format == preparedDirectFallbackFormat && !directLocalRPC(c.url) {
+		return 0, nil, errors.New("direct fallback requires a loopback RPC to keep unreleased keys private")
+	}
+	amount, ok := new(big.Int).SetString(p.Amount, 10)
+	if !ok || amount.Sign() < 0 {
+		return 0, nil, errors.New("invalid direct call amount")
+	}
+	var receipt directEstimate
+	err := c.call("contract_estimateCall", []any{map[string]any{
+		"from": "0x" + sender, "contract": "0x" + p.Contract,
+		"method": p.Operation, "amount": decimal.NewFromBigInt(amount, -18).String(),
+		"maxFee": decimal.NewFromBigInt(maxFee, -18).String(),
+		"args":   []any{map[string]any{"index": 0, "format": "hex", "value": "0x" + p.Calldata}},
+	}}, &receipt)
+	if err != nil {
+		return 0, nil, fmt.Errorf("direct call simulation failed: %w", err)
+	}
+	if !receipt.Success || receipt.GasUsed == 0 {
+		return 0, nil, fmt.Errorf("direct call simulation refused the current contract state: %s", receipt.Error)
+	}
+	// Keep room for signed-transaction framing and small state/fee changes.
+	budget := receipt.GasUsed + receipt.GasUsed/10 + 1_000
+	if budget < receipt.GasUsed || budget > directBlockGasCap {
+		return 0, nil, errors.New("direct call exceeds the chain block gas cap with margin")
+	}
+	rate := feePerGas
+	if rate == nil {
+		var chainFee big.Int
+		if err := c.call("bcn_feePerGas", []any{}, &chainFee); err != nil {
+			return 0, nil, fmt.Errorf("read direct-call chain fee: %w", err)
+		}
+		rate = &chainFee
+	}
+	if rate.Sign() <= 0 {
+		return 0, nil, errors.New("direct-call fee rate is unavailable")
+	}
+	required := new(big.Int).Mul(new(big.Int).SetUint64(budget), rate)
+	if maxFee == nil || maxFee.Cmp(required) < 0 {
+		return budget, rate, fmt.Errorf("direct call needs max fee at least %s base units for the current simulation", required)
+	}
+	if cap := maxMaxFeeFor(rate); maxFee.Cmp(cap) > 0 {
+		return budget, rate, fmt.Errorf("direct max fee exceeds node cap %s", cap)
+	}
+	return budget, rate, nil
+}
+
+func directLocalRPC(endpoint string) bool {
+	u, err := url.Parse(endpoint)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || u.Port() == "" {
+		return false
+	}
+	ip := net.ParseIP(u.Hostname())
+	return ip != nil && ip.IsLoopback()
+}

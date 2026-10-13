@@ -1,0 +1,30 @@
+{
+  "format": "fod.flip-pool",
+  "version": 1,
+  "sessionId": "session-cli-1",
+  "utilityId": "utility-cli",
+  "provenance": {
+    "epoch": 228,
+    "author": "111c27323d48535f6a75808b96a1adb8c3ced9e4",
+    "source": "fixture export over the frozen flip vector (docs/SOURCES.md F-98)",
+    "blockRange": "10870000-10870000",
+    "answers": "fixture answers file"
+  },
+  "rules": {
+    "passThreshold": 1,
+    "opensAt": "2026-09-27T12:00:00Z",
+    "closesAt": "2026-12-31T23:59:59Z"
+  },
+  "answerSalt": "c41f6a2b9d8e7f60514253546576879a8b9cadbecfd0e1f2a3b4c5d6e7f80910",
+  "challenges": [
+    {
+      "challengeId": "bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4",
+      "cid": "bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4",
+      "answerDigest": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9",
+      "content": {
+        "publicPart": "0xe08f89504e470d0a1a0a696d6167652d308f89504e470d0a1a0a696d6167652d31",
+        "privatePart": "0xeb8f89504e470d0a1a0a696d6167652d328f89504e470d0a1a0a696d6167652d33cac480010203c402800301"
+      }
+    }
+  ]
+}

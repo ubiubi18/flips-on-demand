@@ -1,0 +1,13 @@
+[package]
+name = "registration-v2-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+fod-flip-core = { path = "../../../flip-core" }
+fod-registration-core = { path = "../../../registration/core", features = ["risc0-sha"] }
+fod-session-core = { path = "../../../session-core" }
+risc0-zkvm = { version = "^3.0.6", default-features = false, features = ["std"] }
+sha2 = { version = "0.10", default-features = false }

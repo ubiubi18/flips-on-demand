@@ -1,0 +1,16 @@
+[package]
+name = "fod-fast-delivery-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = ["prover"]
+prover = ["dep:rand_core"]
+content = ["dep:chacha20poly1305"]
+
+[dependencies]
+k256 = { version = "0.13.4", default-features = false, features = ["arithmetic", "hash2curve"] }
+sha2 = { version = "0.10", default-features = false }
+rand_core = { version = "0.6", features = ["getrandom"], optional = true }
+chacha20poly1305 = { version = "=0.10.1", default-features = false, features = ["alloc"], optional = true }

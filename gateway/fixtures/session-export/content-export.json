@@ -1,0 +1,41 @@
+{
+  "format": "fod.session-content",
+  "version": 1,
+  "bundle": {
+    "author": "111c27323d48535f6a75808b96a1adb8c3ced9e4",
+    "epoch": 228,
+    "manifestCommitment": "adb227c10ad8be24c509bef27096332e2e0c7c29c21f19b9d373676c5612269a",
+    "flips": 1,
+    "source": "fixture export over the frozen flip vector (docs/SOURCES.md F-98)",
+    "inventoryComplete": true
+  },
+  "flips": [
+    {
+      "cid": "bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4",
+      "pair": 1,
+      "txHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "blockHeight": 10870000,
+      "publicPart": {
+        "file": "flips/bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4.public",
+        "bytes": 69,
+        "sha256": "dd1491e25d0fce8fa8d8cef0d9b75de50a06eeb093ea60db12e4f694dbcb15ee"
+      },
+      "privatePart": {
+        "file": "flips/bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4.private",
+        "bytes": 91,
+        "sha256": "cd1eb2757ba3e48d6b1996c5f2a6f759e9e73caab05eb08f0412c71274b6d19b"
+      }
+    }
+  ],
+  "answers": [
+    {
+      "cid": "bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4",
+      "answerDigest": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9",
+      "evidence": "fixture: the answer the provider vouches for is the second sequence"
+    }
+  ],
+  "answersEvidence": "fixture answers file",
+  "keys": "epoch key pairs are excluded from this export",
+  "exportedAt": "2026-09-27T12:00:00Z",
+  "tool": "fod"
+}

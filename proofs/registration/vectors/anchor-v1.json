@@ -1,0 +1,122 @@
+{
+  "tree": "state",
+  "height": 36,
+  "rootHex": "b1c962c76bd67c44eceb8a547f5ca790371f3c7e6551df6c5e791bc16dff7824",
+  "proofs": [
+    {
+      "keyHex": "0209250d8afb866880f8f82b24df055ffb30290c7a",
+      "valueHex": "0a09015af1d78b58c40000200340034a260a2401551220d1587159d23513aaf7c1b20ab36f80558bd3fd9ec2a3fd3d1759ff6caed1e3f14a280a2401551220f588bb22e27a59aa2d7bcbe077671a2f24c94bc5d57f834f3f6422d937e7868210014a280a24015512205447cb6ec9a1723719e45afaff44b50ce37ad14ff59aae88e5aa1482d0058e4c10027803",
+      "valueHashHex": "022c1f58175787f754babff4bd396457a07ec086548dd532f2ce8e2a54979355",
+      "version": 34,
+      "path": [
+        {
+          "height": 5,
+          "size": 22,
+          "version": 36,
+          "leftHex": "beb946d8c95951070f71ba5412a1a2668ff366a42735ad76be83c0546bac6dce",
+          "rightHex": ""
+        },
+        {
+          "height": 4,
+          "size": 13,
+          "version": 36,
+          "leftHex": "",
+          "rightHex": "61bff0872a727960b7a72c7776da25f0ac4d81cc1d69a6f4c6a3243011c232e1"
+        },
+        {
+          "height": 3,
+          "size": 5,
+          "version": 34,
+          "leftHex": "",
+          "rightHex": "a42ee4212d3d007c26f28008e3e3eff50a0b5d55edde623bd0fbc54bc99c304b"
+        },
+        {
+          "height": 2,
+          "size": 3,
+          "version": 34,
+          "leftHex": "",
+          "rightHex": "901d8cb9412902151903456437e676baee739d8b4bd60119cf74975a664e89d3"
+        },
+        {
+          "height": 1,
+          "size": 2,
+          "version": 34,
+          "leftHex": "3d5e759d559fe4f742764c1d42d7be8a9a378e258469e3d006b21b33cb8f738a",
+          "rightHex": ""
+        }
+      ]
+    },
+    {
+      "keyHex": "0245c32ddf40caa328d1bc8419e83d3906677a1925",
+      "valueHex": "0a09015af1d78b58c40000200340034a260a24015512206a44ad357a173f02026c6bb9400f1ab6b70da24742aa6b289c97ad9d50dd53ef4a280a24015512208469bc372b29d8c565ce14699ff6a8acd9d91964106a422fe3347c619960683210014a280a24015512202f14b54374b6fbbfba65ef3a59871dd596c60ad16d8915cd0340abafc9dac1681002",
+      "valueHashHex": "2d6df8d00cf1a4ecd954582a490e41fdde139d804e93a37a016488513b84ba1d",
+      "version": 4,
+      "path": [
+        {
+          "height": 5,
+          "size": 22,
+          "version": 36,
+          "leftHex": "beb946d8c95951070f71ba5412a1a2668ff366a42735ad76be83c0546bac6dce",
+          "rightHex": ""
+        },
+        {
+          "height": 4,
+          "size": 13,
+          "version": 36,
+          "leftHex": "",
+          "rightHex": "61bff0872a727960b7a72c7776da25f0ac4d81cc1d69a6f4c6a3243011c232e1"
+        },
+        {
+          "height": 3,
+          "size": 5,
+          "version": 34,
+          "leftHex": "",
+          "rightHex": "a42ee4212d3d007c26f28008e3e3eff50a0b5d55edde623bd0fbc54bc99c304b"
+        },
+        {
+          "height": 2,
+          "size": 3,
+          "version": 34,
+          "leftHex": "9f46fa4c989acdbcbf8f0668908c5432fd650de2b13e22d7cf4d7065efcc4c58",
+          "rightHex": ""
+        }
+      ]
+    },
+    {
+      "keyHex": "0248762f5a7e3a3bbe91e3535cf702953b7dbe4c78",
+      "valueHex": "0a09015af1d78b58c40000200340034a260a2401551220c98de1e821adf218b20d58c9dad2dc6335b3378e0fe01053931dfd6f01dc45f74a280a2401551220d88c5e3bbcc9d79245de0f165a3cb8b64f6eeb0dbdd9fb71dd6e35f73bba8ebf10014a280a2401551220b931add347917cb302d842325e758c3b9fa396e288f58e1b6204dbab2d037a6e1002",
+      "valueHashHex": "442216534d66e7bc5e9c9328479d56e8fb1e43ff62066c852c0e19221721d6f6",
+      "version": 4,
+      "path": [
+        {
+          "height": 5,
+          "size": 22,
+          "version": 36,
+          "leftHex": "beb946d8c95951070f71ba5412a1a2668ff366a42735ad76be83c0546bac6dce",
+          "rightHex": ""
+        },
+        {
+          "height": 4,
+          "size": 13,
+          "version": 36,
+          "leftHex": "",
+          "rightHex": "61bff0872a727960b7a72c7776da25f0ac4d81cc1d69a6f4c6a3243011c232e1"
+        },
+        {
+          "height": 3,
+          "size": 5,
+          "version": 34,
+          "leftHex": "8e267d9ab9fa8827e666c8557202a7a745dfc4be4c4a57a9d9e4f18f642ba55c",
+          "rightHex": ""
+        },
+        {
+          "height": 1,
+          "size": 2,
+          "version": 4,
+          "leftHex": "",
+          "rightHex": "63a1d715638c842090e29fdb6865ea6eb194e10765c1459dad1569b30fc97be2"
+        }
+      ]
+    }
+  ]
+}

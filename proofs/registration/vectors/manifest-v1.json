@@ -1,0 +1,19 @@
+{
+  "canonicalHex": "666f643a6d616e69666573743a636c61696d3a7631b2016eb2daf1a795cf832b9f56c50395f39481518b34626ecc4bfdcfdf10311db1c962c76bd67c44eceb8a547f5ca790371f3c7e6551df6c5e791bc16dff782400316964656e612d676f40396263353730343033333766643139663435626136353332333933396361633837383962396566640012666f643a656c69676962696c6974793a7631000b6964656e612d6c6f63616c",
+  "commitment": "2209a150a3f7878e373a204d5e8004febba8c82e972f620c4f9b70e9f9bdb636",
+  "inventoryCommitment": "b2016eb2daf1a795cf832b9f56c50395f39481518b34626ecc4bfdcfdf10311d",
+  "manifest": {
+    "format": "fod.bundle-manifest",
+    "version": 1,
+    "network": "idena-local",
+    "author": "45869fd270fbef7a4e3fb8b8d2323cfdbc76fad3",
+    "epoch": 204,
+    "cids": [
+      "bafkreibbftdp7dxcnohj2skhrm4zte2fkb7tow3diysrlxk2hkjl7a26xu"
+    ],
+    "validationAnchor": "b1c962c76bd67c44eceb8a547f5ca790371f3c7e6551df6c5e791bc16dff7824",
+    "consensusVersion": "idena-go@9bc57040337fd19f45ba65323939cac8789b9efd",
+    "eligibilityPolicy": "fod:eligibility:v1"
+  },
+  "note": "Frozen cross-language vector for the BundleManifest commitment, layout recorded in SOURCES.md F-67. Any implementation must reproduce inventoryCommitment, canonicalHex, and commitment from manifest. The bundle is the one blob-v1.json describes."
+}

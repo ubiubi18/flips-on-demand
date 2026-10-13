@@ -1,0 +1,11 @@
+[package]
+name = "registration-v2-host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+v2-methods = { path = "../methods" }
+fod-session-core = { path = "../../session-core" }
+risc0-zkvm = { version = "^3.0.6" }
+serde = "1.0"
+serde_json = "1.0"

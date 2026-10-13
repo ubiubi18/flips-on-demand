@@ -1,0 +1,1587 @@
+{
+  "cases": [
+    {
+      "name": "seven-candidates-three-authors",
+      "seed": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+      "shortFlipsCount": 6,
+      "shards": [
+        {
+          "id": 1,
+          "candidates": [
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0000",
+                "bafy0001"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0100",
+                "bafy0101"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0200",
+                "bafy0201"
+              ]
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            }
+          ],
+          "authorsPerCandidate": {
+            "0": [
+              2,
+              1,
+              0,
+              2,
+              2,
+              0
+            ],
+            "1": [
+              0,
+              2,
+              2,
+              1,
+              1,
+              1
+            ],
+            "2": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            "3": [
+              0,
+              2,
+              1,
+              2,
+              2,
+              0
+            ],
+            "4": [
+              1,
+              0,
+              2,
+              1,
+              2,
+              1
+            ],
+            "5": [
+              2,
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            "6": [
+              2,
+              1,
+              0,
+              1,
+              0,
+              2
+            ]
+          },
+          "candidatesPerAuthor": {
+            "0": [
+              1,
+              3,
+              2,
+              4,
+              0,
+              2,
+              5,
+              6,
+              2,
+              5,
+              2,
+              6,
+              0,
+              3
+            ],
+            "1": [
+              2,
+              4,
+              0,
+              5,
+              6,
+              3,
+              1,
+              4,
+              6,
+              1,
+              5,
+              1,
+              4,
+              5
+            ],
+            "2": [
+              0,
+              5,
+              6,
+              1,
+              3,
+              1,
+              4,
+              0,
+              3,
+              0,
+              3,
+              4,
+              2,
+              6
+            ]
+          },
+          "shortFlipsPerCandidate": [
+            [
+              4,
+              2,
+              0,
+              5,
+              3,
+              1
+            ],
+            [
+              0,
+              4,
+              2,
+              1,
+              5,
+              3
+            ],
+            [
+              2,
+              0,
+              4,
+              3,
+              1,
+              5
+            ],
+            [
+              0,
+              4,
+              2,
+              1,
+              5,
+              3
+            ],
+            [
+              2,
+              0,
+              4,
+              3,
+              1,
+              5
+            ],
+            [
+              4,
+              2,
+              0,
+              5,
+              3,
+              1
+            ],
+            [
+              4,
+              2,
+              0,
+              5,
+              3,
+              1
+            ]
+          ],
+          "longFlipsPerCandidate": [
+            [
+              4,
+              5,
+              2,
+              3,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              4,
+              5,
+              2,
+              3
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              4,
+              5
+            ],
+            [
+              0,
+              1,
+              4,
+              5,
+              2,
+              3
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              4,
+              5
+            ],
+            [
+              4,
+              5,
+              2,
+              3,
+              0,
+              1
+            ],
+            [
+              4,
+              5,
+              2,
+              3,
+              0,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "twelve-candidates-nine-authors",
+      "seed": "ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100",
+      "shortFlipsCount": 6,
+      "shards": [
+        {
+          "id": 2,
+          "candidates": [
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0000"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0100"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0200"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0300"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0400"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0500"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0600"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0700"
+              ]
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            }
+          ],
+          "authorsPerCandidate": {
+            "0": [
+              4,
+              1,
+              3,
+              5,
+              6,
+              2,
+              0,
+              4,
+              7
+            ],
+            "1": [
+              3,
+              2,
+              6,
+              5,
+              0,
+              4,
+              1,
+              3,
+              7
+            ],
+            "10": [
+              0,
+              3,
+              6,
+              1,
+              4,
+              7,
+              1,
+              5
+            ],
+            "2": [
+              7,
+              5,
+              1,
+              3,
+              6,
+              0,
+              1,
+              4,
+              6
+            ],
+            "3": [
+              1,
+              6,
+              7,
+              2,
+              4,
+              0,
+              0,
+              4,
+              7
+            ],
+            "4": [
+              0,
+              6,
+              5,
+              7,
+              3,
+              2,
+              1,
+              4,
+              6
+            ],
+            "5": [
+              6,
+              7,
+              2,
+              4,
+              1,
+              3,
+              0,
+              3,
+              7
+            ],
+            "6": [
+              5,
+              0,
+              3,
+              7,
+              2,
+              4,
+              1,
+              5
+            ],
+            "7": [
+              2,
+              4,
+              1,
+              5,
+              0,
+              6,
+              0,
+              3,
+              7
+            ],
+            "8": [
+              4,
+              5,
+              7,
+              1,
+              6,
+              3,
+              0,
+              3,
+              6
+            ],
+            "9": [
+              7,
+              2,
+              4,
+              0,
+              1,
+              5,
+              2,
+              3,
+              6
+            ]
+          },
+          "candidatesPerAuthor": {
+            "0": [
+              4,
+              10,
+              6,
+              9,
+              1,
+              7,
+              2,
+              3,
+              8,
+              5,
+              3,
+              0,
+              7
+            ],
+            "1": [
+              3,
+              0,
+              2,
+              7,
+              8,
+              10,
+              5,
+              9,
+              4,
+              6,
+              2,
+              1,
+              10
+            ],
+            "2": [
+              7,
+              1,
+              9,
+              5,
+              3,
+              6,
+              0,
+              4,
+              9
+            ],
+            "3": [
+              1,
+              10,
+              0,
+              6,
+              2,
+              4,
+              5,
+              8,
+              7,
+              9,
+              5,
+              8,
+              1
+            ],
+            "4": [
+              0,
+              8,
+              7,
+              9,
+              5,
+              3,
+              10,
+              1,
+              6,
+              2,
+              3,
+              4,
+              0
+            ],
+            "5": [
+              6,
+              2,
+              8,
+              4,
+              0,
+              1,
+              7,
+              9,
+              10,
+              6
+            ],
+            "6": [
+              5,
+              3,
+              4,
+              1,
+              10,
+              0,
+              2,
+              8,
+              7,
+              9,
+              2,
+              4,
+              8
+            ],
+            "7": [
+              2,
+              9,
+              5,
+              3,
+              8,
+              4,
+              6,
+              10,
+              0,
+              1,
+              7,
+              5,
+              3
+            ]
+          },
+          "shortFlipsPerCandidate": [
+            [
+              1,
+              6,
+              4,
+              3,
+              5,
+              2
+            ],
+            [
+              3,
+              2,
+              0,
+              4,
+              6,
+              5
+            ],
+            [
+              3,
+              4,
+              7,
+              5,
+              1,
+              6
+            ],
+            [
+              6,
+              7,
+              0,
+              1,
+              2,
+              4
+            ],
+            [
+              3,
+              0,
+              6,
+              5,
+              7,
+              2
+            ],
+            [
+              6,
+              7,
+              1,
+              0,
+              2,
+              4
+            ],
+            [
+              5,
+              0,
+              3,
+              7,
+              2,
+              4
+            ],
+            [
+              6,
+              3,
+              2,
+              4,
+              1,
+              5
+            ],
+            [
+              5,
+              7,
+              1,
+              6,
+              3,
+              0
+            ],
+            [
+              7,
+              2,
+              4,
+              0,
+              1,
+              5
+            ],
+            [
+              3,
+              0,
+              6,
+              7,
+              5,
+              1
+            ]
+          ],
+          "longFlipsPerCandidate": [
+            [
+              0,
+              7
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              3
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              7
+            ],
+            [
+              4
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fewer-authors-than-the-short-session",
+      "seed": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "shortFlipsCount": 6,
+      "shards": [
+        {
+          "id": 3,
+          "candidates": [
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0000",
+                "bafy0001"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0100",
+                "bafy0101"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0200",
+                "bafy0201"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0300",
+                "bafy0301"
+              ]
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            }
+          ],
+          "authorsPerCandidate": {
+            "0": [
+              1,
+              2,
+              3,
+              2,
+              2,
+              0
+            ],
+            "1": [
+              2,
+              3,
+              0,
+              3,
+              3,
+              3
+            ],
+            "2": [
+              3,
+              0,
+              1,
+              3,
+              1,
+              1
+            ],
+            "3": [
+              0,
+              2,
+              1,
+              2,
+              0,
+              3
+            ],
+            "4": [
+              1,
+              2,
+              0,
+              3,
+              1,
+              1
+            ],
+            "5": [
+              3,
+              1,
+              0,
+              2,
+              0,
+              0
+            ],
+            "6": [
+              2,
+              0,
+              1,
+              3,
+              1,
+              2
+            ]
+          },
+          "candidatesPerAuthor": {
+            "0": [
+              3,
+              2,
+              6,
+              1,
+              4,
+              5,
+              3,
+              5,
+              0,
+              5
+            ],
+            "1": [
+              0,
+              4,
+              5,
+              2,
+              3,
+              6,
+              2,
+              4,
+              6,
+              2,
+              4
+            ],
+            "2": [
+              1,
+              6,
+              0,
+              3,
+              4,
+              0,
+              3,
+              5,
+              0,
+              6
+            ],
+            "3": [
+              2,
+              5,
+              1,
+              0,
+              1,
+              2,
+              4,
+              6,
+              1,
+              1,
+              3
+            ]
+          },
+          "shortFlipsPerCandidate": [
+            [
+              2,
+              4,
+              6,
+              0,
+              3,
+              5
+            ],
+            [
+              4,
+              6,
+              0,
+              5,
+              7,
+              1
+            ],
+            [
+              6,
+              2,
+              1,
+              7,
+              3,
+              0
+            ],
+            [
+              2,
+              1,
+              7,
+              4,
+              3,
+              0
+            ],
+            [
+              3,
+              5,
+              1,
+              7,
+              2,
+              4
+            ],
+            [
+              7,
+              5,
+              2,
+              0,
+              6,
+              4
+            ],
+            [
+              5,
+              2,
+              6,
+              1,
+              4,
+              3
+            ]
+          ],
+          "longFlipsPerCandidate": [
+            [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              0,
+              1
+            ],
+            [
+              4,
+              5,
+              6,
+              7,
+              0,
+              1
+            ],
+            [
+              6,
+              7,
+              0,
+              1,
+              2,
+              3
+            ],
+            [
+              0,
+              1,
+              4,
+              5,
+              2,
+              3,
+              6,
+              7
+            ],
+            [
+              2,
+              3,
+              4,
+              5,
+              0,
+              1,
+              6,
+              7
+            ],
+            [
+              6,
+              7,
+              2,
+              3,
+              0,
+              1,
+              4,
+              5
+            ],
+            [
+              4,
+              5,
+              0,
+              1,
+              2,
+              3,
+              6,
+              7
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two-shards-and-an-empty-one",
+      "seed": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+      "shortFlipsCount": 7,
+      "shards": [
+        {
+          "id": 1,
+          "candidates": [
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0000",
+                "bafy0001",
+                "bafy0002"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0100",
+                "bafy0101",
+                "bafy0102"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0200"
+              ]
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            }
+          ],
+          "authorsPerCandidate": {
+            "0": [
+              2,
+              1,
+              2,
+              1,
+              0,
+              0,
+              2
+            ],
+            "1": [
+              0,
+              2,
+              0,
+              1,
+              1,
+              1,
+              2
+            ],
+            "2": [
+              1,
+              0,
+              0,
+              0,
+              2,
+              1,
+              1
+            ],
+            "3": [
+              2,
+              1,
+              0,
+              2,
+              1,
+              2,
+              1
+            ],
+            "4": [
+              0,
+              1,
+              2,
+              0,
+              2,
+              0,
+              0
+            ],
+            "5": [
+              1,
+              0,
+              2,
+              2,
+              0,
+              0,
+              1
+            ],
+            "6": [
+              2,
+              1,
+              0,
+              1,
+              0,
+              2,
+              2
+            ]
+          },
+          "candidatesPerAuthor": {
+            "0": [
+              1,
+              4,
+              2,
+              5,
+              1,
+              2,
+              3,
+              6,
+              2,
+              4,
+              0,
+              5,
+              6,
+              0,
+              4,
+              5,
+              4
+            ],
+            "1": [
+              2,
+              5,
+              0,
+              3,
+              4,
+              6,
+              0,
+              1,
+              6,
+              1,
+              3,
+              1,
+              2,
+              2,
+              3,
+              5
+            ],
+            "2": [
+              0,
+              3,
+              6,
+              1,
+              0,
+              4,
+              5,
+              3,
+              5,
+              2,
+              4,
+              3,
+              6,
+              0,
+              1,
+              6
+            ]
+          },
+          "shortFlipsPerCandidate": [
+            [
+              6,
+              3,
+              0,
+              4,
+              1
+            ],
+            [
+              1,
+              6,
+              5,
+              2,
+              3,
+              0
+            ],
+            [
+              4,
+              1,
+              6,
+              5,
+              2,
+              3
+            ],
+            [
+              5,
+              2,
+              6,
+              3,
+              0,
+              4
+            ],
+            [
+              0,
+              6,
+              4,
+              1,
+              5,
+              2
+            ],
+            [
+              6,
+              3,
+              0,
+              4,
+              1
+            ],
+            [
+              6,
+              5,
+              2,
+              3,
+              0
+            ]
+          ],
+          "longFlipsPerCandidate": [
+            [
+              6,
+              3,
+              4,
+              5,
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              1,
+              2,
+              6,
+              3,
+              4,
+              5
+            ],
+            [
+              3,
+              4,
+              5,
+              0,
+              1,
+              2,
+              6
+            ],
+            [
+              6,
+              3,
+              4,
+              5,
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            [
+              3,
+              4,
+              5,
+              0,
+              1,
+              2,
+              6
+            ],
+            [
+              6,
+              3,
+              4,
+              5,
+              0,
+              1,
+              2
+            ]
+          ]
+        },
+        {
+          "id": 4,
+          "candidates": [
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0000",
+                "bafy0001"
+              ]
+            },
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0100",
+                "bafy0101"
+              ]
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            }
+          ],
+          "authorsPerCandidate": {
+            "0": [
+              1,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            "1": [
+              0,
+              0,
+              0,
+              1,
+              1,
+              0,
+              0
+            ],
+            "2": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              1,
+              1
+            ],
+            "3": [
+              1,
+              0,
+              1,
+              1,
+              1,
+              0,
+              1
+            ],
+            "4": [
+              1,
+              0,
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          "candidatesPerAuthor": {
+            "0": [
+              1,
+              2,
+              0,
+              1,
+              3,
+              4,
+              1,
+              2,
+              0,
+              2,
+              4,
+              0,
+              2,
+              0,
+              1,
+              3,
+              0,
+              1
+            ],
+            "1": [
+              0,
+              3,
+              4,
+              2,
+              0,
+              3,
+              4,
+              1,
+              3,
+              1,
+              3,
+              4,
+              2,
+              4,
+              2,
+              3,
+              4
+            ]
+          },
+          "shortFlipsPerCandidate": [
+            [
+              2,
+              0,
+              3,
+              1
+            ],
+            [
+              1,
+              3,
+              0,
+              2
+            ],
+            [
+              2,
+              1,
+              3,
+              0
+            ],
+            [
+              1,
+              2,
+              0,
+              3
+            ],
+            [
+              2,
+              0,
+              3,
+              1
+            ]
+          ],
+          "longFlipsPerCandidate": [
+            [
+              2,
+              3,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            [
+              2,
+              3,
+              0,
+              1
+            ],
+            [
+              2,
+              3,
+              0,
+              1
+            ]
+          ]
+        },
+        {
+          "id": 5,
+          "candidates": [],
+          "authorsPerCandidate": {},
+          "candidatesPerAuthor": {},
+          "shortFlipsPerCandidate": [],
+          "longFlipsPerCandidate": []
+        }
+      ]
+    },
+    {
+      "name": "no-authors-at-all",
+      "seed": "11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff",
+      "shortFlipsCount": 6,
+      "shards": [
+        {
+          "id": 1,
+          "candidates": [
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            },
+            {
+              "isAuthor": false,
+              "flips": null
+            }
+          ],
+          "authorsPerCandidate": {},
+          "candidatesPerAuthor": {},
+          "shortFlipsPerCandidate": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "longFlipsPerCandidate": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "one-author-one-flip",
+      "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+      "shortFlipsCount": 6,
+      "shards": [
+        {
+          "id": 1,
+          "candidates": [
+            {
+              "isAuthor": true,
+              "flips": [
+                "bafy0000"
+              ]
+            }
+          ],
+          "authorsPerCandidate": {
+            "0": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "candidatesPerAuthor": {
+            "0": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shortFlipsPerCandidate": [
+            [
+              0
+            ]
+          ],
+          "longFlipsPerCandidate": [
+            [
+              0
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "note": "inputs and the reference distribution the pinned node computes for them; the port in tools/fod must reproduce every field",
+  "source": "core/ceremony/lottery.go of the pinned idena-go checkout, run unchanged",
+  "statement": "fod:lottery:v1"
+}

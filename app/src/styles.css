@@ -1,0 +1,595 @@
+:root {
+  --ink: #14161a;
+  --muted: #5b6472;
+  --line: #dfe3e8;
+  --surface: #ffffff;
+  --surface-alt: #f6f7f9;
+  --accent: #0f766e;
+  --accent-weak: #e6f2f1;
+  --danger: #b42318;
+  --warning: #b54708;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--surface);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+}
+
+.masthead {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 24px 0;
+  background: var(--surface);
+}
+
+.masthead-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 24px 0 8px;
+}
+
+.import input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.import span {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  background: var(--surface);
+}
+
+.import span:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.import input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.tabs a {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs a[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.provenance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 0 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.provenance > span:not(:first-child)::before {
+  content: "\00b7";
+  margin: 0 6px 0 2px;
+}
+
+.provenance .warning {
+  color: var(--warning);
+}
+
+main {
+  padding: 20px 24px 48px;
+  max-width: 1080px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* The two sequences a participant chooses between: four pictures each. */
+.flip-variants {
+  display: flex;
+  gap: 16px;
+}
+
+.flip-variant {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flip-sequence {
+  display: grid;
+  grid-template-columns: repeat(2, 56px);
+  gap: 2px;
+}
+
+.flip-sequence img {
+  width: 56px;
+  height: 42px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-alt);
+}
+
+.notice {
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-weak);
+  color: var(--ink);
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  max-width: 68ch;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.toolbar input[type="search"] {
+  flex: 1 1 220px;
+  min-width: 180px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segmented button {
+  border: 0;
+  padding: 7px 14px;
+  background: var(--surface);
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--accent-weak);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.pool-more {
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pool-nav {
+  display: flex;
+  gap: 18px;
+  margin: 16px 0;
+}
+
+.pool-lookup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.pool-lookup input {
+  flex: 1 1 220px;
+  max-width: 360px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.pool-id {
+  border: 0;
+  padding: 0;
+}
+
+.pool-id code,
+.pool-cids code {
+  display: block;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.pool-cids {
+  padding-left: 20px;
+}
+
+.pool-cids li + li {
+  margin-top: 8px;
+}
+
+.pool-preview {
+  margin-top: 6px;
+}
+
+.pool-preview p {
+  margin: 6px 0;
+}
+
+.pool-preview-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pool-preview-images img {
+  width: 120px;
+  height: 90px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.pool-curve {
+  margin: 0 0 20px;
+}
+
+.pool-curve h3 {
+  margin-top: 0;
+}
+
+.pool-curve p {
+  margin: 0 0 8px;
+}
+
+.pool-curve-chart {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  color: var(--accent);
+}
+
+.pool-curve-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 8px 0 0;
+}
+
+.pool-curve-values div {
+  min-width: 110px;
+}
+
+.pool-curve-values dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pool-curve-values dd {
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.pool-orders table {
+  min-width: 800px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 620px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+th {
+  white-space: nowrap;
+}
+
+td {
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+th {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-alt);
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Labels for the phone's stacked rows; the desktop table has its header row. */
+.field-label {
+  display: none;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--surface-alt);
+}
+
+.chip-open,
+.chip-sold {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+.chip-funded {
+  color: var(--warning);
+  border-color: var(--warning);
+  background: #fdf3e7;
+}
+
+.chip-refunded,
+.chip-cancelled {
+  color: var(--muted);
+}
+
+.linklike {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Rows can carry more than one action; without a gap the underlined labels run
+   together ("ConfirmReceive"). */
+td .linklike + .linklike {
+  margin-left: 12px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 24px;
+  margin: 0 0 20px;
+}
+
+.facts dt {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 20px;
+}
+
+button.primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primary:disabled {
+  background: var(--surface-alt);
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.market button.primary {
+  white-space: nowrap;
+}
+
+details {
+  border-top: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+details summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+details[open] summary {
+  margin-bottom: 10px;
+}
+
+section.empty,
+.banner {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  background: var(--surface-alt);
+}
+
+.banner {
+  border-color: var(--danger);
+  color: var(--danger);
+  margin: 0 0 16px;
+}
+
+.faq details p {
+  margin: 0 0 8px;
+  max-width: 68ch;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .masthead,
+  main {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .table-wrap th,
+  .table-wrap td {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  /* The desktop floor keeps the wide tables readable; a phone fits what it
+     shows, and anything wider still scrolls inside the wrap. */
+  .table-wrap table {
+    min-width: 0;
+  }
+
+  /* On a phone a table row becomes a short card: each value keeps its label, and
+     every action sits inside the screen instead of past its edge. */
+  .stack thead {
+    display: none;
+  }
+
+  .stack,
+  .stack tbody,
+  .stack tr,
+  .stack td {
+    display: block;
+    width: auto;
+  }
+
+  .stack tr {
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stack tr:last-child {
+    border-bottom: 0;
+  }
+
+  .stack td {
+    border-bottom: 0;
+    padding: 4px 8px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Stacked, each value reads as a line under its label, so the numeric
+     alignment of a table column no longer applies. */
+  .stack td.numeric {
+    text-align: left;
+  }
+
+  /* A phone gets a full-width tap target instead of a link-sized button. */
+  .stack td button.primary {
+    width: 100%;
+    padding: 10px 18px;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+}

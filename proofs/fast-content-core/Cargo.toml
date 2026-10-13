@@ -1,0 +1,21 @@
+[package]
+name = "fod-fast-content-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+risc0-sha = ["fod-registration-core/risc0-sha"]
+
+[dependencies]
+fod-fast-delivery-core = { path = "../fast-delivery-core", default-features = false, features = ["content"] }
+fod-flip-core = { path = "../flip-core" }
+fod-registration-core = { path = "../registration/core" }
+fod-session-core = { path = "../session-core" }
+k256 = { version = "0.13.4", default-features = false, features = ["arithmetic"] }
+sha2 = { version = "0.10", default-features = false }
+sha3 = { version = "0.10", default-features = false }
+
+[dev-dependencies]
+fod-fast-delivery-core = { path = "../fast-delivery-core", features = ["prover"] }
+serde_json = "1.0"

@@ -1,0 +1,82 @@
+{
+  "author": "111c27323d48535f6a75808b96a1adb8c3ced9e4",
+  "manifest": [
+    "bafkreiavv7q7hx64363khxeg573qekzm7ip4acparfb35w4xv6iovg7xi4"
+  ],
+  "sessions": [
+    {
+      "label": "clean",
+      "epoch": 228,
+      "expectedLabel": "clean",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "6d5dc8e14a75c425be15c91bd82c7141b07435058a54532f7d471d9e8e82f2da",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e4011801221400000000000000000000000000000000000000002a20000000000000000000000000000000000000000000000000000000000000000070018201020801",
+          "valueHashHex": "a09801b77557fd7e040018bb84658cf214cba397bdd9fe252c81cc08de29a1ba",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "0acb34d6ea8351315cb6577974756a18aa38d171fb73e7c5e65989f5282d0984",
+              "rightHex": ""
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e818c80120033a41000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040034a260a240155122015afe1f3dfdcdfb6a3dc86eff7022b2cfa1fc009e08943bedb97af90ea9bf747",
+          "valueHashHex": "875d5c8b7e8faa8183d229b6fa221e97d5725838eeccc437a979ec6a00cabfaa",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "",
+              "rightHex": "3bba25376ebaf8326c013e0e605e0141b56916a4bf8b98e42dcf39b0a596b857"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "31d74267d6cacd505a809d8c7458ec9cb4f143cc5b968b3ecaaaf8ceea141445",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e5011801221400000000000000000000000000000000000000002a20000000000000000000000000000000000000000000000000000000000000000070018201020801",
+          "valueHashHex": "29b94ef925c97ae1058ecc59014776f57a8ff4f805f96bbe99b96c0229772287",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "9880aa01c3a2c660c47049ef3e84152ad86a2ac8a716842fb1f6734000a374b4",
+              "rightHex": ""
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e818c80120033a4100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004003",
+          "valueHashHex": "e7ae60517f53f65b1f31fc5d31a39f0cf2814a463cf5bff2f6ff50841d093184",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "",
+              "rightHex": "6b6ea3525c74d0e339488599745d588c08c45906c7e1632967af74a6112bdea0"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "source": "Generated over the CID of the re-sealed flip blob in proofs/registration/vectors/blob-flip-v1.json (a real legacy flip content, sealed with the epoch keys of blob-v1.json), so the version 2 guest checks a record against a blob whose plaintext is a flip. Regenerate with FOD_REGENERATE_SESSION_VECTOR=1. See SOURCES.md F-97, F-98."
+}

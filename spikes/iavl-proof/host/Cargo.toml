@@ -1,0 +1,11 @@
+[package]
+name = "iavl-proof-host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fod-iavl-proof-core = { path = "../core" }
+methods = { path = "../methods" }
+risc0-zkvm = { version = "^3.0.6" }
+serde_json = "1"
+hex = "0.4"

@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = ["methods", "host"]
+
+# Always optimize; the guest's cycle count is what this spike measures.
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+debug = 1
+lto = true

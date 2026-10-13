@@ -1,0 +1,11 @@
+[package]
+name = "registration-host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fod-anchor-core = { path = "../../anchor-core" }
+methods = { path = "../methods" }
+risc0-zkvm = { version = "^3.0.6" }
+serde = "1.0"
+serde_json = "1.0"

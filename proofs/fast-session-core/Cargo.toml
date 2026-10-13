@@ -1,0 +1,11 @@
+[package]
+name = "fod-fast-session-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+fod-session-core = { path = "../session-core" }
+
+[dev-dependencies]
+serde_json = "1.0"

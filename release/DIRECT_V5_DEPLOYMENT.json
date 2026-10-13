@@ -1,0 +1,21 @@
+{
+  "format": "fod.direct-deployment",
+  "version": 1,
+  "candidateVersion": 5,
+  "network": "idena",
+  "contract": "0x68d59c71669c872c848049f22e1388fc226fceb7",
+  "codeHash": "0x45d1d0ebf1140e0f9a7d0383878a6e6e00c424ec12c12de78cacb92ec92f268a",
+  "artifactSha256": "8e6e973ded4adb91017f9dd022bce5b99bf3ef8676086907733bd6e65b41e6e8",
+  "deployment": {
+    "txHash": "0x824b1ab4d2c5eb5f87bf3c0e4b0246dc31004f12e7d6fad10fa8d8f2fc30698f",
+    "blockHeight": 11432050,
+    "blockHash": "0xa09cfbc3a669248d3c5e200360067afdbc047eeb37ec281a2cb37c701bd50dcb",
+    "gasUsed": 30000,
+    "gasCost": "2.499999999999",
+    "txFee": "308.487499999876605"
+  },
+  "verification": {
+    "nodesAgree": true,
+    "codeHashMatches": true
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "port": 8787,
+  "providerId": "example-provider",
+  "publicOrigin": "http://127.0.0.1:8787",
+  "origins": ["null"],
+  "sessionTtlSeconds": 1800,
+  "bodyLimitBytes": 65536,
+  "rateLimit": { "windowSeconds": 60, "maxRequests": 120 },
+  "poolPath": "example-pool.json",
+  "applicationKeyPath": "provider-application-key.json"
+}

@@ -1,0 +1,66 @@
+{
+  "format": "fod.marketplace-state",
+  "version": 1,
+  "network": "idena-local",
+  "contract": "1111111111111111111111111111111111111111",
+  "codeHash": "a54dc85ac99f851c92d7c96d7318af41dbe7c0194edfcc37eb4d422a998c1f56",
+  "blockHeight": 841,
+  "observedAt": "2026-09-26T12:00:00Z",
+  "source": "example pool snapshot for interface tests: one listing with a live quote, one delivered order",
+  "viewer": {
+    "address": "3333333333333333333333333333333333333333",
+    "credits": "250000000000000000000"
+  },
+  "credits": [
+    {
+      "address": "3333333333333333333333333333333333333333",
+      "amount": "250000000000000000000"
+    }
+  ],
+  "pool": [
+    {
+      "bundle": "49d4c4921367105c023c4eaf21329e28925793e6950fee60fe106790547a2fa9",
+      "author": "3333333333333333333333333333333333333333",
+      "manifestCommitment": "5c6de709adcca76b6fdbe787c65e3193c72e262384abc773825769d4b1a0a9b7",
+      "epoch": 204,
+      "flipCount": 6,
+      "reserve": "50000000000000000000000",
+      "units": 3,
+      "beaconBlock": 800,
+      "strikes": 0,
+      "nonce": 1,
+      "buyQuote": "25000000000000000000000",
+      "sellQuote": "12500000000000000000000",
+      "availability": {
+        "checkedAt": "2026-09-26T12:00:00Z",
+        "source": "example node sweep",
+        "coveredFlips": 6,
+        "verifiedFlips": 6,
+        "complete": true
+      }
+    }
+  ],
+  "poolOrders": [
+    {
+      "orderId": 1,
+      "bundle": "49d4c4921367105c023c4eaf21329e28925793e6950fee60fe106790547a2fa9",
+      "buyer": "3333333333333333333333333333333333333333",
+      "paid": "25000000000000000000000",
+      "fundedAtBlock": 400,
+      "deliveryDeadlineBlock": 1120,
+      "refundAfterBlock": 1240,
+      "state": "delivered",
+      "delivered": true
+    },
+    {
+      "orderId": 2,
+      "bundle": "49d4c4921367105c023c4eaf21329e28925793e6950fee60fe106790547a2fa9",
+      "buyer": "3333333333333333333333333333333333333333",
+      "paid": "25000000000000000000000",
+      "fundedAtBlock": 100,
+      "deliveryDeadlineBlock": 820,
+      "refundAfterBlock": 700,
+      "state": "funded"
+    }
+  ]
+}

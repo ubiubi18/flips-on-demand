@@ -1,0 +1,289 @@
+{
+  "author": "111c27323d48535f6a75808b96a1adb8c3ced9e4",
+  "manifest": [
+    "808b96a1acb7c2ced9e4effa05101c27323d48535e6a75808b96a1acb8c3ced9e4effa06",
+    "909ba6b1bcc7d2dee9f4ff0a15202c37424d58636e7a85909ba6b1bcc8d3dee9f4ff0a16",
+    "a0abb6c1ccd7e2eef9040f1a25303c47525d68737e8a95a0abb6c1ccd8e3eef9040f1a26",
+    "b0bbc6d1dce7f2fe09141f2a35404c57626d78838e9aa5b0bbc6d1dce8f3fe09141f2a36",
+    "c0cbd6e1ecf7020e19242f3a45505c67727d88939eaab5c0cbd6e1ecf8030e19242f3a46"
+  ],
+  "sessions": [
+    {
+      "label": "clean",
+      "epoch": 228,
+      "expectedLabel": "clean",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "9a82c24e37af08ed5a93538844cf700df5a258eddd26bda5cef8c60954a8a981",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e40118012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "00aea8416fab3d0bc5083fd54311e264fc7b3f12b578c8e4cc1ad2ac93b88a69",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "58f3f39e5afe9bb941510ae37aa4519c4100a9a3e06cef8fd58f64c56a3bf1d2"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe0940034a260a24808b96a1acb7c2ced9e4effa05101c27323d48535e6a75808b96a1acb8c3ced9e4effa064a280a24909ba6b1bcc7d2dee9f4ff0a15202c37424d58636e7a85909ba6b1bcc8d3dee9f4ff0a1610014a260a24a0abb6c1ccd7e2eef9040f1a25303c47525d68737e8a95a0abb6c1ccd8e3eef9040f1a264a280a24b0bbc6d1dce7f2fe09141f2a35404c57626d78838e9aa5b0bbc6d1dce8f3fe09141f2a3610014a260a24c0cbd6e1ecf7020e19242f3a45505c67727d88939eaab5c0cbd6e1ecf8030e19242f3a46",
+          "valueHashHex": "7da1cc1041113cd0b4361926a0e74a92020bbf54f22d832f0be5a08062a1d797",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "rightHex": "7556ae084af744dc91e80d475d228fe0e945c3430ab47d65fd8adff5c46a9f1c"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "aa4e77200eb159581e8d39bffca134b37dcc93215ebd243cc924dc88569cb96b",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e5012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "6771fd072ebc0a3c7424dd88f26703227132df0f3daaac870eacded91a2c5fec",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "347a978b51aefe93b948a1eac4767347385b7b1c5076671dcb8e3e3db49965b6"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe094003",
+          "valueHashHex": "75643f4d42b9c02ade56792f3d3004a16c9fa3b3cbca176a498f620db08ffcaa",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "rightHex": "7486aa2ba4e6307bf7f62402e1ad030665d1f3850d56f09b5bd979add72a309c"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "reported",
+      "epoch": 228,
+      "expectedLabel": "contains-reported",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "9a82c24e37af08ed5a93538844cf700df5a258eddd26bda5cef8c60954a8a981",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e40118012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "00aea8416fab3d0bc5083fd54311e264fc7b3f12b578c8e4cc1ad2ac93b88a69",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "58f3f39e5afe9bb941510ae37aa4519c4100a9a3e06cef8fd58f64c56a3bf1d2"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe0940034a260a24808b96a1acb7c2ced9e4effa05101c27323d48535e6a75808b96a1acb8c3ced9e4effa064a280a24909ba6b1bcc7d2dee9f4ff0a15202c37424d58636e7a85909ba6b1bcc8d3dee9f4ff0a1610014a260a24a0abb6c1ccd7e2eef9040f1a25303c47525d68737e8a95a0abb6c1ccd8e3eef9040f1a264a280a24b0bbc6d1dce7f2fe09141f2a35404c57626d78838e9aa5b0bbc6d1dce8f3fe09141f2a3610014a260a24c0cbd6e1ecf7020e19242f3a45505c67727d88939eaab5c0cbd6e1ecf8030e19242f3a46",
+          "valueHashHex": "7da1cc1041113cd0b4361926a0e74a92020bbf54f22d832f0be5a08062a1d797",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "rightHex": "7556ae084af744dc91e80d475d228fe0e945c3430ab47d65fd8adff5c46a9f1c"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "5761673870917d49c67dc9c0fe5e87887a0dc7a0765c5e2b875d22ba852e61a0",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e5012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "6771fd072ebc0a3c7424dd88f26703227132df0f3daaac870eacded91a2c5fec",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "2424df2345b89a185663008e7c004040691b329f07fce692a6a848b4f5b539f1"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe094003800101",
+          "valueHashHex": "23b7eedd57601314b9fe369846ae0c5359ab708e27ab5c4f1fc92867f6315b74",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "rightHex": "7486aa2ba4e6307bf7f62402e1ad030665d1f3850d56f09b5bd979add72a309c"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "weak",
+      "epoch": 228,
+      "expectedLabel": "weak",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "9a82c24e37af08ed5a93538844cf700df5a258eddd26bda5cef8c60954a8a981",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e40118012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "00aea8416fab3d0bc5083fd54311e264fc7b3f12b578c8e4cc1ad2ac93b88a69",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "58f3f39e5afe9bb941510ae37aa4519c4100a9a3e06cef8fd58f64c56a3bf1d2"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe0940034a260a24808b96a1acb7c2ced9e4effa05101c27323d48535e6a75808b96a1acb8c3ced9e4effa064a280a24909ba6b1bcc7d2dee9f4ff0a15202c37424d58636e7a85909ba6b1bcc8d3dee9f4ff0a1610014a260a24a0abb6c1ccd7e2eef9040f1a25303c47525d68737e8a95a0abb6c1ccd8e3eef9040f1a264a280a24b0bbc6d1dce7f2fe09141f2a35404c57626d78838e9aa5b0bbc6d1dce8f3fe09141f2a3610014a260a24c0cbd6e1ecf7020e19242f3a45505c67727d88939eaab5c0cbd6e1ecf8030e19242f3a46",
+          "valueHashHex": "7da1cc1041113cd0b4361926a0e74a92020bbf54f22d832f0be5a08062a1d797",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "rightHex": "7556ae084af744dc91e80d475d228fe0e945c3430ab47d65fd8adff5c46a9f1c"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "110ab300d723b5323a428072fc90a689f22ae3adfef07d9f7ed73ab3c6e77571",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e5012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "6771fd072ebc0a3c7424dd88f26703227132df0f3daaac870eacded91a2c5fec",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "ced964e53d67f4702b4e349d70e5179d25be7aa0aafb4f212a4622647c1639d1"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe094003800102",
+          "valueHashHex": "498ff325b7bd1d85afcc43611cd8d5a0342db3fc2ac80327d87edd6500175963",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "rightHex": "7486aa2ba4e6307bf7f62402e1ad030665d1f3850d56f09b5bd979add72a309c"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "uncleared",
+      "epoch": 228,
+      "expectedLabel": "refusal",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "9a82c24e37af08ed5a93538844cf700df5a258eddd26bda5cef8c60954a8a981",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e40118012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "00aea8416fab3d0bc5083fd54311e264fc7b3f12b578c8e4cc1ad2ac93b88a69",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "58f3f39e5afe9bb941510ae37aa4519c4100a9a3e06cef8fd58f64c56a3bf1d2"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe0940034a260a24808b96a1acb7c2ced9e4effa05101c27323d48535e6a75808b96a1acb8c3ced9e4effa064a280a24909ba6b1bcc7d2dee9f4ff0a15202c37424d58636e7a85909ba6b1bcc8d3dee9f4ff0a1610014a260a24a0abb6c1ccd7e2eef9040f1a25303c47525d68737e8a95a0abb6c1ccd8e3eef9040f1a264a280a24b0bbc6d1dce7f2fe09141f2a35404c57626d78838e9aa5b0bbc6d1dce8f3fe09141f2a3610014a260a24c0cbd6e1ecf7020e19242f3a45505c67727d88939eaab5c0cbd6e1ecf8030e19242f3a46",
+          "valueHashHex": "7da1cc1041113cd0b4361926a0e74a92020bbf54f22d832f0be5a08062a1d797",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "rightHex": "7556ae084af744dc91e80d475d228fe0e945c3430ab47d65fd8adff5c46a9f1c"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "f5e1758917ee7cc51b31488fac7a9d9f7d3c95640f794a78f1b7f917ab77940e",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e5012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "6771fd072ebc0a3c7424dd88f26703227132df0f3daaac870eacded91a2c5fec",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "4e9283e1b4156cd4058499c033dcf829c2f57725de98154cd06d378279e52989"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe0940034a260a24808b96a1acb7c2ced9e4effa05101c27323d48535e6a75808b96a1acb8c3ced9e4effa064a280a24909ba6b1bcc7d2dee9f4ff0a15202c37424d58636e7a85909ba6b1bcc8d3dee9f4ff0a1610014a260a24a0abb6c1ccd7e2eef9040f1a25303c47525d68737e8a95a0abb6c1ccd8e3eef9040f1a264a280a24b0bbc6d1dce7f2fe09141f2a35404c57626d78838e9aa5b0bbc6d1dce8f3fe09141f2a3610014a260a24c0cbd6e1ecf7020e19242f3a45505c67727d88939eaab5c0cbd6e1ecf8030e19242f3a46800101",
+          "valueHashHex": "d9100bbc421c144e24ccb4bb86336838c69f152143d18d54f2133663a6d38365",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "rightHex": "7486aa2ba4e6307bf7f62402e1ad030665d1f3850d56f09b5bd979add72a309c"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "source": "Generated with the pinned node's own encoders: state.Identity/state.Global protobuf (idena-go 9bc5704) written into a tree built by the pinned IAVL fork, with proofs from GetWithProof, exactly as the state tree stores them. Field values are synthetic; the heights and the epoch are placeholders. See SOURCES.md F-97."
+}

@@ -1,0 +1,10 @@
+{
+  "format": "fod.provider-config",
+  "version": 1,
+  "providerId": "example-provider",
+  "network": "idena-local",
+  "gatewayUrl": "http://127.0.0.1:8787",
+  "utilityUrl": "http://127.0.0.1:8788",
+  "protocol": "fod.session.v1",
+  "note": "example connection file for the reference integration; points at the gateway's example config"
+}

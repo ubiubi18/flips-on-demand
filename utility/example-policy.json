@@ -1,0 +1,37 @@
+{
+  "format": "fod.utility-policy",
+  "version": 1,
+  "utilityId": "utility-example",
+  "publicOrigin": "http://127.0.0.1:8788",
+  "sessions": [
+    "session-example-1"
+  ],
+  "origins": [
+    "null"
+  ],
+  "requireOutcome": "passed",
+  "grantsPerParticipant": 1,
+  "grantTtlSeconds": 3600,
+  "providers": [
+    {
+      "providerId": "example-provider",
+      "gatewayUrl": "http://127.0.0.1:8787",
+      "publicKeyHex": ""
+    }
+  ],
+  "scope": {
+    "kind": "provider-participant",
+    "statement": "Local quota per utility, provider and wallet; not unique personhood or a global entitlement."
+  },
+  "requireCommittedAnswers": true,
+  "requireScoreProof": true,
+  "sessionDigests": {
+    "session-example-1": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "sessionWindows": {
+    "session-example-1": {
+      "opensAt": "2026-10-01T00:00:00Z",
+      "closesAt": "2026-10-01T00:10:00Z"
+    }
+  }
+}

@@ -1,0 +1,242 @@
+{
+  "tree": "identity",
+  "height": 10860138,
+  "rootHex": "5b7f108f1c52a1a5de2e54c4dafe1f3e4061545a0299df72240761a9d796ea76",
+  "proofs": [
+    {
+      "keyHex": "02012efb6c820f8dee0f7a28900143358824cbe90f",
+      "valueHex": "2003",
+      "valueHashHex": "ffd2b38b328fe2e10d03587fb8dad5dd902305255aa5d7ec9e6a56ea6c0bdc62",
+      "version": 10847400,
+      "path": [
+        {
+          "height": 8,
+          "size": 144,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "421ffeec58e309757cd99dc1f7e843b2e3137fac8cb298c4be27a48f7974d727"
+        },
+        {
+          "height": 7,
+          "size": 71,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "3758cd71505c9265d6cd2d0708fcf81711b7f28b5af70bfbb589819c7c548552"
+        },
+        {
+          "height": 6,
+          "size": 39,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "92ff186c70dda303ed9b867e0d1458bb6f5748eaefb9c38f4ab1b302cadc0c78"
+        },
+        {
+          "height": 5,
+          "size": 23,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "c8b3bcb5168a91ac8a9adaa640b8010369421b8b12515ce68ebe6a7e1472e808"
+        },
+        {
+          "height": 4,
+          "size": 11,
+          "version": 10847400,
+          "leftHex": "",
+          "rightHex": "4c1d6ddb03f53d8840cb7c13384dae6c91b3f91eabd9e81660af5832d99d9f4f"
+        },
+        {
+          "height": 3,
+          "size": 5,
+          "version": 10847400,
+          "leftHex": "",
+          "rightHex": "4e59dbce9371673f353f6e282be8ec1680487662f73e9f12f25786f84515e597"
+        },
+        {
+          "height": 1,
+          "size": 2,
+          "version": 10847400,
+          "leftHex": "",
+          "rightHex": "e177a973914f7c945f82d08461b30c8a358576ced23a69b245c42154632b8aa7"
+        }
+      ]
+    },
+    {
+      "keyHex": "02034309ee8e9b466e3b40ecaceedfd88fbd3386a7",
+      "valueHex": "2005",
+      "valueHashHex": "86cf384458ee22739ac999ee7bd0a0004976a437010d593e1b3b1e72e0f2ccb8",
+      "version": 10847140,
+      "path": [
+        {
+          "height": 8,
+          "size": 144,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "421ffeec58e309757cd99dc1f7e843b2e3137fac8cb298c4be27a48f7974d727"
+        },
+        {
+          "height": 7,
+          "size": 71,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "3758cd71505c9265d6cd2d0708fcf81711b7f28b5af70bfbb589819c7c548552"
+        },
+        {
+          "height": 6,
+          "size": 39,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "92ff186c70dda303ed9b867e0d1458bb6f5748eaefb9c38f4ab1b302cadc0c78"
+        },
+        {
+          "height": 5,
+          "size": 23,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "c8b3bcb5168a91ac8a9adaa640b8010369421b8b12515ce68ebe6a7e1472e808"
+        },
+        {
+          "height": 4,
+          "size": 11,
+          "version": 10847400,
+          "leftHex": "",
+          "rightHex": "4c1d6ddb03f53d8840cb7c13384dae6c91b3f91eabd9e81660af5832d99d9f4f"
+        },
+        {
+          "height": 3,
+          "size": 5,
+          "version": 10847400,
+          "leftHex": "",
+          "rightHex": "4e59dbce9371673f353f6e282be8ec1680487662f73e9f12f25786f84515e597"
+        },
+        {
+          "height": 1,
+          "size": 2,
+          "version": 10847400,
+          "leftHex": "c71354ac76fd94889b732c45fd3eeb47fc684c48b6b8de1a917636b81b0181ee",
+          "rightHex": ""
+        }
+      ]
+    },
+    {
+      "keyHex": "0203fb26c41564ac8a030f6db823e7d34574903f3e",
+      "valueHex": "2003",
+      "valueHashHex": "ffd2b38b328fe2e10d03587fb8dad5dd902305255aa5d7ec9e6a56ea6c0bdc62",
+      "version": 10847140,
+      "path": [
+        {
+          "height": 8,
+          "size": 144,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "421ffeec58e309757cd99dc1f7e843b2e3137fac8cb298c4be27a48f7974d727"
+        },
+        {
+          "height": 7,
+          "size": 71,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "3758cd71505c9265d6cd2d0708fcf81711b7f28b5af70bfbb589819c7c548552"
+        },
+        {
+          "height": 6,
+          "size": 39,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "92ff186c70dda303ed9b867e0d1458bb6f5748eaefb9c38f4ab1b302cadc0c78"
+        },
+        {
+          "height": 5,
+          "size": 23,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "c8b3bcb5168a91ac8a9adaa640b8010369421b8b12515ce68ebe6a7e1472e808"
+        },
+        {
+          "height": 4,
+          "size": 11,
+          "version": 10847400,
+          "leftHex": "",
+          "rightHex": "4c1d6ddb03f53d8840cb7c13384dae6c91b3f91eabd9e81660af5832d99d9f4f"
+        },
+        {
+          "height": 3,
+          "size": 5,
+          "version": 10847400,
+          "leftHex": "7cb24a984ed09570a781564b55ac4397b1b17ebaaaf5b61cebbc2545723da115",
+          "rightHex": ""
+        },
+        {
+          "height": 2,
+          "size": 3,
+          "version": 10847140,
+          "leftHex": "",
+          "rightHex": "0e0057701da71b05f90b9f2c9408841f99c6952369dddab3f56ebc110c5e62c0"
+        }
+      ]
+    },
+    {
+      "keyHex": "02046b168f3a88462ab97977a1196160bce4f4dde6",
+      "valueHex": "2003",
+      "valueHashHex": "ffd2b38b328fe2e10d03587fb8dad5dd902305255aa5d7ec9e6a56ea6c0bdc62",
+      "version": 10847140,
+      "path": [
+        {
+          "height": 8,
+          "size": 144,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "421ffeec58e309757cd99dc1f7e843b2e3137fac8cb298c4be27a48f7974d727"
+        },
+        {
+          "height": 7,
+          "size": 71,
+          "version": 10860100,
+          "leftHex": "",
+          "rightHex": "3758cd71505c9265d6cd2d0708fcf81711b7f28b5af70bfbb589819c7c548552"
+        },
+        {
+          "height": 6,
+          "size": 39,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "92ff186c70dda303ed9b867e0d1458bb6f5748eaefb9c38f4ab1b302cadc0c78"
+        },
+        {
+          "height": 5,
+          "size": 23,
+          "version": 10859894,
+          "leftHex": "",
+          "rightHex": "c8b3bcb5168a91ac8a9adaa640b8010369421b8b12515ce68ebe6a7e1472e808"
+        },
+        {
+          "height": 4,
+          "size": 11,
+          "version": 10847400,
+          "leftHex": "",
+          "rightHex": "4c1d6ddb03f53d8840cb7c13384dae6c91b3f91eabd9e81660af5832d99d9f4f"
+        },
+        {
+          "height": 3,
+          "size": 5,
+          "version": 10847400,
+          "leftHex": "7cb24a984ed09570a781564b55ac4397b1b17ebaaaf5b61cebbc2545723da115",
+          "rightHex": ""
+        },
+        {
+          "height": 2,
+          "size": 3,
+          "version": 10847140,
+          "leftHex": "ce756b65fc282b93bc63da285761d88dad38ea9e7852730faf02d948499d8fab",
+          "rightHex": ""
+        },
+        {
+          "height": 1,
+          "size": 2,
+          "version": 10847140,
+          "leftHex": "",
+          "rightHex": "72c95b7a7355de9a8e86826b4c96a555b646663cf6ebc8a56b3f8fa3cfe4a55c"
+        }
+      ]
+    }
+  ]
+}

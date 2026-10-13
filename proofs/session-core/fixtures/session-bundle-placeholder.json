@@ -1,0 +1,147 @@
+{
+  "author": "111c27323d48535f6a75808b96a1adb8c3ced9e4",
+  "manifest": [
+    "bafkreibbftdp7dxcnohj2skhrm4zte2fkb7tow3diysrlxk2hkjl7a26xu"
+  ],
+  "sessions": [
+    {
+      "label": "clean",
+      "epoch": 228,
+      "expectedLabel": "",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "52c0bce304cd01399822d8205da6d048da34ae6417f46c8873b74868fd9ab01b",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e40118012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "00aea8416fab3d0bc5083fd54311e264fc7b3f12b578c8e4cc1ad2ac93b88a69",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "0b3936a9b5b5742f641afbbf8217b26378115787c68b3c165db0471b7c83c142"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe0940034a3d0a3b6261666b726569626266746470376478636e6f686a32736b68726d347a746532666b6237746f773364697973726c786b32686b6a6c376132367875",
+          "valueHashHex": "bfd0bf2965b37df73795801923fda5803adacb6e1b32f4085a21eec3526f1573",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "rightHex": "7556ae084af744dc91e80d475d228fe0e945c3430ab47d65fd8adff5c46a9f1c"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "aa4e77200eb159581e8d39bffca134b37dcc93215ebd243cc924dc88569cb96b",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e5012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "6771fd072ebc0a3c7424dd88f26703227132df0f3daaac870eacded91a2c5fec",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "347a978b51aefe93b948a1eac4767347385b7b1c5076671dcb8e3e3db49965b6"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe094003",
+          "valueHashHex": "75643f4d42b9c02ade56792f3d3004a16c9fa3b3cbca176a498f620db08ffcaa",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "rightHex": "7486aa2ba4e6307bf7f62402e1ad030665d1f3850d56f09b5bd979add72a309c"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "reported",
+      "epoch": 228,
+      "expectedLabel": "",
+      "inventory": {
+        "height": 10870000,
+        "rootHex": "52c0bce304cd01399822d8205da6d048da34ae6417f46c8873b74868fd9ab01b",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e40118012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "00aea8416fab3d0bc5083fd54311e264fc7b3f12b578c8e4cc1ad2ac93b88a69",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "leftHex": "0b3936a9b5b5742f641afbbf8217b26378115787c68b3c165db0471b7c83c142"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe0940034a3d0a3b6261666b726569626266746470376478636e6f686a32736b68726d347a746532666b6237746f773364697973726c786b32686b6a6c376132367875",
+          "valueHashHex": "bfd0bf2965b37df73795801923fda5803adacb6e1b32f4085a21eec3526f1573",
+          "version": 1,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 1,
+              "rightHex": "7556ae084af744dc91e80d475d228fe0e945c3430ab47d65fd8adff5c46a9f1c"
+            }
+          ]
+        }
+      },
+      "verdict": {
+        "height": 10880001,
+        "rootHex": "5761673870917d49c67dc9c0fe5e87887a0dc7a0765c5e2b875d22ba852e61a0",
+        "global": {
+          "keyHex": "03",
+          "valueHex": "08e5012214606b76818c97a2aeb9c4cfdae5f0fc07121d28332a200000000000000000000000000000000000000000000000000000000000000000388cb9970570018201020801",
+          "valueHashHex": "6771fd072ebc0a3c7424dd88f26703227132df0f3daaac870eacded91a2c5fec",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "leftHex": "2424df2345b89a185663008e7c004040691b329f07fce692a6a848b4f5b539f1"
+            }
+          ]
+        },
+        "identity": {
+          "keyHex": "02111c27323d48535f6a75808b96a1adb8c3ced9e4",
+          "valueHex": "0a0203e8100118c80120033a41404b56616c77828e99a4afbac5d0dce7f2fd08131e2a35404b56616c78838e99a4afbac6d1dce7f2fd08141f2a35404b56626d78838e99a4b0bbc6d1dce7f2fe094003800101",
+          "valueHashHex": "23b7eedd57601314b9fe369846ae0c5359ab708e27ab5c4f1fc92867f6315b74",
+          "version": 10870001,
+          "path": [
+            {
+              "height": 1,
+              "size": 2,
+              "version": 10870001,
+              "rightHex": "7486aa2ba4e6307bf7f62402e1ad030665d1f3850d56f09b5bd979add72a309c"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "source": "Generated the same way as session-bundle.json, but over the CID of the node-built blob in proofs/registration/vectors/blob-v1.json, so the version 2 guest can check the record against a real blob. See SOURCES.md F-97."
+}

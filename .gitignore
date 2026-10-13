@@ -1,0 +1,63 @@
+# Secrets and local vaults
+*.age
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+nodekey*
+*.key
+vault*
+# The CLI's vault implementation is source, not a vault: a fresh clone has to be
+# able to build `fod` (`tools/fod/vault.go`, `vault_test.go`).
+!tools/fod/vault.go
+!tools/fod/vault_test.go
+# The gateway generates its own application signing key on first start.
+provider-application-key.json
+
+# Local public caches and exports
+.fod-cache/
+exports/
+# CLI default outputs carry local lab state, not repository content: a market
+# snapshot, an epoch-key census and the decrypted private-part suffix.
+sweep.json
+epoch-keys*.json
+*.private
+
+# Build outputs
+/target/
+/dist/
+/build/
+spikes/contract-abi/target/
+spikes/header-anchor/target/
+spikes/groth16-verify/target/
+spikes/proofgen/target/
+spikes/r0-verifier-probe/target/
+spikes/r0-receipt/target/
+spikes/r0-receipt-verify/target/
+spikes/registration-cycles/target/
+contracts/*/target/
+contracts/escrow/dist/*.testhooks.wasm
+spikes/fast-escrow-candidate/dist/
+proofs/**/target/
+node_modules/
+app/node_modules/
+output/
+/.playwright-cli/
+serve-actions/
+grants.json
+go.local.mod
+go.local.sum
+# Go build outputs
+tools/fod/fod
+
+# Tooling
+.DS_Store
+*.log
+__pycache__/
+*.pyc
+
+# Keep reproducible pins tracked
+!.tool-versions
+!rust-toolchain.toml
+spikes/iavl-proof/target/

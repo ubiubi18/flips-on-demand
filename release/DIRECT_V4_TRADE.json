@@ -1,0 +1,71 @@
+{
+  "format": "fod.direct-trade-receipt",
+  "version": 1,
+  "candidateVersion": 4,
+  "network": "idena",
+  "deployment": "release/DIRECT_V4_DEPLOYMENT.json",
+  "orderId": 1,
+  "coveredOriginalFlips": 3,
+  "priceAtoms": "1000000000000000000",
+  "buyerBondAtoms": "520833333333125000000",
+  "deliveryTransport": "idena.social encrypted direct message after settlement",
+  "deliverySha256": "f262c7d20bb712ba7203d6a5a341e0c7d2207760815e31d29c6528aa0b4399d8",
+  "deliveryBytes": 924,
+  "recipientMessageVerification": {
+    "transactionReceipt": "successful sendMessage",
+    "decryptionRole": "recipient",
+    "recipientCiphertextIndex": 1,
+    "recordSha256Matches": true
+  },
+  "recipientAppVerification": {
+    "originalFlipsVerified": 3,
+    "retainedPurchaseSelected": true,
+    "deliveryKeySelected": true,
+    "afterSettlement": true
+  },
+  "buyerVerification": "three original flips verified locally; encrypted vault and signed receipt saved",
+  "transactions": {
+    "listing": {
+      "txHash": "0xed3bb98160432663950e7b12393e80b7bee6b56793cbff51896246a6af1abae1",
+      "blockHeight": 11426030,
+      "blockHash": "0x5437491882fd614bb1b95825033d978b4c9aed420eac604d4b6099f0ead396b8",
+      "success": true,
+      "gasUsed": 4437,
+      "gasCost": "0.3697499999998521",
+      "txFee": "0.170833333333265"
+    },
+    "purchase": {
+      "txHash": "0xd091438498e5a702c76f0f2766c86165d8ac2abe786e00fa4c418e0ea1e4e4fe",
+      "blockHeight": 11426038,
+      "blockHash": "0xed8822e6d937f5b22cf2c8d00abc31792bbfbdd49e4993efa42029edc7ad679a",
+      "success": true,
+      "gasUsed": 11065,
+      "gasCost": "0.9220833333329645",
+      "txFee": "0.188333333333258"
+    },
+    "buyerConfirmation": {
+      "txHash": "0x8b8c09e225878d76125cee38dee5e89af1c4ef4d37535fdc3a435e0891443719",
+      "blockHeight": 11426052,
+      "blockHash": "0xf5420955116c420f080dabde087b768f839b21b1d4db37dec2eb4b48d76922aa",
+      "success": true,
+      "gasUsed": 14894,
+      "gasCost": "1.2411666666661702",
+      "txFee": "0.134166666666613"
+    },
+    "idenaSocialMessage": {
+      "txHash": "0x44bc3742c5fdb82d670be433d8cffe7b6c547619c26169035b5410a01a7fe2f4",
+      "method": "sendMessage",
+      "success": true,
+      "gasCost": "4.6292499999981483",
+      "txFee": "2.824166666665537"
+    }
+  },
+  "finalState": {
+    "order": "settled",
+    "offerRetired": false,
+    "keysPublic": false,
+    "contractBalance": "0",
+    "nodesAgree": true,
+    "note": "The two identity nodes share one operator; agreement does not prove independent operator availability. The encrypted record was sent through idena.social after settlement and independently decrypted by the recipient identity with an exact hash match. A real seller fallback was not exercised by this trade."
+  }
+}

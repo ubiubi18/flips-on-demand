@@ -1,0 +1,17 @@
+{
+  "note": "synthetic order: fixed scalars, not real keys. A real order file holds the prover witness - keep it out of the repository and prefer --order - so nothing is written to disk.",
+  "contract": "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a",
+  "network": "idena",
+  "funded_at": 1000,
+  "funding_root": "8888888888888888888888888888888888888888888888888888888888888888",
+  "offer_id": 3,
+  "order_nonce": 2,
+  "seller": "5555555555555555555555555555555555555555",
+  "buyer": "6666666666666666666666666666666666666666",
+  "epoch": 205,
+  "author": "7777777777777777777777777777777777777777",
+  "public_part_secret": "0011a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+  "private_part_secret": "0011b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1",
+  "ephemeral": "0011c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+  "buyer_secret": "0011919191919191919191919191919191919191919191919191919191919191"
+}

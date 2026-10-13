@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["core", "methods", "host"]
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+debug = 1
+lto = true

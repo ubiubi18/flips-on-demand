@@ -1,0 +1,12 @@
+[package]
+name = "fast-content-prepare"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+fod-fast-content-core = { path = "../../fast-content-core" }
+fod-fast-delivery-core = { path = "../../fast-delivery-core", features = ["content"] }
+fod-registration-core = { path = "../../registration/core" }
+fod-session-core = { path = "../../session-core" }
+serde_json = "1.0"

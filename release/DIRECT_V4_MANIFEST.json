@@ -1,0 +1,57 @@
+{
+  "format": "fod.direct-candidate-manifest",
+  "version": 4,
+  "artifact": {
+    "path": "release/artifacts/fod_direct_escrow_v4.wasm",
+    "bytes": 353712,
+    "sha256": "599cf9b72c748d53d95815811d2fe27532030a68d146145e9bfc578590d751f9"
+  },
+  "source": {
+    "contract": "488ea44ca587e9c2fd55c518c396296c5e02bd12f06bb5b397478277da09d6b6",
+    "state": "66bc2b08cd962acf8da646390eb330e01129a9559938524d1253a68e6417caab",
+    "manifest": "d3469ecb27c11ab9a547740789cdc6fdcbd2b75b58ed751d8f3d247a5f9ed15b",
+    "lockfile": "bb636c8040305eae85406a36f5716ba4699f373051a8bb1acf93556afa2e96ca",
+    "registrationVerifier": "d088c508a430ac83ab69b52d4b1d952e0e81ad235d0c1fe79888584ca09088da",
+    "cliProofPin": "07336842f4a46e778a0fa7afcccee7a600c425927d6332cd1a7c6130d34bc676",
+    "syntheticProof": "a6cef819030c8ec6786467a0023662fe068ce7a59d097ea814e8e05268d9611a"
+  },
+  "build": {
+    "rust": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+    "binaryen": "wasm-opt version 133",
+    "command": "cargo build --locked --offline --release --target wasm32-unknown-unknown; wasm-opt --llvm-memory-copy-fill-lowering -O2 target/wasm32-unknown-unknown/release/fod_direct_escrow.wasm -o ../../release/artifacts/fod_direct_escrow_v4.wasm"
+  },
+  "checks": {
+    "runtime": "pinned idena-wasm-binding f7c71ce32d86c8ed26e74935265c95768b0230d0",
+    "cooperativeConfirmation": {
+      "wasmGas": 324471
+    },
+    "syntheticSealedFallbackStart": {
+      "wasmGas": 195525250,
+      "conservativeTransactionGas": 1966273,
+      "genuineRegistrationV2": true
+    },
+    "publicKeyReveal": {
+      "wasmGas": 339757,
+      "conservativeTransactionGas": 9658
+    },
+    "registrationImageId": "658db709b6de076b1f41cd14de106be4ef67e32353b3e46b41db689a11970b58",
+    "buyerBond": {
+      "gasBudget": 2500000,
+      "feeMargin": 2,
+      "reimbursementGasBudget": 2000000,
+      "sellerStakeGasBudget": 100000
+    },
+    "refundBoundaryBlocks": 8640,
+    "deploy": {
+      "wasmGas": 3000058,
+      "conservativeTransactionGas": 3587601
+    },
+    "conservativeFallbackGas": 1975931,
+    "blockGasLimit": 5120000
+  },
+  "deployment": {
+    "network": null,
+    "contract": null,
+    "note": "Experimental direct sale. Local synthetic proof gas and behavior do not establish live proof availability, chain inclusion, or guaranteed payment after a censored public fallback."
+  }
+}

@@ -1,0 +1,14 @@
+[package]
+name = "fod-flip-fixture"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+fod-delivery-core = { path = "../delivery/core" }
+fod-registration-core = { path = "../registration/core" }
+k256 = { version = "0.13", default-features = false, features = ["arithmetic"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+fod-flip-core = { path = "../flip-core" }

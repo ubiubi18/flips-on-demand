@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+# The version 2 registration program keeps its own workspace and its own guest
+# image id, so the pinned version 1 guest, the escrow's constant and every stored
+# receipt stay valid while this one is built. The swap is a coordinated step:
+# new guest, new seal, new contract constants, new manifest.
+members = ["methods", "host"]
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+debug = 1
+lto = true

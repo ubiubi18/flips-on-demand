@@ -1,0 +1,30 @@
+[package]
+name = "fod-direct-escrow-v5"
+version = "0.5.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+# The shared verifier exposes fast-content verification under this feature.
+default = ["fast-candidate"]
+fast-candidate = []
+
+[dependencies]
+risc0-groth16 = { version = "3.0.5", default-features = false }
+risc0-zkp = { version = "3.0.5", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+fod-fast-content-core = { path = "../../proofs/fast-content-core" }
+fod-fast-session-core = { path = "../../proofs/fast-session-core" }
+
+[dev-dependencies]
+hex-literal = "0.4"
+serde_json = "1.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,23 @@
+{
+  "name": "flips-on-demand-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "node verify.mjs"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "esbuild": "^0.25.0",
+    "playwright": "^1.63.0",
+    "typescript": "^5.7.0"
+  }
+}

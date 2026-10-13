@@ -1,0 +1,209 @@
+{
+  "note": "Frozen cross-language vector for the flip verdict and the eligibility policy, recorded in SOURCES.md F-72. The verdict cases are the ones read from the pinned node's own Test_qualifyOneFlip; the eligibility cases are this project's policy from SOURCES.md F-66. Answers are the node's enum: 0 none, 1 left, 2 right. Grades are the node's enum: 0 none, 1 reported, 2 D, 3 C, 4 B, 5 A. Statuses are qualified, weaklyQualified, qualifiedByNone, notQualified. A grade score is written as a rational.",
+  "flipVerdicts": [
+    {
+      "name": "6 left 1 right 1 none, 4 reports of 8, graded 18 of 8",
+      "committee": {"left": 6, "right": 1, "none": 1, "reports": 4, "totalGradeScore": 18, "approves": 4, "reportCommitteeSize": 8, "gradeScoreCommitteeSize": 8},
+      "expected": {"status": "qualified", "answer": 1, "grade": 0, "gradeScore": "18/8"}
+    },
+    {
+      "name": "6 left of 6, 2 reports of 4, graded 6 of 4",
+      "committee": {"left": 6, "right": 0, "none": 0, "reports": 2, "totalGradeScore": 6, "approves": 2, "reportCommitteeSize": 4, "gradeScoreCommitteeSize": 4},
+      "expected": {"status": "qualified", "answer": 1, "grade": 0, "gradeScore": "6/4"}
+    },
+    {
+      "name": "7 left of 7, 2 reports of 4, graded 8 of 4",
+      "committee": {"left": 7, "right": 0, "none": 0, "reports": 2, "totalGradeScore": 8, "approves": 2, "reportCommitteeSize": 4, "gradeScoreCommitteeSize": 4},
+      "expected": {"status": "qualified", "answer": 1, "grade": 0, "gradeScore": "8/4"}
+    },
+    {
+      "name": "7 left of 7, 3 reports of 6, graded 12 of 7",
+      "committee": {"left": 7, "right": 0, "none": 0, "reports": 3, "totalGradeScore": 12, "approves": 3, "reportCommitteeSize": 6, "gradeScoreCommitteeSize": 7},
+      "expected": {"status": "qualified", "answer": 1, "grade": 0, "gradeScore": "12/7"}
+    },
+    {
+      "name": "6 left 1 right 1 none, 3 reports of 6, graded 13 of 6",
+      "committee": {"left": 6, "right": 1, "none": 1, "reports": 3, "totalGradeScore": 13, "approves": 3, "reportCommitteeSize": 6, "gradeScoreCommitteeSize": 6},
+      "expected": {"status": "qualified", "answer": 1, "grade": 0, "gradeScore": "13/6"}
+    },
+    {
+      "name": "6 left 1 right 1 none, 4 reports of 8, graded 12 of 8",
+      "committee": {"left": 6, "right": 1, "none": 1, "reports": 4, "totalGradeScore": 12, "approves": 4, "reportCommitteeSize": 8, "gradeScoreCommitteeSize": 8},
+      "expected": {"status": "qualified", "answer": 1, "grade": 0, "gradeScore": "12/8"}
+    },
+    {
+      "name": "6 left 1 right 1 none, 4 reports of 8, graded 8 of 8",
+      "committee": {"left": 6, "right": 1, "none": 1, "reports": 4, "totalGradeScore": 8, "approves": 4, "reportCommitteeSize": 8, "gradeScoreCommitteeSize": 8},
+      "expected": {"status": "qualified", "answer": 1, "grade": 0, "gradeScore": "8/8"}
+    },
+    {
+      "name": "6 left 1 right 1 none, 5 reports of 8",
+      "committee": {"left": 6, "right": 1, "none": 1, "reports": 5, "totalGradeScore": 6, "approves": 3, "reportCommitteeSize": 8, "gradeScoreCommitteeSize": 8},
+      "expected": {"status": "qualified", "answer": 1, "grade": 1, "gradeScore": "0/1"}
+    },
+    {
+      "name": "25 left 75 right, 100 answers",
+      "committee": {"left": 25, "right": 75, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+      "expected": {"status": "qualified", "answer": 2, "grade": 0, "gradeScore": "2/1"}
+    },
+    {
+      "name": "10 right of 10",
+      "committee": {"left": 0, "right": 10, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+      "expected": {"status": "qualified", "answer": 2, "grade": 0, "gradeScore": "2/1"}
+    },
+    {
+      "name": "15 left 3 right 4 none, 22 answers",
+      "committee": {"left": 15, "right": 3, "none": 4, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+      "expected": {"status": "weaklyQualified", "answer": 1, "grade": 0, "gradeScore": "2/1"}
+    },
+    {
+      "name": "30 left 66 right 4 none, 100 answers",
+      "committee": {"left": 30, "right": 66, "none": 4, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+      "expected": {"status": "weaklyQualified", "answer": 2, "grade": 0, "gradeScore": "2/1"}
+    },
+    {
+      "name": "4 left 4 right 4 none, 12 answers",
+      "committee": {"left": 4, "right": 4, "none": 4, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+      "expected": {"status": "notQualified", "answer": 0, "grade": 0, "gradeScore": "2/1"}
+    },
+    {
+      "name": "1 left 2 right 10 none, 13 answers",
+      "committee": {"left": 1, "right": 2, "none": 10, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+      "expected": {"status": "qualifiedByNone", "answer": 0, "grade": 0, "gradeScore": "2/1"}
+    },
+    {
+      "name": "15 right of 15",
+      "committee": {"left": 0, "right": 15, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+      "expected": {"status": "qualified", "answer": 2, "grade": 0, "gradeScore": "2/1"}
+    }
+  ],
+  "eligibility": [
+    {
+      "name": "qualified flips with no reported grade",
+      "verdicts": [
+        {"flip": 3, "status": "qualified", "answer": 1, "grade": 2},
+        {"flip": 7, "status": "qualified", "answer": 2, "grade": 3},
+        {"flip": 9, "status": "qualified", "answer": 1, "grade": 4}
+      ],
+      "covered": [9, 3, 7],
+      "expected": {"eligible": true, "exclusions": []}
+    },
+    {
+      "name": "weakly qualified flip",
+      "verdicts": [{"flip": 1, "status": "weaklyQualified", "answer": 1, "grade": 2}],
+      "covered": [1],
+      "expected": {"eligible": false, "exclusions": [{"flip": 1, "reason": "not_strong_consensus"}]}
+    },
+    {
+      "name": "qualified by none",
+      "verdicts": [{"flip": 2, "status": "qualifiedByNone", "answer": 0, "grade": 2}],
+      "covered": [2],
+      "expected": {"eligible": false, "exclusions": [{"flip": 2, "reason": "not_strong_consensus"}]}
+    },
+    {
+      "name": "reported grade on a qualified flip",
+      "verdicts": [{"flip": 3, "status": "qualified", "answer": 1, "grade": 1}],
+      "covered": [3],
+      "expected": {"eligible": false, "exclusions": [{"flip": 3, "reason": "reported"}]}
+    },
+    {
+      "name": "not qualified and reported",
+      "verdicts": [{"flip": 4, "status": "notQualified", "answer": 0, "grade": 1}],
+      "covered": [4],
+      "expected": {"eligible": false, "exclusions": [{"flip": 4, "reason": "not_strong_consensus"}, {"flip": 4, "reason": "reported"}]}
+    },
+    {
+      "name": "no verdict for a covered flip",
+      "verdicts": [],
+      "covered": [8],
+      "expected": {"eligible": false, "exclusions": [{"flip": 8, "reason": "no_verdict"}]}
+    }
+  ],
+  "epochs": [
+    {
+      "name": "three participants, three flips",
+      "totalFlips": 3,
+      "candidates": [
+        {"flips": [0, 1, 2], "answers": [1, 1, 1], "grades": [2, 1, 2]},
+        {"flips": [0, 2], "answers": [2, 2], "grades": [0, 2]},
+        {"flips": [1], "answers": [1], "grades": [3]}
+      ],
+      "preUpgrade11": [
+        {"left": 1, "right": 1, "none": 0, "reports": 0, "totalGradeScore": 2, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 0},
+        {"left": 2, "right": 0, "none": 0, "reports": 1, "totalGradeScore": 3, "approves": 1, "reportCommitteeSize": 2, "gradeScoreCommitteeSize": 0},
+        {"left": 1, "right": 1, "none": 0, "reports": 0, "totalGradeScore": 4, "approves": 2, "reportCommitteeSize": 2, "gradeScoreCommitteeSize": 0}
+      ],
+      "upgrade11": [
+        {"left": 1, "right": 1, "none": 0, "reports": 0, "totalGradeScore": 3, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 2},
+        {"left": 2, "right": 0, "none": 0, "reports": 1, "totalGradeScore": 4, "approves": 1, "reportCommitteeSize": 2, "gradeScoreCommitteeSize": 2},
+        {"left": 1, "right": 1, "none": 0, "reports": 0, "totalGradeScore": 4, "approves": 2, "reportCommitteeSize": 2, "gradeScoreCommitteeSize": 2}
+      ]
+    },
+    {
+      "name": "a report-heavy participant loses its reports",
+      "totalFlips": 2,
+      "candidates": [{"flips": [0, 1], "answers": [1, 1], "grades": [1, 1]}],
+      "preUpgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0}
+      ],
+      "upgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0}
+      ]
+    },
+    {
+      "name": "more than one grade above D is dropped from upgrade 11 only",
+      "totalFlips": 2,
+      "candidates": [{"flips": [0, 1], "answers": [1, 1], "grades": [3, 3]}],
+      "preUpgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 3, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 0},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 3, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 0}
+      ],
+      "upgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0}
+      ]
+    },
+    {
+      "name": "a participant that never approved is dropped from upgrade 11 only",
+      "totalFlips": 1,
+      "candidates": [{"flips": [0], "answers": [1], "grades": [0]}],
+      "preUpgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0}
+      ],
+      "upgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 0, "gradeScoreCommitteeSize": 0}
+      ]
+    },
+    {
+      "name": "a moderate reporter stays with its grades",
+      "totalFlips": 3,
+      "candidates": [{"flips": [0, 1, 2], "answers": [1, 1, 1], "grades": [1, 2, 2]}],
+      "preUpgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 1, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 0},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 2, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 0},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 2, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 0}
+      ],
+      "upgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 1, "totalGradeScore": 0, "approves": 0, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 1},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 2, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 1},
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 2, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 1}
+      ]
+    },
+    {
+      "name": "a void participant contributes nothing",
+      "totalFlips": 1,
+      "candidates": [
+        {"flips": [0], "answers": [], "grades": []},
+        {"flips": [0], "answers": [1], "grades": [2]}
+      ],
+      "preUpgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 2, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 0}
+      ],
+      "upgrade11": [
+        {"left": 1, "right": 0, "none": 0, "reports": 0, "totalGradeScore": 2, "approves": 1, "reportCommitteeSize": 1, "gradeScoreCommitteeSize": 1}
+      ]
+    }
+  ]
+}
