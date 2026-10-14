@@ -64,10 +64,14 @@ func newDirectV6FixtureWithActivation(t *testing.T, activate bool) *directV6Fixt
 		author := addressFromHex(t, hexOf(bytes.Repeat([]byte{byte(0xc1 + i)}, 20)))
 		seedIDs[i] = v6OfferID(author, epoch)
 	}
+	// A zero-value transaction loses its amount field in the node's signed
+	// encoding. The WASM host consequently presents an absent pay_amount.
+	env.payAmount = nil
 	deployGas, _, err := lib.Deploy(api, code, [][]byte{join(seedIDs[0][:], seedIDs[1][:])}, lib.Address{}, maxCallGasWasm, false)
 	if err != nil {
 		t.Fatalf("v6 deploy rejected by pinned runtime: %v", err)
 	}
+	env.ResetPayAmount()
 	f := &directV6Fixture{
 		env: env, api: api, code: code,
 		deployGas: deployGas,
@@ -156,6 +160,9 @@ func (f *directV6Fixture) get(key []byte) []byte {
 func (f *directV6Fixture) call(t *testing.T, method string, arg []byte) uint64 {
 	t.Helper()
 	defer f.env.ResetPayAmount()
+	if f.env.payAmount != nil && f.env.payAmount.Sign() == 0 {
+		f.env.payAmount = nil
+	}
 	gas, _, err := lib.Execute(f.api, f.code, method, [][]byte{arg}, lib.Address{}, maxCallGasWasm, false)
 	if err != nil {
 		t.Fatalf("v6 %s rejected by pinned runtime: %v", method, err)
@@ -498,12 +505,15 @@ func TestDirectV6SyntheticRuntimeAccounting(t *testing.T) {
 		f.reject(t, "allocate", []byte{0x42}, f.buyer, big.NewInt(1))
 		f.reject(t, "allocate", nil, f.buyer, nil)
 	})
-	t.Run("nonpayable business calls reject attached value", func(t *testing.T) {
+	t.Run("nonpayable business calls cannot credit attached value to pool reserve", func(t *testing.T) {
 		f := newDirectV6Fixture(t)
 		f.list(t)
 		f.buy(t)
-		f.reject(t, "challenge", u64Arg(1), f.buyer, big.NewInt(1))
+		f.env.SetCaller(f.buyer)
+		f.env.SetPayAmount(big.NewInt(1))
+		f.env.CreditContractBalance(big.NewInt(1))
 		f.call(t, "challenge", u64Arg(1))
+		f.amount(t, "pool/reserve", f.reserve)
 	})
 	t.Run("zero-value deploy and separately funded activation fit the pinned block gas budget", func(t *testing.T) {
 		f := newDirectV6Fixture(t)

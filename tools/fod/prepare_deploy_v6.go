@@ -12,8 +12,8 @@ import (
 	"github.com/idena-network/idena-go/crypto"
 )
 
-const directV6CodeHashHex = "2f922c4c41e6389405e8972e0e0ff9722ec49f42ee64ef947ba91f4869c20d8c"
-const directV6DeployWasmGas uint64 = 4_234_882
+const directV6CodeHashHex = "03389d9ddb389e1afd7c4e0080cbae6dc6cb8ee29c027a8fa737082a592d450d"
+const directV6DeployWasmGas uint64 = 4_234_803
 
 // A v6 deployment uses only the exact locally measured module. The contract
 // remains experimental; this gate does not substitute for a real seller proof.

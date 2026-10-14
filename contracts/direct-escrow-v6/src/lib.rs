@@ -460,11 +460,9 @@ unsafe fn require_solvency(reserve: u128, pending: u128) {
     }
 }
 
-unsafe fn require_no_payment() {
-    if amount(pay_amount()).unwrap_or_else(|| refused()) != 0 {
-        refused();
-    }
-}
+// The node omits a zero Amount from serialized transactions. Its WASM
+// pay_amount import traps on that absent value, so only payable methods call
+// it. Value accidentally attached to other methods remains unallocated.
 
 fn require_commitments(reserve: u128, committed: u128) {
     if committed > reserve {
@@ -1070,7 +1068,6 @@ pub extern "C" fn deploy(arg: u32) -> u32 {
         if first == [0; 32] || second == [0; 32] || first == second {
             refused();
         }
-        require_no_payment();
         if read_u64(NEXT_ORDER_KEY) != 0 {
             refused();
         }
@@ -1160,7 +1157,6 @@ pub extern "C" fn activate(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn qualify(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         let (metadata, wire) = parse_qualification_arg(raw).unwrap_or_else(|| refused());
         let author = address(caller()).unwrap_or_else(|| refused());
@@ -1235,7 +1231,6 @@ pub extern "C" fn qualify(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn proveBundle(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         let (id, journal, seal, wire) = parse_prove_arg(raw).unwrap_or_else(|| refused());
         let mut offer = read_offer(&id).unwrap_or_else(|| refused());
@@ -1290,7 +1285,6 @@ pub extern "C" fn proveBundle(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn slashUnproved(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 8 {
             refused();
@@ -1343,7 +1337,6 @@ pub extern "C" fn slashUnproved(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn seedBundle(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 32 + SECRETS_BYTES {
             refused();
@@ -1449,7 +1442,6 @@ pub extern "C" fn relist(arg: u32) -> u32 {
         };
         if offer.public_seed {
             if minimum_payout != 0
-                || amount(pay_amount()).unwrap_or_else(|| refused()) != 0
                 || !offer.content_proven
                 || read_keyed(public_seed_key(&id))
                     .is_none_or(|secrets| !secrets_match_offer(secrets, &offer))
@@ -1732,7 +1724,6 @@ pub extern "C" fn buyPublicSeed(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn challenge(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 8 {
             refused();
@@ -1761,7 +1752,6 @@ pub extern "C" fn challenge(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn confirm(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != CONFIRM_ARG_BYTES {
             refused();
@@ -1789,7 +1779,6 @@ pub extern "C" fn confirm(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn startFallback(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() < 8 {
             refused();
@@ -1856,7 +1845,6 @@ pub extern "C" fn startFallback(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn proveAndReveal(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != REVEAL_ARG_BYTES {
             refused();
@@ -1891,7 +1879,6 @@ pub extern "C" fn proveAndReveal(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn refund(arg: u32) -> u32 {
     unsafe {
-        require_no_payment();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 8 {
             refused();

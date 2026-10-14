@@ -41,6 +41,9 @@ func TestDirectV6DeployPinsConstructorAndZeroValue(t *testing.T) {
 	if err := tx.FromBytes(raw); err != nil {
 		t.Fatal(err)
 	}
+	if tx.Amount != nil {
+		t.Fatal("a signed zero-value deploy should decode with an absent amount")
+	}
 	parsed := attachments.ParseDeployContractAttachment(&tx)
 	if parsed == nil || len(parsed.Args) != 1 || !bytes.Equal(parsed.Args[0], seedIDs) {
 		t.Fatal("the signed v6 deploy lost its constructor seed IDs")

@@ -37,6 +37,10 @@ and funded trade remain unqualified.
 The bootstrap sequence is a zero-value deploy with the two seed offer IDs.
 `fod prepare-deploy` requires `-v6-seed-ids` with those two 32-byte IDs
 concatenated as hex and refuses a nonzero deployment amount.
+The node omits a zero amount from the signed transaction. V6's zero-value
+methods therefore do not call its `pay_amount` import, which fails on an absent
+amount. Send exactly zero to them: extra value is not added to the tracked
+pool reserve and may be unrecoverable.
 Each original author qualifies and proves their own bundle, then makes its
 verified keys public. Only after both seeds are public can `activate` accept
 the same 64-byte seed ID argument and exactly 10,000 iDNA. Trading remains
