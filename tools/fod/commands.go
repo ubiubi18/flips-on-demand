@@ -75,6 +75,9 @@ var commandModes = map[string]string{
 	"direct-status":             "direct-status",
 	"direct-market":             "direct-market",
 	"direct-pool-market":        "direct-pool-market",
+	"direct-pool-qualify":       "direct-pool-qualify",
+	"direct-pool-prove-bundle":  "direct-pool-prove-bundle",
+	"direct-v7-prepare":         "direct-v7-prepare",
 	"direct-list":               "direct-list",
 	"direct-buy":                "direct-buy",
 	"direct-dm":                 "direct-dm",
@@ -179,6 +182,9 @@ func usageText() string {
 	b.WriteString("  direct-status  read a direct order and its refund height\n")
 	b.WriteString("  direct-market  export public direct offers and orders from the node\n")
 	b.WriteString("  direct-pool-market  export the v6 liquidity pool and queue from the node (-direct-version 6)\n")
+	b.WriteString("  direct-pool-qualify  prepare and estimate v6 qualify from a sealed proof and canonical session (-direct-version 6)\n")
+	b.WriteString("  direct-pool-prove-bundle  prepare and estimate v6 proveBundle for the same author and offer (-direct-version 6)\n")
+	b.WriteString("  direct-v7-prepare  prepare and estimate one typed v7 pool operation (-direct-version 7 -operation NAME)\n")
 	b.WriteString("  direct-list    prepare a canonical original-flip sale\n")
 	b.WriteString("  direct-buy     retain original flips and prepare a funded purchase\n")
 	b.WriteString("  direct-dm      export encrypted delivery text for a private message\n")

@@ -28,6 +28,23 @@ func estimateDirectCall(c *client, p *preparedAction, sender string, maxFee, fee
 	if p.Format == preparedDirectFallbackFormat && !directLocalRPC(c.url) {
 		return 0, nil, errors.New("direct fallback requires a loopback RPC to keep unreleased keys private")
 	}
+	return estimatePreparedDirectCall(c, p, sender, maxFee, feePerGas)
+}
+
+func estimateDirectV6PoolCall(c *client, p *preparedAction, sender string, maxFee, feePerGas *big.Int) (uint64, *big.Int, error) {
+	if p == nil || p.DirectVersion != 6 || p.Network != NetworkNamePinned || p.Amount != "0" ||
+		p.Author != sender || !isHex(p.Contract, addressBytes) || !isHex(p.DirectOfferID, 32) ||
+		!(p.Format == preparedDirectV6PoolQualifyFormat && p.Operation == "qualify" ||
+			p.Format == preparedDirectV6PoolProveFormat && p.Operation == "proveBundle") {
+		return 0, nil, errors.New("invalid v6 pool estimate context")
+	}
+	if !directLocalRPC(c.url) {
+		return 0, nil, errors.New("v6 pool estimate needs a loopback node RPC")
+	}
+	return estimatePreparedDirectCall(c, p, sender, maxFee, feePerGas)
+}
+
+func estimatePreparedDirectCall(c *client, p *preparedAction, sender string, maxFee, feePerGas *big.Int) (uint64, *big.Int, error) {
 	amount, ok := new(big.Int).SetString(p.Amount, 10)
 	if !ok || amount.Sign() < 0 {
 		return 0, nil, errors.New("invalid direct call amount")

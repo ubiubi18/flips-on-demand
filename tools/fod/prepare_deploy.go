@@ -452,6 +452,10 @@ func deployGasForDirectV5Code(codePath string, code []byte) (operationGas, error
 }
 
 func runPrepareDeploy(codePath, nodeKeyPath, deployNonceHex, v6SeedIDsHex, network, outPath string, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int, broadcast bool, rpcURL, apiKey string, feePerGas *big.Int) {
+	if filepath.Base(codePath) == "fod_direct_escrow_v7.wasm" {
+		fmt.Fprintln(os.Stderr, "refused: v7 deploy needs the one-seed -v7-seed-id path")
+		os.Exit(1)
+	}
 	code, err := os.ReadFile(codePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "read the module: %v\n", err)

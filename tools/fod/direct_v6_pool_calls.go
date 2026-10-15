@@ -1,7 +1,7 @@
 package main
 
-// Fixed-width calldata for contracts/direct-escrow-v6. These helpers only
-// encode arguments; payable amounts and contract state are checked elsewhere.
+// Calldata for contracts/direct-escrow-v6. These helpers only encode arguments;
+// payable amounts and contract state are checked elsewhere.
 
 import (
 	"crypto/sha256"
@@ -14,6 +14,8 @@ import (
 
 const (
 	directV6PoolDeployArgBytes  = 32 + 32
+	directV6PoolQualifyHeader   = 2 + 4 + 32 + 32 + 2
+	directV6PoolProveHeader     = 32 + fastContentJournalBytes + fastContentSealBytes + 2
 	directV6PoolSeedArgBytes    = 32 + 106
 	directV6PoolListArgBytes    = 2 + 4 + 32 + 32 + 16
 	directV6PoolBuyArgBytes     = 32 + 65
@@ -22,6 +24,42 @@ const (
 	directV6PoolSecretsBytes    = 106
 	directV6PoolSecretsDomain   = "fod:epoch-secrets:v1"
 )
+
+type DirectV6PoolQualifyArgs struct {
+	Epoch     uint16
+	Covered   uint32
+	Inventory [32]byte
+	Keys      [32]byte
+}
+
+func EncodeDirectV6PoolQualify(args DirectV6PoolQualifyArgs, wire []byte) ([]byte, error) {
+	if args.Covered == 0 || args.Covered > 32 || args.Inventory == ([32]byte{}) ||
+		args.Keys == ([32]byte{}) || len(wire) == 0 || len(wire) > fastRegistrationMaxWireBytes {
+		return nil, errors.New("v6 pool qualify needs valid offer metadata and a bounded session witness")
+	}
+	out := make([]byte, directV6PoolQualifyHeader+len(wire))
+	binary.BigEndian.PutUint16(out[:2], args.Epoch)
+	binary.BigEndian.PutUint32(out[2:6], args.Covered)
+	copy(out[6:38], args.Inventory[:])
+	copy(out[38:70], args.Keys[:])
+	binary.BigEndian.PutUint16(out[70:72], uint16(len(wire)))
+	copy(out[72:], wire)
+	return out, nil
+}
+
+func EncodeDirectV6PoolProveBundle(offerID [32]byte, journal, seal, wire []byte) ([]byte, error) {
+	if offerID == ([32]byte{}) || len(journal) != fastContentJournalBytes ||
+		len(seal) != fastContentSealBytes || len(wire) == 0 || len(wire) > fastRegistrationMaxWireBytes {
+		return nil, errors.New("v6 pool proveBundle needs an offer ID, sealed proof, and bounded session witness")
+	}
+	out := make([]byte, directV6PoolProveHeader+len(wire))
+	copy(out[:32], offerID[:])
+	copy(out[32:32+fastContentJournalBytes], journal)
+	copy(out[32+fastContentJournalBytes:32+fastContentJournalBytes+fastContentSealBytes], seal)
+	binary.BigEndian.PutUint16(out[directV6PoolProveHeader-2:directV6PoolProveHeader], uint16(len(wire)))
+	copy(out[directV6PoolProveHeader:], wire)
+	return out, nil
+}
 
 func EncodeDirectV6PoolDeploySeedIDs(first, second [32]byte) ([]byte, error) {
 	if first == ([32]byte{}) || second == ([32]byte{}) || first == second {

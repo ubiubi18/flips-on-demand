@@ -183,7 +183,7 @@ func main() {
 		opensAtFlag         = flag.String("opens-at", "", "when the session opens, RFC 3339 (session-pool mode; defaults to now)")
 		closesAtFlag        = flag.String("closes-at", "", "when the session closes, RFC 3339 (session-pool mode)")
 		bundleFlag          = flag.String("bundle", "", "path to the author-epoch inventory `fod inspect` wrote (prepare-offer mode)")
-		directSessionFlag   = flag.String("session", "", "canonical two-anchor session bundle for direct-list, direct-buy, or direct v5 fallback")
+		directSessionFlag   = flag.String("session", "", "canonical two-anchor session bundle for direct-list, direct-buy, v5 fallback, or v6 pool preparation")
 		directPurchaseFlag  = flag.String("purchase", "", "retained direct-buy action for direct-check or direct-receive")
 		directMessageFlag   = flag.String("message", "", "private direct-delivery message file to import, or - for standard input")
 		directAutoConfirm   = flag.Bool("auto-confirm", false, "after direct-receive verifies every original flip, sign and broadcast buyer confirmation for this order")
@@ -206,14 +206,17 @@ func main() {
 		epochBlockFlag      = flag.Uint64("epoch-block", 0, "the block an epoch's state root belongs to, when the caller knows it (assignment and eligibility modes; default: ask the indexer)")
 		codePath            = flag.String("code", "", "path to the contract module to deploy (prepare-deploy mode)")
 		codeHashFlag        = flag.String("code-hash", "", "independently verified Keccak-256 hash of deployed contract code (prepare-buy and buy submit)")
-		directVersionFlag   = flag.Int("direct-version", 0, "direct contract version; 4 and 5 select proof-backed direct sales, 6 selects the read-only liquidity pool (default: pinned deployed v3)")
+		directVersionFlag   = flag.Int("direct-version", 0, "direct contract version; 4 and 5 select proof-backed direct sales, 6 selects v6 pool reads, 7 selects v7 preparation (default: pinned deployed v3)")
+		v7OfferIDFlag       = flag.String("v7-offer-id", "", "32-byte v7 offer ID for direct-v7-prepare")
+		minimumPayoutFlag   = flag.String("minimum-payout", "0", "minimum seller payout in base units for v7 list")
 		deployNonceFlag     = flag.String("deploy-nonce", "", "hex deployment nonce that decides the contract address (prepare-deploy mode; default: a fresh random one)")
 		v6SeedIDsFlag       = flag.String("v6-seed-ids", "", "two 32-byte v6 seed offer IDs concatenated as hex (prepare-deploy mode only)")
-		amountFlag          = flag.String("amount", "0", "base units the deploy sends to the new contract (prepare-deploy mode)")
+		v7SeedIDFlag        = flag.String("v7-seed-id", "", "one 32-byte v7 public seed offer ID (prepare-deploy mode only)")
+		amountFlag          = flag.String("amount", "0", "base units for deploy or an explicit v7 payable-call value")
 		networkFlag         = flag.String("network", "unspecified", "network label recorded in the artefact (prepare-deploy mode)")
 		contractFlag        = flag.String("contract", "", "expected contract address; for buys, independently approved rather than copied from a snapshot")
 		feePerGasFlag       = flag.String("fee-per-gas", "", "chain fee per gas in base units; fees mode prices at it, and submit and prepare-deploy check their max fee against it instead of the node's own rate")
-		operationFlag       = flag.String("operation", "", "restrict fees mode to one operation")
+		operationFlag       = flag.String("operation", "", "restrict fees mode to one operation, or select the typed direct-v7-prepare method")
 		indexerURLFlag      = flag.String("indexer", "", "public indexer URL: the fee rate (fees mode), the epoch records to cross-check an assignment against (assignment mode), or those records plus the author's flip qualification (eligibility mode)")
 		policyFlag          = flag.String("policy", EligibilityPolicyV1, "eligibility policy to apply (eligibility mode)")
 		viewerFlag          = flag.String("viewer", "", "address whose credit to include in the marketplace state (market mode)")
@@ -234,6 +237,7 @@ func main() {
 	if strings.HasPrefix(*mode, "direct-") {
 		err := directCommand(directCommandOptions{
 			Mode: *mode, DirectVersion: *directVersionFlag, Node: c, Contract: *contractFlag, CodeHash: *codeHashFlag,
+			Operation: *operationFlag, OfferID: *v7OfferIDFlag, MinimumPayout: *minimumPayoutFlag,
 			Network: *networkFlag, SessionPath: *directSessionFlag, VaultPath: *vaultPath,
 			NodeKeyPath: *nodeKeyPath, BuyerAddress: *buyerFlag, DeliveryKeyPath: *deliveryKey,
 			PurchasePath: *directPurchaseFlag, MessagePath: *directMessageFlag,
@@ -562,6 +566,17 @@ func main() {
 		deployPath := *signedPath
 		if deployPath == "" && flagWasSet("out") {
 			deployPath = *out
+		}
+		if *v7SeedIDFlag != "" {
+			if *v6SeedIDsFlag != "" {
+				fmt.Fprintln(os.Stderr, "v7 deploy cannot use v6 seed IDs")
+				os.Exit(1)
+			}
+			if err := runPrepareDeployV7(*codePath, *nodeKeyPath, *deployNonceFlag, *v7SeedIDFlag, *networkFlag, deployPath, nonce, epoch, amount, maxFee, tips, deployFeePerGas, *broadcastFlag); err != nil {
+				fmt.Fprintf(os.Stderr, "v7 deploy refused: %v\n", err)
+				os.Exit(1)
+			}
+			return
 		}
 		runPrepareDeploy(*codePath, *nodeKeyPath, *deployNonceFlag, *v6SeedIDsFlag, *networkFlag, deployPath, nonce, epoch, amount, maxFee, tips, *broadcastFlag, *rpcURL, apiKey, deployFeePerGas)
 		return

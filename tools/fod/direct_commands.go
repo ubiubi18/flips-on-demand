@@ -24,6 +24,9 @@ type directCommandOptions struct {
 	Node            *client
 	Contract        string
 	CodeHash        string
+	Operation       string
+	OfferID         string
+	MinimumPayout   string
 	Network         string
 	SessionPath     string
 	VaultPath       string
@@ -108,6 +111,10 @@ type directCheckResult struct {
 func checkDirectPaths(o directCommandOptions) error {
 	var paths []string
 	switch o.Mode {
+	case "direct-v7-prepare":
+		paths = []string{o.SessionPath, o.ProofPath, o.ProofHostPath, o.VaultPath, o.DeliveryKeyPath, o.PreparedPath}
+	case "direct-pool-qualify", "direct-pool-prove-bundle":
+		paths = []string{o.SessionPath, o.ProofPath, o.ProofHostPath, o.PreparedPath}
 	case "direct-list":
 		paths = []string{o.SessionPath, o.VaultPath, o.NodeKeyPath, o.PreparedPath}
 	case "direct-buy":
@@ -195,6 +202,15 @@ func directListingRiskWarning(c *client, price *big.Int) string {
 }
 
 func directCommand(o directCommandOptions) error {
+	if o.Mode == "direct-v7-prepare" && (o.Node == nil || !directLocalRPC(o.Node.url) || o.DirectVersion != 7 ||
+		o.Broadcast || o.AutoConfirm || o.NodeKeyPath != "" || o.SignedPath != "") {
+		return errors.New("v7 preparation requires -direct-version 7 and a loopback RPC, without signing or broadcast flags")
+	}
+	if isDirectV6PoolPrepareMode(o.Mode) {
+		if err := validateDirectV6PoolPrepareOptions(o); err != nil {
+			return err
+		}
+	}
 	if (o.Mode == "direct-market" || o.Mode == "direct-pool-market") && (!o.OutExplicit || strings.TrimSpace(o.OutPath) == "") {
 		return fmt.Errorf("%s needs -network idena -contract ADDRESS -code-hash KECCAK256 -out FILE", o.Mode)
 	}
@@ -221,7 +237,7 @@ func directCommand(o directCommandOptions) error {
 		return errors.New("v5 direct contract requires -direct-version 5")
 	}
 	var fallbackVersion int
-	if o.Mode != "direct-pool-market" && (o.Mode == "direct-reserve-fallback" || o.Mode == "direct-start-fallback" ||
+	if o.Mode != "direct-pool-market" && o.Mode != "direct-v7-prepare" && !isDirectV6PoolPrepareMode(o.Mode) && (o.Mode == "direct-reserve-fallback" || o.Mode == "direct-start-fallback" ||
 		o.Mode == "direct-fallback" || o.Mode == "direct-refund" ||
 		o.Mode == "direct-status" || o.Mode == "direct-market" || o.DirectVersion != 0) {
 		fallbackVersion, err = directFallbackVersion(o, contract)
@@ -230,6 +246,10 @@ func directCommand(o directCommandOptions) error {
 		}
 	}
 	switch o.Mode {
+	case "direct-v7-prepare":
+		return preparePoolV7FromFiles(o, contract)
+	case "direct-pool-qualify", "direct-pool-prove-bundle":
+		return prepareDirectV6PoolFromFiles(o, contract)
 	case "direct-pool-market":
 		state, err := buildDirectV6PoolState(o.Node, contract, strings.ToLower(strings.TrimPrefix(o.CodeHash, "0x")))
 		if err != nil {

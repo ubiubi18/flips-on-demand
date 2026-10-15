@@ -100,6 +100,34 @@ func TestDirectV6PoolCallExactRustLayouts(t *testing.T) {
 	directV6PoolTestBytes(t, "max u64 order ID", got, err, "ffffffffffffffff", 8)
 }
 
+func TestDirectV6PoolQualificationAndProofExactRustLayouts(t *testing.T) {
+	var inventory, keys, offerID [32]byte
+	copy(inventory[:], bytes.Repeat([]byte{0x11}, 32))
+	copy(keys[:], bytes.Repeat([]byte{0x22}, 32))
+	copy(offerID[:], bytes.Repeat([]byte{0x33}, 32))
+	wire := []byte{0x01, 0xa0, 0xb0}
+	qualify, err := EncodeDirectV6PoolQualify(DirectV6PoolQualifyArgs{
+		Epoch: 0x0123, Covered: 2, Inventory: inventory, Keys: keys,
+	}, wire)
+	directV6PoolTestBytes(t, "qualify", qualify, err,
+		"012300000002"+strings.Repeat("11", 32)+strings.Repeat("22", 32)+"000301a0b0", 75)
+	journal := bytes.Repeat([]byte{0x44}, 273)
+	seal := bytes.Repeat([]byte{0x55}, 256)
+	prove, err := EncodeDirectV6PoolProveBundle(offerID, journal, seal, wire)
+	directV6PoolTestBytes(t, "proveBundle", prove, err,
+		strings.Repeat("33", 32)+strings.Repeat("44", 273)+strings.Repeat("55", 256)+"000301a0b0", 566)
+	journal[0], seal[0], wire[0] = 0, 0, 0
+	if prove[32] != 0x44 || prove[32+273] != 0x55 || prove[len(prove)-3] != 1 {
+		t.Fatal("proveBundle calldata aliases its input")
+	}
+	if _, err := EncodeDirectV6PoolQualify(DirectV6PoolQualifyArgs{Epoch: 1, Covered: 2, Inventory: inventory, Keys: keys}, nil); err == nil {
+		t.Fatal("qualify accepted an empty session witness")
+	}
+	if _, err := EncodeDirectV6PoolProveBundle([32]byte{}, prove[32:32+273], prove[32+273:32+273+256], prove[len(prove)-3:]); err == nil {
+		t.Fatal("proveBundle accepted a zero offer ID")
+	}
+}
+
 func TestDirectV6PoolCallRejectsMalformedFields(t *testing.T) {
 	valid := DirectV6PoolListArgs{
 		Epoch: 230, Covered: 1, Inventory: [32]byte{1}, Keys: [32]byte{2}, MinimumPayout: big.NewInt(0),

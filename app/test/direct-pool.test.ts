@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { build } from "esbuild";
 import { chromium } from "playwright";
 import { fileURLToPath } from "node:url";
@@ -203,7 +204,7 @@ test("v6 parser caps snapshot bytes and total entries", () => {
   assert.equal(parseDirectPoolState(" ".repeat(20 * 1024 * 1024 + 1)).ok, false);
 });
 
-test("v6 import shows the current queue, public CID references, and dispute state only", async () => {
+test("v6 market foregrounds the next offer, keeps explorer loading opt-in, and shows disputes", async () => {
   const bundle = await build({
     absWorkingDir: fileURLToPath(new URL("..", import.meta.url)),
     entryPoints: ["src/main.tsx"], bundle: true, write: false, format: "iife", jsx: "automatic",
@@ -211,7 +212,8 @@ test("v6 import shows the current queue, public CID references, and dispute stat
   const browser = await chromium.launch({ headless: true, channel: "chrome" });
   try {
     const page = await browser.newPage();
-    await page.route("**/*", (route) => route.fulfill({ contentType: "text/html", body: '<div id="root"></div>' }));
+    const styles = await readFile(fileURLToPath(new URL("../src/styles.css", import.meta.url)), "utf8");
+    await page.route("**/*", (route) => route.fulfill({ contentType: "text/html", body: '<style>' + styles + '</style><div id="root"></div>' }));
     await page.goto("https://pool-test.invalid/#/trades");
     await page.addScriptTag({ content: bundle.outputFiles[0].text });
     const input = snapshot();
@@ -219,7 +221,7 @@ test("v6 import shows the current queue, public CID references, and dispute stat
     await page.route("https://api.idena.io/api/flip/*/content", (route) => {
       previewRequests++;
       const url = route.request().url();
-      const pics = url.includes(input.offers[2].originalCids[0]) ? Array(8).fill(`0x${tinyJpeg}`) :
+      const pics = url.includes(input.offers[2].originalCids[0]) ? Array(2).fill("0x" + tinyJpeg) :
         url.includes(input.offers[0].originalCids[0]) ? [] : ["0x00112233"];
       return route.fulfill({
         headers: { "access-control-allow-origin": "*", "content-type": "application/json" },
@@ -229,62 +231,54 @@ test("v6 import shows the current queue, public CID references, and dispute stat
     await page.locator('input[type="file"]').setInputFiles({
       name: "pool.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(input)),
     });
-    await page.getByRole("heading", { name: "Liquidity pool" }).waitFor();
-    assert.match(await page.locator("main").innerText(), /Reserve at snapshot block\s+10 iDNA/);
-    assert.match(await page.locator("main").innerText(), /Snapshot buy quote \(max 1,000 iDNA\)\s+9 iDNA/);
-    assert.match(await page.locator("main").innerText(), /Next author payout\s+1 iDNA/);
-    assert.match(await page.locator("main").innerText(), /New primary listing payout quote\s+3 iDNA/);
+    await page.getByRole("heading", { name: "Explore original flips." }).waitFor();
+    assert.match(await page.locator(".pool-hero").innerText(), /Next bundle at snapshot\s*9 iDNA/);
+    assert.match(await page.locator(".pool-featured").innerText(), /1 original flip/);
+    assert.match(await page.locator(".pool-economics").innerText(), /iDNA reserve\s*10/);
+    assert.match(await page.locator(".pool-economics").innerText(), /Author payout\s*1 iDNA/);
+    assert.match(await page.locator(".pool-economics").innerText(), /New primary listing quote\s*3 iDNA/);
     const curve = await page.locator(".pool-curve").innerText();
-    assert.match(curve, /2 units · snapshot\s+9 iDNA/);
-    assert.match(curve, /3 units\s+3 iDNA/);
-    assert.match(curve, /4 units\s+1\.5 iDNA/);
+    assert.match(curve, /2 units · snapshot\s*9 iDNA/);
+    assert.match(curve, /3 units\s*3 iDNA/);
+    assert.match(curve, /4 units\s*1\.5 iDNA/);
     assert.match(curve, /oldest seller's locked payout/);
     assert.equal(await page.locator(".pool-curve-chart polyline").count(), 1);
-    assert.doesNotMatch(await page.locator("main").innerText(), /Next seller payout/);
-    const queueRows = await page.locator(".pool-queue tbody tr").allTextContents();
-    assert.match(queueRows[0], /aaaaaaaa\.\.\.aaaaaa/);
-    assert.match(queueRows[1], /bbbbbbbb\.\.\.bbbbbb/);
-    assert.match(await page.locator("main").innerText(), /Buyer challenged/);
-    assert.match(await page.locator("main").innerText(), /Buyer paid\s*2 iDNA/);
-    assert.match(await page.locator("main").innerText(), /Author payout\s*1 iDNA/);
-    assert.match(await page.locator("main").innerText(), /Repeat-sale payments split 50% to the original author and 50% to the pool/);
-    assert.match(await page.locator("main").innerText(), /oldest primary offer first.*oldest secondary offer/);
-    assert.match(await page.locator("main").innerText(), /public flip reference may remain encrypted/i);
-    assert.match(await page.locator("main").innerText(), /Buyer bond\s+0\.5 iDNA/);
-    assert.equal(await page.locator('a[href^="https://scan.idena.io/flip/"]').count(), 0);
-    await page.locator(".pool-queue tbody tr").first().locator(".pool-id summary").first().click();
-    assert.equal(await page.locator(".pool-queue tbody tr").first().locator(".pool-id code").first().innerText(), ids[0]);
-    for (const details of await page.locator(".pool-flips").all()) await details.locator("summary").click();
-    const links = page.locator('a[href^="https://scan.idena.io/flip/"]');
-    await page.waitForFunction(() => document.querySelectorAll('a[href^="https://scan.idena.io/flip/"]').length === 3);
-    assert.equal(await links.count(), 3);
-    const actualLinks = await links.evaluateAll((elements) => elements.map((element) => element.getAttribute("href")));
-    assert.deepEqual(actualLinks.sort(),
-      input.offers.map((item) => `https://scan.idena.io/flip/${item.originalCids[0]}`).sort());
-    assert.deepEqual((await page.locator(".pool-cids code").allTextContents()).sort(),
-      input.offers.map((item) => item.originalCids[0]).sort());
+    assert.equal(await page.locator(".pool-queue .pool-offer-card").count(), 2);
+    assert.match(await page.locator(".pool-queue .pool-offer-card").first().innerText(), /Queue 1/);
+    assert.match(await page.locator(".pool-queue .pool-offer-card").last().innerText(), /Resale/);
+    assert.match(await page.locator("#pool-orders").innerText(), /Buyer challenged/);
+    assert.equal((await page.locator("#pool-orders tbody tr").first().locator("td").nth(3).innerText()).trim(), "2 iDNA");
+    assert.match(await page.locator(".pool-queue-rule").innerText(), /Never-sold bundles go first, oldest listing first/);
+    assert.match(await page.locator(".pool-aside-note").innerText(), /Repeat-sale payments split 50%/);
     assert.equal(previewRequests, 0);
     assert.equal(await page.locator("img").count(), 0);
-    await page.locator(".pool-queue tbody tr").first().getByRole("button", { name: "Load preview from Idena explorer" }).click();
-    await page.waitForFunction(() => document.querySelector<HTMLImageElement>(".pool-preview img")?.naturalWidth === 2);
+    await page.getByRole("button", { name: "Show public preview" }).click();
+    await page.waitForFunction(() => document.querySelector<HTMLImageElement>(".pool-featured img")?.naturalWidth === 2);
     assert.equal(previewRequests, 1);
-    assert.equal(await page.locator(".pool-preview img").count(), 8);
-    assert.match(await page.locator(".pool-preview").first().innerText(), /images may still be encrypted/);
-    await page.locator(".pool-queue tbody tr").nth(1).getByRole("button", { name: "Load preview from Idena explorer" }).click();
-    await page.getByText("No public preview is available.").waitFor();
-    await page.locator(".pool-preview").last().getByRole("button", { name: "Load preview from Idena explorer" }).click();
-    await page.getByText("Public preview could not be loaded.").waitFor();
-    assert.equal(previewRequests, 3);
+    assert.equal(await page.locator(".pool-featured img").count(), 2);
+
+    await page.locator(".pool-featured .pool-flips summary").click();
+    const featureLink = page.locator(".pool-featured a[href^='https://scan.idena.io/flip/']");
+    await featureLink.waitFor();
+    assert.equal(await featureLink.count(), 1);
+    assert.equal(await featureLink.getAttribute("href"), "https://scan.idena.io/flip/" + input.offers[2].originalCids[0]);
+    await page.locator(".pool-featured .pool-cids .pool-preview button").click();
+    await page.waitForFunction(() => document.querySelectorAll(".pool-featured .pool-cids img").length === 2);
+    assert.match(await page.locator(".pool-featured .pool-cids .pool-preview").innerText(), /complete flip may remain encrypted/);
+
+    await page.locator(".pool-queue .pool-offer-card").last().getByRole("button", { name: "Preview" }).click();
+    await page.locator(".pool-queue .pool-offer-card").last().getByText("Unavailable").waitFor();
+    await page.locator(".pool-other-offers summary").first().click();
+    await page.locator(".pool-other-offers .pool-offer-card").first().getByRole("button", { name: "Preview" }).click();
+    await page.locator(".pool-other-offers .pool-offer-card").first().getByText("Unavailable").waitFor();
+    assert.equal(previewRequests, 4);
     assert.equal(await page.getByRole("button", { name: /buy|sign|purchase|confirm/i }).count(), 0);
-    assert.equal(await page.getByRole("link", { name: "Use flips" }).count(), 0);
 
     await page.setViewportSize({ width: 390, height: 800 });
-    await page.getByRole("button", { name: "Current orders" }).click();
-    assert.equal(await page.getByRole("heading", { name: "Current orders" }).isVisible(), true);
-    await page.getByRole("button", { name: "Find offer" }).click();
     await page.getByRole("searchbox", { name: "Find offer" }).fill(ids[1]);
-    assert.equal(await page.locator(".pool-queue tbody tr").count(), 1);
-    assert.match(await page.locator(".pool-queue tbody tr").first().innerText(), /secondary/);
+    assert.equal(await page.locator(".pool-queue .pool-offer-card").count(), 1);
+    assert.match(await page.locator(".pool-queue .pool-offer-card").first().innerText(), /Resale/);
+    assert.equal(await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth), true);
 
     const paused = snapshot();
     paused.pool.buyPausedForBond = true;
@@ -293,22 +287,14 @@ test("v6 import shows the current queue, public CID references, and dispute stat
       name: "paused-pool.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(paused)),
     });
     await page.getByText(/seller bond for queue head.*needs 0\.75 iDNA more/).waitFor();
-    assert.match(await page.locator("main").innerText(), /queue head\s+aaaaaaaa/);
-    assert.match(await page.locator("main").innerText(), /needs 0\.75 iDNA more/);
 
     paused.observedAt = "2020-01-01T00:00:00Z";
     await page.locator('input[type="file"]').setInputFiles({
       name: "stale-pool.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(paused)),
     });
     await page.getByText(/Buying was paused at this snapshot's block/).waitFor();
-    const staleText = await page.locator("main").innerText();
-    assert.match(staleText, /Read-only imported snapshot; verify current chain state before a trade/);
-    assert.match(staleText, /Snapshot buy quote \(max 1,000 iDNA\)\s+Unavailable \(stale snapshot\)/);
-    assert.match(staleText, /Buyer bond\s+Unavailable \(stale snapshot\)/);
-    assert.match(staleText, /Total to lock\s+Unavailable \(stale snapshot\)/);
-    assert.match(staleText, /New primary listing payout quote\s+Unavailable \(stale snapshot\)/);
-    assert.match(staleText, /Reserve at snapshot block\s+10 iDNA/);
-    assert.match(staleText, /Buying was paused at this snapshot's block/);
+    assert.match(await page.locator(".pool-hero").innerText(), /Unavailable \(stale snapshot\)/);
+    assert.match(await page.locator(".pool-economics").innerText(), /Buyer bond\s*Unavailable \(stale snapshot\)/);
   } finally {
     await browser.close();
   }
@@ -344,11 +330,11 @@ test("v6 queue displays large inventories in batches", async () => {
       name: "pool.json", mimeType: "application/json",
       buffer: Buffer.from(JSON.stringify(input).padEnd(6 * 1024 * 1024, " ")),
     });
-    await page.getByRole("heading", { name: "Liquidity pool" }).waitFor();
-    assert.equal(await page.locator(".pool-queue tbody tr").count(), 10);
+    await page.getByRole("heading", { name: "Explore original flips." }).waitFor();
+    assert.equal(await page.locator(".pool-queue .pool-offer-card").count(), 10);
     assert.equal(await page.locator('a[href^="https://scan.idena.io/flip/"]').count(), 0);
     await page.getByRole("button", { name: "Show 50 more" }).click();
-    assert.equal(await page.locator(".pool-queue tbody tr").count(), 52);
+    assert.equal(await page.locator(".pool-queue .pool-offer-card").count(), 52);
   } finally {
     await browser.close();
   }

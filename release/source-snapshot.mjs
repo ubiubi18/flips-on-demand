@@ -14,6 +14,7 @@ const omitted = (path) => path === "release/MANIFEST.json" || path === "release/
   path === "release/DIRECT_V4_MANIFEST.json" || path === "release/DIRECT_V4_MANIFEST.json.staged" ||
   path === "release/DIRECT_V5_MANIFEST.json" || path === "release/DIRECT_V5_MANIFEST.json.staged" ||
   path === "release/DIRECT_V6_MANIFEST.json" || path === "release/DIRECT_V6_MANIFEST.json.staged" ||
+  path === "release/DIRECT_V7_MANIFEST.json" || path === "release/DIRECT_V7_MANIFEST.json.staged" ||
   path.startsWith("release/artifacts/") || path.startsWith("app/dist/") ||
   /^contracts\/[^/]+\/dist\//.test(path);
 const publicFlipVectors = new Map([

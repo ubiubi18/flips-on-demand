@@ -64,7 +64,7 @@ async function publicFlipPictures(cid: string, signal: AbortSignal): Promise<Blo
 
 type Preview = { kind: "idle" | "loading" | "empty" | "error" } | { kind: "ready"; urls: string[] };
 
-function PublicFlipPreview({ cid }: { cid: string }) {
+function PublicFlipPreview({ cid, autoLoad = false, compact = false }: { cid: string; autoLoad?: boolean; compact?: boolean }) {
   const [preview, setPreview] = useState<Preview>({ kind: "idle" });
   const controller = useRef<AbortController | null>(null);
   const urls = useRef<string[]>([]);
@@ -101,22 +101,26 @@ function PublicFlipPreview({ cid }: { cid: string }) {
     }
   }
 
+  useEffect(() => {
+    if (autoLoad) void load();
+  }, [autoLoad, cid]);
+
   function imageFailed() {
     urls.current.forEach(URL.revokeObjectURL);
     urls.current = [];
     setPreview({ kind: "error" });
   }
 
-  return <div className="pool-preview">
+  return <div className={compact ? "pool-preview pool-preview-compact" : "pool-preview"}>
     {preview.kind !== "ready" && <button className="pool-more" type="button" disabled={preview.kind === "loading"} onClick={() => void load()}>
-      {preview.kind === "loading" ? "Loading explorer preview…" : preview.kind === "idle" ? "Load preview from Idena explorer" : "Retry explorer preview"}
+      {preview.kind === "loading" ? "Loading…" : preview.kind === "idle" ? compact ? "Preview" : "Show public images" : compact ? "Retry" : "Retry public images"}
     </button>}
-    {preview.kind === "empty" && <p className="muted">No public preview is available.</p>}
-    {preview.kind === "error" && <p className="muted">Public preview could not be loaded.</p>}
+    {preview.kind === "empty" && <p className="muted">{compact ? "Unavailable" : "No public preview is available."}</p>}
+    {preview.kind === "error" && <p className="muted">{compact ? "Unavailable" : "Public preview could not be loaded."}</p>}
     {preview.kind === "ready" && <>
-      <p className="muted">Explorer public preview; images may still be encrypted.</p>
+      {!compact && <p className="muted">Public images from Idena explorer; the complete flip may remain encrypted.</p>}
       <div className="pool-preview-images">
-        {preview.urls.map((url, index) => <img key={url} src={url} alt={`Explorer public flip image ${index + 1}`} onError={imageFailed} />)}
+        {(compact ? preview.urls.slice(0, 2) : preview.urls).map((url, index) => <img key={url} src={url} alt={`Public flip image ${index + 1}`} onError={imageFailed} />)}
       </div>
     </>}
   </div>;
@@ -223,51 +227,52 @@ function OriginalCids({ offer }: { offer: DirectPoolOffer }) {
   );
 }
 
-function OfferTable({ offers, queued, searching }: { offers: DirectPoolOffer[]; queued: boolean; searching: boolean }) {
+function OfferList({ offers, queued, searching }: { offers: DirectPoolOffer[]; queued: boolean; searching: boolean }) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_OFFER_COUNT);
-  return (
-    <>
-    <div className={queued ? "table-wrap pool-queue" : "table-wrap"}>
-      <table className="market stack">
-        <thead><tr>
-          {queued && <th className="numeric">Position</th>}
-          <th>Offer</th><th>Author</th><th>{queued ? "Queue" : "Status"}</th>
-          <th className="numeric">Flips</th><th>Content proof</th><th>Original flips</th>
-        </tr></thead>
-        <tbody>
-          {offers.slice(0, visibleCount).map((offer) => (
-            <tr key={offer.offerId}>
-              {queued && <td className="numeric"><span className="field-label">Position</span>{offer.queuePosition}</td>}
-              <td><span className="field-label">Offer</span><FullId value={offer.offerId} /></td>
-              <td><span className="field-label">Author</span><FullId value={offer.author} /></td>
-              <td><span className="field-label">{queued ? "Queue" : "Status"}</span>{queued ? offer.queue : offer.state}</td>
-              <td className="numeric"><span className="field-label">Flips</span>{offer.coveredFlips}</td>
-              <td><span className="field-label">Content proof</span>{offer.contentProven ? "Recorded" : "Not recorded"}</td>
-              <td><span className="field-label">Original flips</span><OriginalCids offer={offer} /></td>
-            </tr>
-          ))}
-          {offers.length === 0 && <tr><td colSpan={queued ? 7 : 6} className="muted">{searching ? "No matching offers." : queued ? "No offers in the current queue." : "No other offers in this snapshot."}</td></tr>}
-        </tbody>
-      </table>
-    </div>
-    {offers.length > visibleCount && <p className="muted">
-      Showing {visibleCount} of {offers.length} offers.{" "}
+  return <>
+    {offers.length === 0 ? <p className="pool-empty">
+      {searching ? "No matching offers." : queued ? "No bundles are waiting in the queue." : "No other offers in this snapshot."}
+    </p> : <ol className={queued ? "pool-offers pool-queue" : "pool-offers"}>
+      {offers.slice(0, visibleCount).map((offer) => (
+        <li className="pool-offer-card" key={offer.offerId}>
+          <div className="pool-offer-art">
+            <span className="pool-offer-art-mark">{queued ? String(offer.queuePosition).padStart(2, "0") : "·"}</span>
+            <PublicFlipPreview cid={offer.originalCids[0]} compact />
+          </div>
+          <div className="pool-offer-body">
+            <div className="pool-offer-topline">
+              <span className={offer.queue === "secondary" || offer.everSold ? "pool-tag pool-tag-secondary" : "pool-tag"}>
+                {offer.publicSeed ? "Public seed" : offer.queue === "secondary" ? "Resale" : "First sale"}
+              </span>
+              <span className="pool-position">{queued ? "Queue " + offer.queuePosition : offer.state}</span>
+            </div>
+            <h4>{offer.coveredFlips} {offer.coveredFlips === 1 ? "flip" : "flips"} · epoch {offer.epoch}</h4>
+            <div className="pool-offer-byline">Author <FullId value={offer.author} /> · Offer <FullId value={offer.offerId} /></div>
+            <div className="pool-offer-foot">
+              <span>{offer.contentProven ? "Content proof recorded" : "Content proof pending"}</span>
+              <OriginalCids offer={offer} />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ol>}
+    {offers.length > visibleCount && <p className="pool-count">
+      Showing {visibleCount} of {offers.length}.{" "}
       <button className="pool-more" type="button" onClick={() => setVisibleCount(Math.min(visibleCount + PAGE_SIZE, offers.length))}>Show 50 more</button>
     </p>}
-    </>
-  );
+  </>;
 }
 
 export function DirectPoolMarket({ state, snapshotFresh }: { state: DirectPoolState; snapshotFresh: boolean }) {
   const [visibleOrders, setVisibleOrders] = useState(PAGE_SIZE);
   const [search, setSearch] = useState("");
+  const [showFeaturedPreview, setShowFeaturedPreview] = useState(false);
   const needle = search.trim().toLowerCase().replace(/^0x/, "");
   const matchingOffers = needle === "" ? state.offers : state.offers.filter((offer) =>
     offer.offerId.includes(needle) || offer.author.includes(needle) || offer.originalCids.some((cid) => cid.includes(needle)));
   const queued = matchingOffers.filter((offer) => offer.queuePosition > 0)
     .sort((left, right) => left.queuePosition - right.queuePosition);
   const otherOffers = matchingOffers.filter((offer) => offer.queuePosition === 0);
-  const hasOtherOffers = state.offers.some((offer) => offer.queuePosition === 0);
   const nextOffer = state.offers.find((offer) => offer.offerId === state.pool.nextOfferId);
   const nextAuthorPayout = nextOffer === undefined || state.pool.buyQuote === undefined ? undefined :
     nextOffer.queue === "secondary" ? (BigInt(state.pool.buyQuote) / 2n).toString() : nextOffer.payout;
@@ -276,71 +281,129 @@ export function DirectPoolMarket({ state, snapshotFresh }: { state: DirectPoolSt
     const b = BigInt(right.orderId);
     return a === b ? 0 : a > b ? -1 : 1;
   });
+  const challengedOrders = orders.filter((order) => order.challenged && order.state !== "settled" && order.state !== "refunded").length;
   return (
-    <section>
-      <header className="section-head"><h2>Liquidity pool</h2></header>
-      <dl className="facts">
-        <div><dt>Reserve at snapshot block</dt><dd>{formatAmount(state.pool.reserve)} iDNA</dd></div>
-        <div><dt>Snapshot buy quote (max 1,000 iDNA)</dt><dd>{currentAmount(state.pool.buyQuote, snapshotFresh)}</dd></div>
-        <div><dt>{nextOffer?.queue === "secondary" ? "Next author dividend" : "Next author payout"}</dt><dd>{currentAmount(nextAuthorPayout, snapshotFresh)}</dd></div>
-        <div><dt>Buyer bond</dt><dd>{currentAmount(state.pool.minimumBuyerBond, snapshotFresh)}</dd></div>
-        <div><dt>Total to lock</dt><dd>{currentAmount(state.pool.minimumBuyerTotal, snapshotFresh)}</dd></div>
-        <div><dt>New primary listing payout quote</dt><dd>{currentAmount(state.pool.nextSellerPayout, snapshotFresh)}</dd></div>
-      </dl>
-      {state.pool.reserve === "0" ? <p className="notice">
+    <section className="pool-market">
+      <header className="pool-hero">
+        <div>
+          <p className="pool-eyebrow">FLIPS ON DEMAND <span aria-hidden="true">/</span> ON-CHAIN MARKET</p>
+          <h2>Explore original flips.</h2>
+          <p className="pool-hero-description">Explore the queue, see public flip images, and follow each order on-chain.</p>
+        </div>
+        <div className="pool-hero-quote">
+          <span>Next bundle at snapshot</span>
+          <strong>{currentAmount(state.pool.buyQuote, snapshotFresh)}</strong>
+          <small>{nextOffer?.publicSeed ? "Public seed · settles on purchase" : "Buyer bond and network fees are additional"}</small>
+        </div>
+      </header>
+
+      <div className="pool-snapshot-line">
+        <span className="pool-live-dot" aria-hidden="true" />
+        <span>Imported chain snapshot · block {state.blockHeight.toLocaleString()}</span>
+        <span>{state.pool.primaryUnits} first sales · {state.pool.secondaryUnits} resales</span>
+        <span>Read only</span>
+      </div>
+
+      {state.pool.reserve === "0" && <p className="notice">
         Pool not yet open. {state.pool.seedCount} of 2 original bundles have been independently proved and publicly seeded.
-        The 10,000 iDNA starting liquidity can be added only after both are ready; no purchase or listing quote is available yet.
-      </p> : <PriceCurve state={state} />}
+        The 10,000 iDNA starting liquidity can be added only after both are ready.
+      </p>}
       {state.pool.buyPausedForBond && <p className="notice">
         {snapshotFresh ? "Buying is paused" : "Buying was paused at this snapshot's block"}: the seller bond for{" "}
         {state.pool.nextOfferId === undefined ? "the queue head" : <>queue head <code className="mono">{state.pool.nextOfferId}</code></>} needs{" "}
-        {state.pool.bondTopUpRequired === undefined ? "a top-up" : `${formatAmount(state.pool.bondTopUpRequired)} iDNA more`}.
-      </p>}
-      <p className="muted">Repeat-sale payments split 50% to the original author and 50% to the pool. Read-only imported snapshot; verify current chain state before a trade. A public flip reference may remain encrypted.</p>
-
-      <nav className="pool-nav" aria-label="Pool sections">
-        <button className="linklike" type="button" onClick={() => document.getElementById("pool-lookup")?.scrollIntoView()}>Find offer</button>
-        <button className="linklike" type="button" onClick={() => document.getElementById("pool-orders")?.scrollIntoView()}>Current orders</button>
-      </nav>
-      <h3 id="pool-orders">Current orders</h3>
-      <p className="muted">Amounts shown were fixed when each order was funded.</p>
-      <div className="table-wrap pool-orders">
-        <table className="market stack">
-          <thead><tr><th>Order</th><th>Offer</th><th>Status</th><th className="numeric">Buyer paid</th><th className="numeric">Buyer bond</th><th className="numeric">Author payout</th><th>Proof / dispute</th><th className="numeric">Refund from block</th></tr></thead>
-          <tbody>
-            {orders.slice(0, visibleOrders).map((order) => (
-              <tr key={order.orderId}>
-                <td><span className="field-label">Order</span>{order.orderId}</td>
-                <td><span className="field-label">Offer</span><FullId value={order.offerId} /></td>
-                <td><span className="field-label">Status</span>{order.state === "fallback-pending" ? "Proof accepted; reveal pending" : order.state}</td>
-                <td className="numeric"><span className="field-label">Buyer paid</span>{formatAmount(order.paid)} iDNA</td>
-                <td className="numeric"><span className="field-label">Buyer bond</span>{formatAmount(order.bond)} iDNA</td>
-                <td className="numeric"><span className="field-label">Author payout</span>{formatAmount(order.sellerPayout)} iDNA</td>
-                <td><span className="field-label">Proof / dispute</span>{order.challenged ? "Buyer challenged" : "No buyer challenge recorded"}</td>
-                <td className="numeric"><span className="field-label">Refund from block</span>{order.refundAvailable ? "Available" : order.state === "funded" || order.state === "fallback-pending" ? order.refundAtBlock : "—"}</td>
-              </tr>
-            ))}
-            {orders.length === 0 && <tr><td colSpan={8} className="muted">No current orders in this snapshot.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-      {orders.length > visibleOrders && <p className="muted">
-        Showing {visibleOrders} of {orders.length} orders.{" "}
-        <button className="pool-more" type="button" onClick={() => setVisibleOrders(Math.min(visibleOrders + PAGE_SIZE, orders.length))}>Show 50 more</button>
+        {state.pool.bondTopUpRequired === undefined ? "a top-up" : formatAmount(state.pool.bondTopUpRequired) + " iDNA more"}.
       </p>}
 
-      <div className="pool-lookup" id="pool-lookup">
-        <label htmlFor="pool-offer-search">Find offer</label>
-        <input id="pool-offer-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Offer ID, author, or flip CID" />
-      </div>
-      <h3>Current queue</h3>
-      <p className="muted">Buyers take the oldest primary offer first. When primary is empty, they take the oldest secondary offer. Non-seed offers that have never sold use primary; previously sold offers and public seeds use secondary.</p>
-      <OfferTable offers={queued} queued searching={needle !== ""} />
+      <div className="pool-layout">
+        <div className="pool-catalog">
+          <div className="pool-section-heading">
+            <div><p className="pool-eyebrow">FIRST IN LINE</p><h3>Next available bundle</h3></div>
+            {!showFeaturedPreview && nextOffer && <button className="pool-preview-toggle" type="button" onClick={() => setShowFeaturedPreview(true)}>
+              Show public preview
+            </button>}
+          </div>
+          {nextOffer ? <article className="pool-featured">
+            <div className="pool-featured-image">
+              <span className="pool-featured-number">01 / PUBLIC FLIP IMAGES</span>
+              <PublicFlipPreview key={nextOffer.originalCids[0]} cid={nextOffer.originalCids[0]} autoLoad={showFeaturedPreview} compact />
+            </div>
+            <div className="pool-featured-body">
+              <span className={nextOffer.everSold || nextOffer.publicSeed ? "pool-tag pool-tag-secondary" : "pool-tag"}>
+                {nextOffer.publicSeed ? "Public seed" : nextOffer.everSold ? "Secondary sale" : "First sale"}
+              </span>
+              <h4>{nextOffer.coveredFlips} {nextOffer.coveredFlips === 1 ? "original flip" : "original flips"}</h4>
+              <p>Epoch {nextOffer.epoch} · Author <FullId value={nextOffer.author} /> · Offer <FullId value={nextOffer.offerId} /></p>
+              <div className="pool-featured-amount"><span>Current snapshot quote</span><strong>{currentAmount(state.pool.buyQuote, snapshotFresh)}</strong></div>
+              <p className="pool-featured-proof">{nextOffer.contentProven ? "Independent content proof recorded" : "Content proof has not been recorded"}</p>
+              <OriginalCids offer={nextOffer} />
+            </div>
+          </article> : <p className="pool-empty">No bundle is available at this snapshot.</p>}
+          <p className="pool-explorer-note">Public previews come from Idena explorer after you request them. They show only the public part of a flip.</p>
 
-      {hasOtherOffers && <>
-        <h3>Other public offers in this snapshot</h3>
-        <OfferTable offers={otherOffers} queued={false} searching={needle !== ""} />
-      </>}
+          <div className="pool-section-heading pool-browse-heading" id="pool-lookup">
+            <div><p className="pool-eyebrow">THE QUEUE</p><h3>Browse bundles</h3></div>
+            <span>{queued.length} waiting</span>
+          </div>
+          <div className="pool-lookup">
+            <label htmlFor="pool-offer-search">Find offer</label>
+            <input id="pool-offer-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Offer, author, or flip CID" />
+          </div>
+          <p className="pool-queue-rule">Never-sold bundles go first, oldest listing first. Resales follow in their own queue.</p>
+          <OfferList offers={queued} queued searching={needle !== ""} />
+          {otherOffers.length > 0 && <details className="pool-other-offers">
+            <summary>Other public offers ({otherOffers.length})</summary>
+            <OfferList offers={otherOffers} queued={false} searching={needle !== ""} />
+          </details>}
+        </div>
+
+        <aside className="pool-aside" aria-label="Market details">
+          <PriceCurve state={state} />
+          <div className="pool-economics">
+            <h3>Pool at a glance</h3>
+            <dl>
+              <div><dt>iDNA reserve</dt><dd>{formatAmount(state.pool.reserve)}</dd></div>
+              <div><dt>Buyer bond</dt><dd>{currentAmount(state.pool.minimumBuyerBond, snapshotFresh)}</dd></div>
+              <div><dt>Total to lock</dt><dd>{currentAmount(state.pool.minimumBuyerTotal, snapshotFresh)}</dd></div>
+              <div><dt>{nextOffer?.queue === "secondary" ? "Author dividend" : "Author payout"}</dt><dd>{currentAmount(nextAuthorPayout, snapshotFresh)}</dd></div>
+              <div><dt>New primary listing quote</dt><dd>{currentAmount(state.pool.nextSellerPayout, snapshotFresh)}</dd></div>
+            </dl>
+          </div>
+          <p className="pool-aside-note">This v6 snapshot can differ from current chain state. Prices, fees and bonds must be checked again before signing. Repeat-sale payments split 50% to the author and 50% to the pool.</p>
+        </aside>
+      </div>
+
+      <section className="pool-order-section" id="pool-orders">
+        <div className="pool-section-heading">
+          <div><p className="pool-eyebrow">AFTER PURCHASE</p><h3>Orders & disputes</h3></div>
+          <span>{challengedOrders > 0 ? challengedOrders + " challenged" : orders.length + " orders"}</span>
+        </div>
+        <p className="pool-order-intro">Amounts were fixed when each order was funded. Challenge and refund status come from this snapshot.</p>
+        <div className="table-wrap pool-orders">
+          <table className="market stack">
+            <thead><tr><th>Order</th><th>Offer</th><th>Status</th><th className="numeric">Buyer paid</th><th className="numeric">Buyer bond</th><th className="numeric">Author payout</th><th>Proof / dispute</th><th className="numeric">Refund from block</th></tr></thead>
+            <tbody>
+              {orders.slice(0, visibleOrders).map((order) => (
+                <tr key={order.orderId}>
+                  <td><span className="field-label">Order</span>{order.orderId}</td>
+                  <td><span className="field-label">Offer</span><FullId value={order.offerId} /></td>
+                  <td><span className="field-label">Status</span>{order.state === "fallback-pending" ? "Proof accepted; reveal pending" : order.state}</td>
+                  <td className="numeric"><span className="field-label">Buyer paid</span>{formatAmount(order.paid)} iDNA</td>
+                  <td className="numeric"><span className="field-label">Buyer bond</span>{formatAmount(order.bond)} iDNA</td>
+                  <td className="numeric"><span className="field-label">Author payout</span>{formatAmount(order.sellerPayout)} iDNA</td>
+                  <td><span className="field-label">Proof / dispute</span>{order.challenged ? "Buyer challenged" : "No challenge recorded"}</td>
+                  <td className="numeric"><span className="field-label">Refund from block</span>{order.refundAvailable ? "Available" : order.state === "funded" || order.state === "fallback-pending" ? order.refundAtBlock : "—"}</td>
+                </tr>
+              ))}
+              {orders.length === 0 && <tr><td colSpan={8} className="muted">No current orders in this snapshot.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        {orders.length > visibleOrders && <p className="pool-count">
+          Showing {visibleOrders} of {orders.length}.{" "}
+          <button className="pool-more" type="button" onClick={() => setVisibleOrders(Math.min(visibleOrders + PAGE_SIZE, orders.length))}>Show 50 more</button>
+        </p>}
+      </section>
+      <p className="pool-experimental">Experimental smart contract market. There is no operator guaranteeing a sale, delivery, price, or recovery.</p>
     </section>
   );
 }
