@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="500" viewBox="0 0 1440 500" role="img" aria-labelledby="title desc">
+<title id="title">Why use Flips on Demand?</title><desc id="desc">An author offers old picture puzzles. An app operator buys access to them. A visitor solves a few puzzles, and the app decides whether to unlock a feature or give test coins. Visitors do not buy the puzzles. This is a proposed use case, not a complete working service.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#117c73"/></marker></defs>
+<rect width="1440" height="500" fill="#f9fbf9"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#153b3b">
+<text x="40" y="40" font-size="15" font-weight="700" fill="#117c73">FLIPS ON DEMAND / THE IDEA</text>
+<text x="40" y="84" font-size="38" font-weight="700" fill="#153b3b">Picture puzzles, ready for another use</text>
+<text x="40" y="119" font-size="21" font-weight="400" fill="#526966">An app could ask visitors to solve a few puzzles before giving access to something.</text>
+<rect x="40" y="165" width="310" height="210" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="64" y="196" font-size="14" font-weight="700" fill="#117c73">1 / PUZZLE AUTHOR</text>
+<text x="64" y="231" font-size="26" font-weight="700" fill="#153b3b">Offer puzzles</text>
+<text x="64" y="268" font-size="20" font-weight="400" fill="#526966">Offers a collection</text>
+<text x="64" y="297" font-size="20" font-weight="400" fill="#526966">of past puzzles.</text>
+<rect x="390" y="165" width="310" height="210" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="414" y="196" font-size="14" font-weight="700" fill="#117c73">2 / APP OPERATOR</text>
+<text x="414" y="231" font-size="26" font-weight="700" fill="#153b3b">Buy access</text>
+<text x="414" y="268" font-size="20" font-weight="400" fill="#526966">Buys unlocking keys.</text>
+<text x="414" y="297" font-size="20" font-weight="400" fill="#526966">Prepares a session.</text>
+<rect x="740" y="165" width="310" height="210" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="764" y="196" font-size="14" font-weight="700" fill="#117c73">3 / VISITOR</text>
+<text x="764" y="231" font-size="26" font-weight="700" fill="#153b3b">Solve puzzles</text>
+<text x="764" y="268" font-size="20" font-weight="400" fill="#526966">Solves picture puzzles.</text>
+<text x="764" y="297" font-size="20" font-weight="400" fill="#526966">No purchase needed.</text>
+<rect x="1090" y="165" width="310" height="210" rx="16" fill="#e9f5ef" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1114" y="196" font-size="14" font-weight="700" fill="#117c73">4 / APP</text>
+<text x="1114" y="231" font-size="26" font-weight="700" fill="#153b3b">Unlock access</text>
+<text x="1114" y="268" font-size="20" font-weight="400" fill="#526966">Checks answers.</text>
+<text x="1114" y="297" font-size="20" font-weight="400" fill="#526966">Gives access if passed.</text>
+<path d="M350 270 H390" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M700 270 H740" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1050 270 H1090" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="40" y="434" font-size="26" font-weight="700" fill="#153b3b">The app buys puzzle access. Its visitors use the puzzles.</text>
+<text x="40" y="474" font-size="20" font-weight="400" fill="#526966">Intended use case. Still experimental; passing cannot guarantee one account per person.</text>
+</g></svg>

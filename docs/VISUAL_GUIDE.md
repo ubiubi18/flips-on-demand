@@ -1,0 +1,102 @@
+# Flips on Demand — visual guide
+
+UI captures and diagrams based on repository revision [`792e234`](https://github.com/ubiubi18/flips-on-demand/tree/792e234), checked on **18 October 2026**. These illustrate an experimental implementation; they do not establish a safe funded release.
+
+## Real flip previews
+
+The opening README includes unchanged public JPEG previews from two epoch-230 flips. They were retrieved on 18 October 2026 from the Idena explorer API. Each response contained two public pictures; no encrypted private part was opened. These are illustrations of the puzzle format, not a new claim of marketplace eligibility or a complete playable flip.
+
+| Example | Public source and author |
+| --- | --- |
+| IdenaAI 2 — avalanche / punch | [Flip](https://scan.idena.io/flip/bafybeicpa2wypblq7ri4522azsjb6y3676nyq4y7se7x4ay7ppy6fcnvj4) · [picture response](https://api.idena.io/api/flip/bafybeicpa2wypblq7ri4522azsjb6y3676nyq4y7se7x4ay7ppy6fcnvj4/content) · author `0xace93bd09e9e8c3fa75d3cb7de810ccfeb333a99` |
+| IdenaAI 3 — balloon / smoke | [Flip](https://scan.idena.io/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq) · [picture response](https://api.idena.io/api/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq/content) · author `0x1af4820204ddcd1a882359198227798f463f3058` |
+
+The author-to-flip mapping was checked against the explorer's epoch-230 author listings. The four files in `visuals/idenaai{2,3}-public-{1,2}.jpg` preserve the returned bytes. The words in the captions come from the explorer metadata. The examples were selected with the repository owner's permission; they are not repository test fixtures.
+
+## Current UI
+
+The screenshots show the actual bundled browser app, rebuilt from source, with the synthetic `snapshot()` fixture in [`app/test/direct-pool.test.ts`](../app/test/direct-pool.test.ts). Addresses, prices, balances, CIDs and order states are examples. The browser clock and fixture timestamp were fixed at `2026-10-18T12:00:00Z` so the app could display fresh sample quotes. No application styles or components were changed for the captures. No node, wallet, private delivery file or external image service was accessed.
+
+**Version matters:** this page accepts **v6 pool snapshots** and is read only. Its price curve and sample amounts do not describe v7 economics. The v7 transaction interface is in the separate [IdenaAI development source branch](https://github.com/ubiubi18/IdenaAI/tree/vibe/fod-social-bridge), not the screenshots here. Published IdenaAI desktop binaries do not include that source-only page as of the baseline above.
+
+### Market on desktop
+
+Featured bundle, original-flip references, queue, illustrative price curve and the amounts to lock. Public previews remain unopened; they require a separate explorer request.
+
+![Actual v6 browser viewer with synthetic sample state, captured at 1440 by 1080 CSS pixels](visuals/viewer-v6-market.png)
+
+### Orders and disputes
+
+The same sample snapshot contains a funded order marked as challenged. This view reports imported state; it does not challenge, confirm or refund an order itself.
+
+![Actual orders and disputes section, showing a synthetic funded order and buyer challenge](visuals/viewer-v6-orders.png)
+
+### Mobile
+
+The existing responsive layout at 390 CSS pixels wide. Open the image for the full resolution capture.
+
+<a href="visuals/viewer-v6-mobile.png"><img src="visuals/viewer-v6-mobile.png" width="320" alt="Full mobile version of the v6 browser viewer, using the same synthetic sample state" /></a>
+
+The captures used Chrome through the app's installed Playwright dependency at a device scale factor of 2. The build produced no browser errors or external requests during capture. Built HTML SHA-256: `f9e0b20f0c7e358fe430c8d52fd04b50eaa94c693d95b53bb03242669ec6b58d`. Browser appearance can vary with fonts, browser version and operating system.
+
+## Direct v7: listing → trade → resolution
+
+V7 trades access to the original keys for one author's historical epoch bundle. The oldest first sale has priority; resales follow in their own queue. The buyer keeps authenticated encrypted files before paying. Encrypted key delivery happens through a separate private channel; the contract cannot determine whether that message was sent or received.
+
+![V7 listing, purchase, private confirmation, buyer challenge, public proof and reveal, refund and public-seed exception](visuals/v7-trade-flow.svg)
+
+A **challenge** records the buyer's request for a proof. It does not invoke a moderator, automatically refund the order, or extend the deadline. After valid public fallback, it allows capped reimbursement from the buyer bond. A seller may also use fallback when the buyer stays silent, but then the whole buyer bond returns.
+
+Public fallback permanently reveals the original keys, retains them in contract state and retires the private offer. A buyer can recover those keys from the chain; retained usable flip files are still necessary. The already-public seed has a different route: `buyPublicSeed` settles immediately, splits the price between author and reserve, and requeues the seed without creating a private order.
+
+### Deadlines are block heights
+
+Let `h` be the block where the private buy is included and `D = h + 12,960`.
+
+| Action | Contract condition |
+| --- | --- |
+| Buyer `challenge` | Order is still funded; caller is the buyer; before `D`; only once |
+| Seller `startFallback` | Still funded; from `h + 30`, strictly before `D − 120` |
+| Seller `proveAndReveal` | Fallback proof already accepted; strictly before `D` |
+| Anyone `refund` | Order is funded or fallback-pending; at or after `D` |
+| Buyer `confirm` | Still funded, including after `D` until a refund lands; unavailable once fallback is pending |
+
+The 12,960-block window is nominally three days at 20 seconds per block. Actual elapsed time depends on the chain. Merely submitting a transaction does not satisfy an inclusion deadline.
+
+## Costs and money movements
+
+![Illustrative v7 first-sale costs, showing locked funds and amounts returned under each resolution](visuals/v7-costs.svg)
+
+The diagram uses a **hypothetical constant fee rate**, not a current network quote or a measured v7 transaction fee. Bonds are locked collateral, not an automatic charge. Normal network fees are separate, paid by each transaction sender, and not reimbursed by the escrow refund.
+
+| Symbol | Current v7 rule |
+| --- | --- |
+| `P` — price | `min(1,000 iDNA, ceil(R / (Q + 9)))`, calculated in integer base units. `R` excludes insurance and held bonds; `Q` counts queued bundles. |
+| `B` — buyer bond | Required at private buy: `5,000,000 × feePerGas` at that call. |
+| `S` — seller delivery bond | Required at listing: `5,000,000 × feePerGas`. Later fee increases can require a top-up before buying. |
+| `F` — fraud collateral | `1,000 iDNA` for an unproved listing; zero for a proven listing. |
+| `C` — challenged fallback reimbursement | `min(B, 2,500,000 × feePerGas recorded at startFallback)`. Only paid after successful public reveal on a challenged order, including a pre-proven offer. |
+
+Every first-sale payment goes to the original author. On a resale, the author receives `floor(P / 2)` and the rest enters the reserve. There is no operator commission. The one-time **10,000 iDNA activation deposit is permanently locked**, with no redeemable share; listing more bundles does not itself pay authors.
+
+For unproved content, private confirmation returns the seller delivery bond but **does not release fraud collateral**. A valid content proof before the original deadline releases it. Otherwise `slashUnproved` can forfeit it to insurance and retire the offer after the deadline. A default refund also sends any still-held fraud collateral to insurance; the buyer receives the price, buyer bond and seller delivery bond, not that fraud collateral.
+
+Proving, hosting and private delivery can incur additional local costs. Those costs are not specified by the bond formula. Use the current node rate and an estimate of the actual call for network fees; historical fees from older escrow versions are not v7 quotes.
+
+## Use case: buy flips for a gated session
+
+![An author supplies historical flips, a provider acquires and prepares them, participants solve a session, and an application decides access](visuals/use-case.svg)
+
+For example, a provider could buy historical flip access and use the content in a session that gates a testnet-faucet claim or dapp access. The marketplace settles the content purchase; the provider hosts the session, and the application applies its own verification and access policy. This is an intended integration use case, not a demonstrated complete v7 purchase-to-access flow. It does not guarantee unique personhood or rule out automated solving.
+
+## Sources and scope
+
+| Visual or rule | Owning source |
+| --- | --- |
+| Browser viewer and screenshot fixture | [`DirectPool.tsx`](../app/src/views/DirectPool.tsx), [`direct-pool-state.ts`](../app/src/direct-pool-state.ts), [`direct-pool.test.ts`](../app/test/direct-pool.test.ts) |
+| V7 lifecycle, payout and collateral | [`v7 contract guide`](../contracts/direct-escrow-v7/README.md), [`lib.rs`](../contracts/direct-escrow-v7/src/lib.rs): `settle`, `challenge`, `confirm`, `startFallback`, `proveAndReveal`, `refund`, `slashUnproved` |
+| Exact deadline predicates | [`state.rs`](../contracts/direct-escrow-v7/src/state.rs): `can_start_fallback`, `seller_can_reveal`, `can_refund` |
+| Price, bonds and reimbursement | [`curve.rs`](../contracts/direct-escrow-v7/src/curve.rs), [`lib.rs`](../contracts/direct-escrow-v7/src/lib.rs): `required_bond`, `seller_bond_for_rate`, `fallback_reimbursement` |
+| Gated-session examples | [`GateSetup.tsx`](../app/src/views/GateSetup.tsx), [`utility/README.md`](../utility/README.md) |
+
+The diagrams are editable, self-contained SVGs with accessible titles and descriptions. The UI screenshots are PNGs; the public flip previews are unchanged JPEGs. Refresh the captures and rules together when their owning sources change. The v7 guide records one owner-operated funded pilot; funded cooperative confirmation, refund and resale, an unproved funded fallback with a v7-bound proof, and an independent security audit remain unverified at this baseline.

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="860" viewBox="0 0 1440 860" role="img" aria-labelledby="title desc">
+<title id="title">How a private flip trade works</title><desc id="desc">The author lists a collection, the buyer locks a payment and deposit, and the seller privately sends the unlocking keys. Confirmation pays the seller. Without confirmation the seller may prove and publish the keys before the deadline, or a refund returns the price and buyer deposit plus the seller delivery deposit. A successful public fallback can charge part of a challenging buyer deposit.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#117c73"/></marker></defs>
+<rect width="1440" height="860" fill="#f9fbf9"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#153b3b">
+<text x="40" y="40" font-size="15" font-weight="700" fill="#117c73">FLIPS ON DEMAND / A PRIVATE TRADE</text>
+<text x="40" y="84" font-size="38" font-weight="700" fill="#153b3b">Buy access. Check the keys. Settle the payment.</text>
+<text x="40" y="119" font-size="21" font-weight="400" fill="#526966">The contract holds the money until a trade is completed or refunded.</text>
+<rect x="40" y="165" width="400" height="185" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="64" y="196" font-size="14" font-weight="700" fill="#117c73">1 / LIST</text>
+<text x="64" y="231" font-size="26" font-weight="700" fill="#153b3b">Author offers a collection</text>
+<text x="64" y="268" font-size="20" font-weight="400" fill="#526966">The author lists past puzzles.</text>
+<text x="64" y="297" font-size="20" font-weight="400" fill="#526966">Seller locks a deposit.</text>
+<text x="64" y="326" font-size="20" font-weight="400" fill="#526966">Listing earns no payment.</text>
+<rect x="520" y="165" width="400" height="185" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="544" y="196" font-size="14" font-weight="700" fill="#117c73">2 / BUY</text>
+<text x="544" y="231" font-size="26" font-weight="700" fill="#153b3b">Payment waits in escrow</text>
+<text x="544" y="268" font-size="20" font-weight="400" fill="#526966">Buyer locks price + deposit.</text>
+<text x="544" y="297" font-size="20" font-weight="400" fill="#526966">The contract holds the money.</text>
+<text x="544" y="326" font-size="20" font-weight="400" fill="#526966">Buyer keeps encrypted puzzle files.</text>
+<rect x="1000" y="165" width="400" height="185" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1024" y="196" font-size="14" font-weight="700" fill="#117c73">3 / DELIVER</text>
+<text x="1024" y="231" font-size="26" font-weight="700" fill="#153b3b">Seller sends the keys</text>
+<text x="1024" y="268" font-size="20" font-weight="400" fill="#526966">Seller privately sends the keys.</text>
+<text x="1024" y="297" font-size="20" font-weight="400" fill="#526966">Buyer checks they open the puzzles.</text>
+<path d="M440 260 H520" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M920 260 H1000" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1200 350 V404 H240 V470" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M720 404 V470" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1200 404 V470" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="105" y="426" width="245" height="25" fill="#f9fbf9"/>
+<rect x="557" y="426" width="326" height="25" fill="#f9fbf9"/>
+<rect x="1081" y="426" width="160" height="25" fill="#f9fbf9"/>
+<text x="120" y="445" font-size="17" font-weight="400" fill="#117c73">buyer checks and confirms</text>
+<text x="568" y="445" font-size="17" font-weight="400" fill="#117c73">seller proves and publishes keys</text>
+<text x="1093" y="445" font-size="17" font-weight="400" fill="#117c73">deadline missed</text>
+<rect x="40" y="470" width="400" height="250" rx="16" fill="#e9f5ef" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="64" y="501" font-size="14" font-weight="700" fill="#117c73">A / CONFIRMED</text>
+<text x="64" y="536" font-size="26" font-weight="700" fill="#153b3b">Seller gets paid</text>
+<text x="64" y="573" font-size="20" font-weight="400" fill="#526966">Buyer keeps access to the puzzles.</text>
+<text x="64" y="602" font-size="20" font-weight="400" fill="#526966">Both deposits return.*</text>
+<text x="64" y="631" font-size="20" font-weight="400" fill="#526966">Keys stay private in this trade.</text>
+<rect x="520" y="470" width="400" height="250" rx="16" fill="#fff4de" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="544" y="501" font-size="14" font-weight="700" fill="#117c73">B / PUBLIC RESOLUTION</text>
+<text x="544" y="536" font-size="26" font-weight="700" fill="#153b3b">Seller gets paid</text>
+<text x="544" y="573" font-size="20" font-weight="400" fill="#526966">Seller proves the keys work and</text>
+<text x="544" y="602" font-size="20" font-weight="400" fill="#526966">makes them public before the deadline.</text>
+<text x="544" y="631" font-size="20" font-weight="400" fill="#526966">A buyer who challenged may pay</text>
+<text x="544" y="660" font-size="20" font-weight="400" fill="#526966">proof costs from their deposit.</text>
+<rect x="1000" y="470" width="400" height="250" rx="16" fill="#fff0eb" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1024" y="501" font-size="14" font-weight="700" fill="#117c73">C / REFUND</text>
+<text x="1024" y="536" font-size="26" font-weight="700" fill="#153b3b">Buyer gets money back</text>
+<text x="1024" y="573" font-size="20" font-weight="400" fill="#526966">If still unsettled at the deadline:</text>
+<text x="1024" y="602" font-size="20" font-weight="400" fill="#526966">price and buyer deposit return;</text>
+<text x="1024" y="631" font-size="20" font-weight="400" fill="#526966">the seller delivery deposit goes</text>
+<text x="1024" y="660" font-size="20" font-weight="400" fill="#526966">to the buyer as compensation.</text>
+<text x="40" y="768" font-size="25" font-weight="700" fill="#153b3b">No human referee: the contract checks proof, confirmation and deadlines.</text>
+<text x="40" y="807" font-size="19" font-weight="400" fill="#526966">* An extra seller deposit may stay locked until the puzzles are proved valid. Network fees are always extra.</text>
+<text x="40" y="835" font-size="19" font-weight="400" fill="#526966">Already-public collections settle immediately. This diagram shows private-key sales; see the guide for exact rules.</text>
+</g></svg>

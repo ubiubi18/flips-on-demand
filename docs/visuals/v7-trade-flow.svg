@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1400" viewBox="0 0 1440 1400" role="img" aria-labelledby="title desc">
+<title id="title">Direct v7: listing, trade and dispute outcomes</title><desc id="desc">A private bundle is listed, bought and verified locally. Buyer confirmation settles privately. Otherwise the seller can prove and publicly reveal before the deadline, or anyone can trigger a default refund after it. A buyer challenge only changes fallback reimbursement; it does not extend the deadline. Public seed purchases settle immediately without a private order.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#117c73"/></marker></defs>
+<rect width="1440" height="1400" fill="#f9fbf9"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#153b3b">
+<text x="40" y="40" font-size="15" font-weight="700" fill="#117c73">FLIPS ON DEMAND / DIRECT V7 / EXPERIMENTAL</text>
+<text x="40" y="84" font-size="38" font-weight="700" fill="#153b3b">From listing to settlement</text>
+<text x="40" y="119" font-size="21" font-weight="400" fill="#526966">Contract rules at 792e234 · P = price · B = buyer bond · S = seller delivery bond · F = fraud collateral</text>
+<rect x="40" y="155" width="400" height="192" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="64" y="186" font-size="14" font-weight="700" fill="#117c73">01 / AUTHOR</text>
+<text x="64" y="221" font-size="26" font-weight="700" fill="#153b3b">Qualify and list</text>
+<text x="64" y="258" font-size="20" font-weight="400" fill="#526966">One author + one historical epoch.</text>
+<text x="64" y="287" font-size="20" font-weight="400" fill="#526966">Lock S; add F = 1,000 iDNA if unproved.</text>
+<text x="64" y="316" font-size="20" font-weight="400" fill="#526966">No payout just for listing.</text>
+<rect x="520" y="155" width="400" height="192" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="544" y="186" font-size="14" font-weight="700" fill="#117c73">02 / BUYER</text>
+<text x="544" y="221" font-size="26" font-weight="700" fill="#153b3b">Buy the queue head</text>
+<text x="544" y="258" font-size="20" font-weight="400" fill="#526966">First sales before resales; FIFO.</text>
+<text x="544" y="287" font-size="20" font-weight="400" fill="#526966">Keep verified encrypted flip files.</text>
+<text x="544" y="316" font-size="20" font-weight="400" fill="#526966">Private buy locks P + B in escrow.</text>
+<rect x="1000" y="155" width="400" height="192" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1024" y="186" font-size="14" font-weight="700" fill="#117c73">03 / PRIVATE DELIVERY</text>
+<text x="1024" y="221" font-size="26" font-weight="700" fill="#153b3b">Receive and verify</text>
+<text x="1024" y="258" font-size="20" font-weight="400" fill="#526966">Seller sends encrypted keys privately.</text>
+<text x="1024" y="287" font-size="20" font-weight="400" fill="#526966">Buyer checks original CIDs and keys.</text>
+<text x="1024" y="316" font-size="20" font-weight="400" fill="#526966">A message alone does not settle.</text>
+<path d="M440 250 H520" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M920 250 H1000" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1200 347 V427" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1215" y="393" font-size="17" font-weight="400" fill="#117c73">confirm</text>
+<path d="M1200 377 H720 V427" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="782" y="368" font-size="17" font-weight="400" fill="#117c73">no confirmation</text>
+<rect x="1000" y="427" width="400" height="224" rx="16" fill="#e9f5ef" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1024" y="458" font-size="14" font-weight="700" fill="#117c73">OUTCOME A / COOPERATIVE</text>
+<text x="1024" y="493" font-size="26" font-weight="700" fill="#153b3b">Private settlement</text>
+<text x="1024" y="530" font-size="20" font-weight="400" fill="#526966">Author receives the sale payout.</text>
+<text x="1024" y="559" font-size="20" font-weight="400" fill="#526966">Buyer gets B back; seller gets S back.</text>
+<text x="1024" y="588" font-size="20" font-weight="400" fill="#526966">Original keys stay off-chain.</text>
+<text x="1024" y="617" font-size="20" font-weight="400" fill="#526966">Unproved F stays held until proof.</text>
+<rect x="520" y="427" width="400" height="224" rx="16" fill="#fff4de" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="544" y="458" font-size="14" font-weight="700" fill="#117c73">DISPUTE / NO HUMAN ARBITER</text>
+<text x="544" y="493" font-size="26" font-weight="700" fill="#153b3b">Challenge or silence</text>
+<text x="544" y="530" font-size="20" font-weight="400" fill="#526966">Buyer may call challenge before D.</text>
+<text x="544" y="559" font-size="20" font-weight="400" fill="#526966">Silence also permits seller fallback.</text>
+<text x="544" y="588" font-size="20" font-weight="400" fill="#526966">Challenge does not reset the clock.</text>
+<text x="544" y="617" font-size="20" font-weight="400" fill="#526966">No penalty merely for challenging.</text>
+<path d="M720 651 V737" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="734" y="701" font-size="17" font-weight="400" fill="#117c73">seller acts in time</text>
+<path d="M520 539 H240 V737" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="265" y="595" font-size="17" font-weight="400" fill="#117c73">No completed settlement</text>
+<text x="265" y="620" font-size="17" font-weight="400" fill="#117c73">by deadline D</text>
+<rect x="520" y="737" width="400" height="224" rx="16" fill="#fff4de" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="544" y="768" font-size="14" font-weight="700" fill="#117c73">SELLER / TWO INCLUDED CALLS</text>
+<text x="544" y="803" font-size="26" font-weight="700" fill="#153b3b">Prove, then reveal</text>
+<text x="544" y="840" font-size="20" font-weight="400" fill="#526966">startFallback: use an accepted proof</text>
+<text x="544" y="869" font-size="20" font-weight="400" fill="#526966">or submit a valid v7-bound proof.</text>
+<text x="544" y="898" font-size="20" font-weight="400" fill="#526966">proveAndReveal: publish original keys.</text>
+<text x="544" y="927" font-size="20" font-weight="400" fill="#526966">Both must meet their deadlines.</text>
+<rect x="40" y="737" width="400" height="224" rx="16" fill="#fff0eb" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="64" y="768" font-size="14" font-weight="700" fill="#117c73">OUTCOME C / DEFAULT</text>
+<text x="64" y="803" font-size="26" font-weight="700" fill="#153b3b">Refund + compensation</text>
+<text x="64" y="840" font-size="20" font-weight="400" fill="#526966">Anyone calls refund at or after D.</text>
+<text x="64" y="869" font-size="20" font-weight="400" fill="#526966">Buyer receives P + B + S.</text>
+<text x="64" y="898" font-size="20" font-weight="400" fill="#526966">Unproved F goes to pool insurance.</text>
+<text x="64" y="927" font-size="20" font-weight="400" fill="#526966">Offer retires; seller loses S.</text>
+<path d="M520 841 H440" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="447" y="823" font-size="17" font-weight="400" fill="#117c73">fails</text>
+<path d="M720 961 V1030" stroke="#117c73" stroke-width="2.5" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="520" y="1030" width="400" height="224" rx="16" fill="#e9f5ef" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="544" y="1061" font-size="14" font-weight="700" fill="#117c73">OUTCOME B / PUBLIC FALLBACK</text>
+<text x="544" y="1096" font-size="26" font-weight="700" fill="#153b3b">Public settlement</text>
+<text x="544" y="1133" font-size="20" font-weight="400" fill="#526966">Author gets payout; S and F return.</text>
+<text x="544" y="1162" font-size="20" font-weight="400" fill="#526966">If challenged: C reimburses seller</text>
+<text x="544" y="1191" font-size="20" font-weight="400" fill="#526966">from B; buyer receives B − C.</text>
+<text x="544" y="1220" font-size="20" font-weight="400" fill="#526966">Without challenge: all B returns.</text>
+<rect x="1000" y="737" width="400" height="224" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1024" y="768" font-size="14" font-weight="700" fill="#117c73">SUCCESS / WHERE P GOES</text>
+<text x="1024" y="803" font-size="26" font-weight="700" fill="#153b3b">Sale payout</text>
+<text x="1024" y="840" font-size="20" font-weight="400" fill="#526966">First sale: all P to original author.</text>
+<text x="1024" y="869" font-size="20" font-weight="400" fill="#526966">Resale: half P to original author;</text>
+<text x="1024" y="898" font-size="20" font-weight="400" fill="#526966">the remainder adds to pool reserve.</text>
+<text x="1024" y="927" font-size="20" font-weight="400" fill="#526966">Each sender also pays network fees.</text>
+<rect x="1000" y="1030" width="400" height="224" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1024" y="1061" font-size="14" font-weight="700" fill="#117c73">SEPARATE PUBLIC-SEED PATH</text>
+<text x="1024" y="1096" font-size="26" font-weight="700" fill="#153b3b">Already public keys</text>
+<text x="1024" y="1133" font-size="20" font-weight="400" fill="#526966">buyPublicSeed pays P; no buyer bond.</text>
+<text x="1024" y="1162" font-size="20" font-weight="400" fill="#526966">Immediate 50/50 author / pool split.</text>
+<text x="1024" y="1191" font-size="20" font-weight="400" fill="#526966">Seed returns to the resale queue.</text>
+<text x="1024" y="1220" font-size="20" font-weight="400" fill="#526966">No private order or delivery dispute.</text>
+<rect x="40" y="1030" width="400" height="224" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="64" y="1061" font-size="14" font-weight="700" fill="#117c73">PUBLIC FALLBACK CONSEQUENCE</text>
+<text x="64" y="1096" font-size="26" font-weight="700" fill="#153b3b">Disclosure is permanent</text>
+<text x="64" y="1133" font-size="20" font-weight="400" fill="#526966">Keys remain readable on-chain.</text>
+<text x="64" y="1162" font-size="20" font-weight="400" fill="#526966">The private offer is retired.</text>
+<text x="64" y="1191" font-size="20" font-weight="400" fill="#526966">The contract cannot judge private</text>
+<text x="64" y="1220" font-size="20" font-weight="400" fill="#526966">messages or guarantee file access.</text>
+<path d="M40 1290 H1400" stroke="#cbdcd6"/>
+<text x="40" y="1324" font-size="21" font-weight="700" fill="#153b3b">D = funding block + 12,960. Start fallback from funding + 30 to strictly before D − 120.</text>
+<text x="40" y="1360" font-size="20" font-weight="400" fill="#526966">Reveal strictly before D; refund from D. Block counts govern. A still-funded order can confirm until refund lands.</text>
+</g></svg>

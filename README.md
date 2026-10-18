@@ -2,11 +2,61 @@
 
 # Flips on Demand
 
+**Reuse Idena picture puzzles as on-demand challenges for apps and services.**
+
+A *flip* shows the same four pictures in two orders. You choose the order that tells a sensible story. Idena uses flips in its validation sessions; this project explores reusing past puzzles.
+
+## What would you use it for?
+
+An app could ask visitors to solve a few puzzles before unlocking a feature or receiving free test coins. The app operator buys the keys to unlock a collection of existing flips, prepares a session, and decides what passing it unlocks. Visitors solve the puzzles; they do not buy them.
+
+![An author offers puzzles, an app operator buys access, a visitor solves them, and the app decides whether to grant access](docs/visuals/use-case.svg)
+
+**Here are pictures from two real flips.** Each preview shows two of the four pictures, not a complete puzzle.
+
+| IdenaAI 2 — “Avalanche / punch” | IdenaAI 3 — “Balloon / smoke” |
+| --- | --- |
+| <img src="docs/visuals/idenaai2-public-1.jpg" width="240" alt="A man in a red jacket breaks a cabin window" /> <img src="docs/visuals/idenaai2-public-2.jpg" width="240" alt="The man rests inside the cabin with snow outside" /> | <img src="docs/visuals/idenaai3-public-1.jpg" width="240" alt="A boy beside a smoking barbecue sees his balloon burst" /> <img src="docs/visuals/idenaai3-public-2.jpg" width="240" alt="The boy holds an intact red balloon beside the barbecue" /> |
+| [Public flip on Idena explorer](https://scan.idena.io/flip/bafybeicpa2wypblq7ri4522azsjb6y3676nyq4y7se7x4ay7ppy6fcnvj4) | [Public flip on Idena explorer](https://scan.idena.io/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq) |
+
+This use case is still being built. It cannot guarantee one account per person, and AI may solve the puzzles too.
+
+## What does it look like?
+
+The current browser preview shows collections, prices, and trade status. **These are made-up test amounts in a read-only preview**, not a working checkout.
+
+![Current browser preview showing a collection of flips, its sample price, and the waiting list](docs/visuals/viewer-v6-market.png)
+
+[Mobile view and orders screen →](docs/VISUAL_GUIDE.md#current-ui)
+
+## How does a trade work?
+
+The author lists a collection. The buyer pays into **escrow**: a contract holds the money while the seller sends the unlocking keys. Confirmation, public proof or a refund then closes the trade.
+
+![Listing, escrow payment and private delivery lead to confirmation, public proof or refund](docs/visuals/trade-overview.svg)
+
+## What does it cost?
+
+The buyer locks the price **plus a deposit**; the seller also deposits money. Deposits normally return after success, but may cover compensation or proof costs in a dispute. Blockchain fees are extra.
+
+The current price cap is **1,000 iDNA**, Idena's currency, before deposits and fees. Buying keys does not mean exclusive access: they can be copied or sold again.
+
+[Worked cost example and exact dispute rules →](docs/VISUAL_GUIDE.md#costs-and-money-movements)
+
+## How far along is it?
+
+One owner-run pilot tested a paid purchase, buyer challenge and public key release. The complete service is unfinished and has not been independently audited. The screenshots demonstrate the interface, not readiness for general use.
+
+## Technical details
+
+<details>
+<summary>Interfaces, contract versions, setup and command reference</summary>
+
 This repository explores sales of access to the original decryption keys of historical Idena flips. It contains several contract prototypes. **Direct escrow v7** is the one-seed contract described below: one permanently public seed bundle anchors a queue of private first sales and resales. One owner-operated, funded two-identity pilot completed a private purchase, challenge, and public seller fallback. That does not establish an independent audit, reliable delivery, or general readiness.
 
 The [v7 contract guide](contracts/direct-escrow-v7/README.md) explains settlement and risks. The [v7 manifest](release/DIRECT_V7_MANIFEST.json) identifies the public candidate WASM and its expected code hash; its deployment field is *not* a directory of trusted live contracts. Independently establish the address and deployed code of any contract you intend to call.
 
-## Choose an interface
+### Choose an interface
 
 | Path | What it supports |
 | --- | --- |
@@ -16,13 +66,13 @@ The [v7 contract guide](contracts/direct-escrow-v7/README.md) explains settlemen
 
 The bundled browser page in `app/` is an experimental viewer with synthetic sample state; importing a snapshot does not verify chain state or sign a transaction. Do not mix contract versions, addresses, or prepared actions.
 
-## Before using v7
+### Before using v7
 
 You need a fully synced Idena node you control, its **local** RPC endpoint and API key file, and the identity that will pay for the call. A seller also needs the original flip inventory, canonical session evidence, a sealed content proof with its verifier host, and an encrypted epoch-key vault. These are private working files, not repository fixtures. A private buyer needs a dedicated delivery key and a way to receive and verify the seller's ciphertext. The contract does not deliver that ciphertext.
 
 Keep RPC and node keys in owner-only files. Use a loopback RPC URL, or a local tunnel to your own node; never expose its key over plain remote HTTP. The examples use `curl`, `jq`, Python 3, and Go (see [`.tool-versions`](.tool-versions)). Replace every placeholder with values checked against your own node. The CLI uses **integer iDNA base units** (`10^18` units per iDNA) for amounts and fees; node JSON-RPC uses **decimal iDNA** for `amount` and `maxFee`.
 
-### Build the CLI
+#### Build the CLI
 
 The public CLI module depends on Idena node source. This local build recipe uses a public node-source revision and leaves tracked module files untouched:
 
@@ -44,7 +94,7 @@ Compare the candidate WASM's SHA-256 and deployed code hash with the manifest be
 
 The test in the build recipe rejects a node-source revision whose epoch-key mapping differs from the CLI. The frozen blob fixture was built with an older mapping and checks opening with its recorded keys; it is not a derivation vector for the pinned node source. Before qualifying a new bundle, verify every intended original flip opens with the derived keys.
 
-### Read your node and contract
+#### Read your node and contract
 
 Idena RPC requests put the API key in the JSON body's top-level `key` field. This helper reads it from a file without placing it in the command line. See the [Idena node RPC reference](https://rpc.idena.io/) for the node API:
 
@@ -74,7 +124,7 @@ rpc contract_iterateMap "$(jq -nc --arg c "0x$CONTRACT" '[$c,"pool/offer/",null,
 
 Compare `contract_getStake.result.Hash` with the manifest's `artifact.codeHash` **only if this is the intended candidate deployment**. A missing hash, unexpected seed, wrong active identity, syncing node, or stale queue is a stop condition. The primary head has priority; the secondary head is selectable only when the primary queue is empty. Continue `contract_iterateMap` with its returned continuation token until exhausted; its offer values are raw 222-byte records. `contract_readData` also exposes `pool/reserve`, `pool/insurance`, `pool/primary-units`, `pool/secondary-units`, `pool/order/<decimal order ID>`, and, after public fallback, `pool/reveal/<decimal order ID>`. These are raw contract values, not a verified market summary.
 
-### If you deploy your own instance
+#### If you deploy your own instance
 
 An existing v7 address is unnecessary if you deploy the candidate yourself. The constructor pins **one** seed bundle ID; you must be able to qualify, prove, and publicly disclose that real bundle before activation. From `tools/fod`, `prepare-deploy` signs a **zero-value** transaction into a private file but never broadcasts it. Supply a live base-unit fee rate, sufficient maximum fee for the large WASM deployment, your next nonce, and current epoch:
 
@@ -102,7 +152,7 @@ rpc bcn_sendRawTx "$(jq -nc --arg tx "0x$RAW_TX" '[$tx]')"
 
 Verify the transaction receipt and the derived address's deployed hash and pinned seed. Set `CONTRACT` to that verified derived address before later calls. Do not send another deployment if the first response is uncertain. The [contract guide](contracts/direct-escrow-v7/README.md) describes the required seed proof, publication, and irreversible 10,000 iDNA activation deposit.
 
-## Use the typed v7 CLI
+### Use the typed v7 CLI
 
 From `tools/fod`, set local paths and independently checked values. `CODE_HASH` is the deployed code hash **without** `0x`, `MAX_FEE_BASE` is a positive base-unit ceiling informed by a fresh fee and gas estimate, and `OFFER_ID` is a 32-byte lowercase hex author-and-epoch bundle ID:
 
@@ -159,7 +209,7 @@ The typed CLI also accepts these `-operation` values for `direct-v7-prepare`:
 
 Prepare and submit each step separately after the preceding transaction is included and its state is checked. Do not seed or activate a new deployment with sample data. For an unproved `startFallback`, the CLI checks the pinned proof host, v7 contract binding, original CID inventory, key commitment, and canonical session roots before preparing the call; submission checks the live order and proof statement again. The contract verifies the seal and session at execution. `proveBundle` verifies original content; it does not prove that a buyer received a private message. A legacy v6-bound proof is allowed only for an unfunded qualified epoch-230 offer; proving after funding requires a proof bound to the live v7 contract. The fallback deadline is 12,960 blocks from funding; a failed or absent fallback may allow `refund` once that window ends. See the [contract guide](contracts/direct-escrow-v7/README.md) for payouts, bonds, queue order, and deadlines.
 
-### Verify private delivery before confirming
+#### Verify private delivery before confirming
 
 After the private `buy` is included, the seller can produce one encrypted JSON message from the funded order and their committed key vault. This command writes a local file; it does not send a message:
 
@@ -195,7 +245,7 @@ CONFIRM_PREPARED='/absolute/path/to/private/new-confirm-prepared.json'
 
 Inspect and submit `CONFIRM_PREPARED` with the buyer's nodekey using the `submit` pattern above. Confirmation settles the order and commits the SHA-256 of the exact verified ciphertext on-chain. The CLI checks the receipt signature and live funded order again before signing. Delivery and receipt outputs are create-only; choose new paths for a later attempt. Keep the message, purchase file, delivery key, receipt, and vault private. A ciphertext file or a seller's claim alone is not evidence of a usable delivery.
 
-## Make a manual node RPC call
+### Make a manual node RPC call
 
 You can call the same methods without the CLI through your own node's `contract_estimateCall` and then `contract_call`, supplying the exact wire argument and attached value. **The node signs `contract_call` with its active identity.** Read the corresponding export in [`contracts/direct-escrow-v7/src/lib.rs`](contracts/direct-escrow-v7/src/lib.rs) before sending; a successful estimate is not an inclusion guarantee.
 
@@ -257,6 +307,8 @@ rpc bcn_txReceipt "$(jq -nc --arg h "$TX_HASH" '[$h]')"
 ```
 
 If the response is missing or uncertain, reconcile the hash, nonce, mempool, receipt, and changed state before trying again; a timeout does not mean the transaction failed. Public fallback or seed publication exposes keys permanently. The contract cannot guarantee content availability, private-message delivery, or recovery of lost local files.
+
+</details>
 
 ## License
 

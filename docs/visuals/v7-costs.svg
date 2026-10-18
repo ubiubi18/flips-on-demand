@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1030" viewBox="0 0 1440 1030" role="img" aria-labelledby="title desc">
+<title id="title">Direct v7: example costs and who receives each payment</title><desc id="desc">Hypothetical first sale with a 500 iDNA price, 500 iDNA buyer and seller bonds, pre-proven content and a constant 0.0001 iDNA-per-gas fee rate. On confirmation or unchallenged fallback the buyer recovers 500; after challenged fallback they recover 250; after default they recover 1500 including the seller bond. Network fees are extra.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#117c73"/></marker></defs>
+<rect width="1440" height="1030" fill="#f9fbf9"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#153b3b">
+<text x="40" y="40" font-size="15" font-weight="700" fill="#117c73">FLIPS ON DEMAND / DIRECT V7 / ILLUSTRATIVE AMOUNTS</text>
+<text x="40" y="84" font-size="38" font-weight="700" fill="#153b3b">What is locked, returned or spent?</text>
+<text x="40" y="119" font-size="21" font-weight="400" fill="#526966">Example only: P = 500 iDNA · pre-proven first sale · assumed fee rate f = 0.0001 iDNA per gas throughout</text>
+<rect x="40" y="155" width="400" height="185" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="64" y="186" font-size="14" font-weight="700" fill="#117c73">BEFORE THE TRADE</text>
+<text x="64" y="221" font-size="26" font-weight="700" fill="#153b3b">Seller locks 500</text>
+<text x="64" y="258" font-size="20" font-weight="400" fill="#526966">S = 5,000,000 × f = 500 iDNA.</text>
+<text x="64" y="287" font-size="20" font-weight="400" fill="#526966">F = 0 because content is pre-proven.</text>
+<text x="64" y="316" font-size="20" font-weight="400" fill="#526966">Listing does not pay the seller.</text>
+<rect x="520" y="155" width="400" height="185" rx="16" fill="white" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="544" y="186" font-size="14" font-weight="700" fill="#117c73">AT PURCHASE</text>
+<text x="544" y="221" font-size="26" font-weight="700" fill="#153b3b">Buyer locks 1,000</text>
+<text x="544" y="258" font-size="20" font-weight="400" fill="#526966">P = 500 plus B = 500 iDNA.</text>
+<text x="544" y="287" font-size="20" font-weight="400" fill="#526966">B = 5,000,000 × f.</text>
+<text x="544" y="316" font-size="20" font-weight="400" fill="#526966">The price stays in escrow.</text>
+<rect x="1000" y="155" width="400" height="185" rx="16" fill="#fff4de" stroke="#cbdcd6" stroke-width="1.5"/>
+<text x="1024" y="186" font-size="14" font-weight="700" fill="#117c73">ONLY IF CHALLENGED</text>
+<text x="1024" y="221" font-size="26" font-weight="700" fill="#153b3b">Fallback C = 250</text>
+<text x="1024" y="258" font-size="20" font-weight="400" fill="#526966">C = min(B, 2,500,000 × fallback f).</text>
+<text x="1024" y="287" font-size="20" font-weight="400" fill="#526966">Deducted only after valid reveal.</text>
+<text x="1024" y="316" font-size="20" font-weight="400" fill="#526966">This is a cap, not an expense invoice.</text>
+<text x="40" y="394" font-size="27" font-weight="700" fill="#153b3b">Money received when the order closes</text>
+<text x="40" y="426" font-size="20" font-weight="400" fill="#526966">All figures below are iDNA. Seller receipts include return of the 500 delivery bond.</text>
+<rect x="40" y="458" width="1360" height="360" rx="14" fill="white" stroke="#cbdcd6"/>
+<path d="M40 522 H1400 M40 596 H1400 M40 670 H1400 M40 744 H1400" stroke="#cbdcd6"/>
+<text x="64" y="498" font-size="20" font-weight="700" fill="#153b3b">Outcome</text>
+<text x="550" y="498" font-size="20" font-weight="700" fill="#153b3b">Buyer receives</text>
+<text x="850" y="498" font-size="20" font-weight="700" fill="#153b3b">Seller receives</text>
+<text x="1140" y="498" font-size="20" font-weight="700" fill="#153b3b">Buyer net cost*</text>
+<text x="64" y="566" font-size="21" font-weight="400" fill="#153b3b">Buyer confirms</text>
+<text x="550" y="566" font-size="21" font-weight="700" fill="#153b3b">500</text>
+<text x="850" y="566" font-size="21" font-weight="700" fill="#153b3b">1,000</text>
+<text x="1140" y="566" font-size="21" font-weight="700" fill="#153b3b">500</text>
+<text x="64" y="640" font-size="21" font-weight="400" fill="#153b3b">Public fallback, no challenge</text>
+<text x="550" y="640" font-size="21" font-weight="700" fill="#153b3b">500</text>
+<text x="850" y="640" font-size="21" font-weight="700" fill="#153b3b">1,000</text>
+<text x="1140" y="640" font-size="21" font-weight="700" fill="#153b3b">500</text>
+<text x="64" y="714" font-size="21" font-weight="400" fill="#153b3b">Public fallback, challenged</text>
+<text x="550" y="714" font-size="21" font-weight="700" fill="#153b3b">250</text>
+<text x="850" y="714" font-size="21" font-weight="700" fill="#153b3b">1,250</text>
+<text x="1140" y="714" font-size="21" font-weight="700" fill="#153b3b">750</text>
+<text x="64" y="788" font-size="21" font-weight="400" fill="#153b3b">No settlement → refund</text>
+<text x="550" y="788" font-size="21" font-weight="700" fill="#153b3b">1,500</text>
+<text x="850" y="788" font-size="21" font-weight="700" fill="#153b3b">0</text>
+<text x="1140" y="788" font-size="21" font-weight="700" fill="#153b3b">−500</text>
+<text x="40" y="856" font-size="20" font-weight="400" fill="#526966">* Locked 1,000 minus amount returned. A −500 net cost is 500 compensation from the seller bond.</text>
+<text x="40" y="902" font-size="23" font-weight="700" fill="#153b3b">Network fees are additional on every path and are not refunded by this contract.</text>
+<text x="40" y="943" font-size="20" font-weight="400" fill="#526966">Unproved content adds 1,000 fraud collateral: returned after timely proof, or forfeited to insurance.</text>
+<text x="40" y="972" font-size="20" font-weight="400" fill="#526966">Resales split P approximately 50/50 between author and reserve. Activation locks 10,000 iDNA once.</text>
+<text x="40" y="1001" font-size="20" font-weight="400" fill="#526966">Actual price, fee rate and bond requirements must be checked against the selected live contract.</text>
+</g></svg>
