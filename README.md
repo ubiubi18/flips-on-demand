@@ -2,50 +2,49 @@
 
 # Flips on Demand
 
-**Reuse Idena picture puzzles as on-demand challenges for apps and services.**
+**A market for picture puzzles that websites could use as CAPTCHAs.**
 
-A *flip* shows the same four pictures in two orders. You choose the order that tells a sensible story. Idena uses flips in its validation sessions; this project explores reusing past puzzles.
+Idena has produced **tens of thousands of human-reviewed picture puzzles**, called *flips*. People have already solved them and agreed on their answers. This project explores a second use: authors sell access to past puzzles, and CAPTCHA services buy them for websites.
 
-## What would you use it for?
+Imagine a website offering a free trial. Its CAPTCHA provider buys and unlocks a collection of flips. Visitors solve a few before continuing. **The service pays. Visitors just solve—no wallet or crypto knowledge needed.**
 
-An app could ask visitors to solve a few puzzles before unlocking a feature or receiving free test coins. The app operator buys the keys to unlock a collection of existing flips, prepares a session, and decides what passing it unlocks. Visitors solve the puzzles; they do not buy them.
+![Illustrated market and CAPTCHA: real IdenaAI flip previews with two hidden pictures, an unlocking key, and a website visitor choosing a picture story](docs/visuals/use-case.svg)
 
-![An author offers puzzles, an app operator buys access, a visitor solves them, and the app decides whether to grant access](docs/visuals/use-case.svg)
+*Concept screens. Real IdenaAI 2/3 previews; already-public Idena CAPTCHA example. [Picture sources →](docs/VISUAL_GUIDE.md#real-flip-previews)*
 
-**Here are pictures from two real flips.** Each preview shows two of the four pictures, not a complete puzzle.
+## Why could this be useful?
 
-| IdenaAI 2 — “Avalanche / punch” | IdenaAI 3 — “Balloon / smoke” |
+- **Authors could earn again.** The whole first-sale price goes to the original author.
+- **Services get existing puzzles and agreed answers**, saving challenge-creation work.
+- **Visitors choose a story:** which arrangement of four pictures makes sense?
+
+The proposed commodity is **access to puzzles with a history of human agreement.** Keys can be copied; access is not exclusive.
+
+One historical session alone recorded **32,593 qualified flips** ([epoch 80](https://api.idena.io/api/epoch/80/flipStatesSummary)); that is not current market stock. Participants agree on answers through [Idena validation](https://docs.idena.io/docs/wp/technology#flip-consensus). The market verifies historical validation evidence against blockchain records. This human consensus does not guarantee resistance to AI.
+
+## What happens when someone buys?
+
+**The product is the unlocking key.** Only part of a flip is public. The key opens the complete pictures; the contract holds payment until settlement.
+
+![Six-step illustrated trade: hidden flip listed, key purchased, buyer unlocks and checks, buyer accepts, author receives payment, website uses the flip as a CAPTCHA](docs/visuals/trade-overview.svg)
+
+The buyer checks the complete puzzle **before** accepting, then serves it to visitors. Normal trades keep keys private.
+
+## What if the trade goes wrong—and what does it cost?
+
+| What happens | Where the money goes |
 | --- | --- |
-| <img src="docs/visuals/idenaai2-public-1.jpg" width="240" alt="A man in a red jacket breaks a cabin window" /> <img src="docs/visuals/idenaai2-public-2.jpg" width="240" alt="The man rests inside the cabin with snow outside" /> | <img src="docs/visuals/idenaai3-public-1.jpg" width="240" alt="A boy beside a smoking barbecue sees his balloon burst" /> <img src="docs/visuals/idenaai3-public-2.jpg" width="240" alt="The boy holds an intact red balloon beside the barbecue" /> |
-| [Public flip on Idena explorer](https://scan.idena.io/flip/bafybeicpa2wypblq7ri4522azsjb6y3676nyq4y7se7x4ay7ppy6fcnvj4) | [Public flip on Idena explorer](https://scan.idena.io/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq) |
+| **Buyer checks the key and accepts** | Sale price → author. Buyer and seller delivery deposits return. |
+| **Seller proves and publishes working keys in time** | Author gets paid; keys become public. A challenging buyer pays capped proof costs from their deposit. |
+| **Still unsettled at the deadline** | Refund claim → buyer gets price + deposit back, plus the seller’s delivery deposit as compensation. |
 
-This use case is still being built. It cannot guarantee one account per person, and AI may solve the puzzles too.
+The price cap is **1,000 iDNA per collection**, plus deposits and network fees. Both sides deposit money. Example: a buyer locks a 500 iDNA price + 500 deposit; acceptance returns the deposit. These amounts are illustrative. Extra seller collateral for unproved content can remain locked or be forfeited. [Worked costs, deadlines and dispute arrows →](docs/VISUAL_GUIDE.md#direct-v7-listing--trade--resolution)
 
-## What does it look like?
+## What exists today?
 
-The current browser preview shows collections, prices, and trade status. **These are made-up test amounts in a read-only preview**, not a working checkout.
+One owner-run paid pilot tested purchase, challenge and public key release. The pictured service is a concept; the complete CAPTCHA integration is not built. There is no independent audit or guarantee of one person per account.
 
-![Current browser preview showing a collection of flips, its sample price, and the waiting list](docs/visuals/viewer-v6-market.png)
-
-[Mobile view and orders screen →](docs/VISUAL_GUIDE.md#current-ui)
-
-## How does a trade work?
-
-The author lists a collection. The buyer pays into **escrow**: a contract holds the money while the seller sends the unlocking keys. Confirmation, public proof or a refund then closes the trade.
-
-![Listing, escrow payment and private delivery lead to confirmation, public proof or refund](docs/visuals/trade-overview.svg)
-
-## What does it cost?
-
-The buyer locks the price **plus a deposit**; the seller also deposits money. Deposits normally return after success, but may cover compensation or proof costs in a dispute. Blockchain fees are extra.
-
-The current price cap is **1,000 iDNA**, Idena's currency, before deposits and fees. Buying keys does not mean exclusive access: they can be copied or sold again.
-
-[Worked cost example and exact dispute rules →](docs/VISUAL_GUIDE.md#costs-and-money-movements)
-
-## How far along is it?
-
-One owner-run pilot tested a paid purchase, buyer challenge and public key release. The complete service is unfinished and has not been independently audited. The screenshots demonstrate the interface, not readiness for general use.
+[See the actual desktop, mobile and order screens →](docs/VISUAL_GUIDE.md#current-ui) · [Technical setup below ↓](#technical-details)
 
 ## Technical details
 

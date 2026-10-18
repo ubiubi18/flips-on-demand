@@ -2,9 +2,27 @@
 
 UI captures and diagrams based on repository revision [`792e234`](https://github.com/ubiubi18/flips-on-demand/tree/792e234), checked on **18 October 2026**. These illustrate an experimental implementation; they do not establish a safe funded release.
 
+## The idea in pictures
+
+The README opens with **illustrated product concepts**, followed by a six-step private purchase. These are explanatory drawings, not screenshots of implemented checkout or CAPTCHA functionality. They show the value to a website visitor before introducing contract mechanics.
+
+![A concept market with hidden flip pictures, unlocking keys and a website CAPTCHA](visuals/use-case.svg)
+
+![Hidden listing, key purchase, private unlock and check, buyer acceptance, author payment and website use](visuals/trade-overview.svg)
+
+The story deliberately shows the buyer unlocking and checking the pictures **before** accepting the trade. That private reveal differs from public fallback, where working keys are disclosed to everyone. The illustrated service hosts the CAPTCHA and decides access; the market settles the content purchase.
+
+### Resource size and human agreement
+
+The README's “tens of thousands” claim describes historical production, not available marketplace stock. On 18 October 2026 the official explorer API returned **37,633 total flips** for [epoch 80](https://api.idena.io/api/epoch/80/flips/count), with **32,593 `Qualified`**, 3,178 `QualifiedByNone`, 868 `NotQualified` and 881 `WeaklyQualified` in its [status summary](https://api.idena.io/api/epoch/80/flipStatesSummary). The `Qualified` count alone supports the claim; the other categories are not added to it. That session took place on 22 January 2022. These counts do not establish that original files and keys remain available or eligible for sale.
+
+Idena's [flip consensus documentation](https://docs.idena.io/docs/wp/technology#flip-consensus) explains how validation participants agree on the answer. Its [encryption description](https://docs.idena.io/docs/wp/technology#flips-encryption) explains why only two of four pictures are normally public. Human-reviewed does not mean that every source image was made by a human, or that a reused puzzle is resistant to current AI.
+
+The v7 [`qualify` implementation](../contracts/direct-escrow-v7/src/lib.rs) checks the historical flip inventory and clean validation status against canonical chain roots, through [`fast-session-core`](../proofs/fast-session-core/src/lib.rs). The private content/key proof is a separate check. Blockchain verification anchors the historical evidence; it does not conduct a new human vote on the purchased puzzle or certify CAPTCHA security.
+
 ## Real flip previews
 
-The opening README includes unchanged public JPEG previews from two epoch-230 flips. They were retrieved on 18 October 2026 from the Idena explorer API. Each response contained two public pictures; no encrypted private part was opened. These are illustrations of the puzzle format, not a new claim of marketplace eligibility or a complete playable flip.
+The opening market concept embeds unchanged public JPEG previews from two epoch-230 flips, with two drawn lock placeholders per flip. They were retrieved on 18 October 2026 from the Idena explorer API. Each response contained two public pictures; no encrypted private part was opened. The positions in the concept are illustrative, not a reconstruction of the private sequence. These are illustrations of the puzzle format, not a new claim of marketplace eligibility or a complete playable flip.
 
 | Example | Public source and author |
 | --- | --- |
@@ -12,6 +30,8 @@ The opening README includes unchanged public JPEG previews from two epoch-230 fl
 | IdenaAI 3 — balloon / smoke | [Flip](https://scan.idena.io/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq) · [picture response](https://api.idena.io/api/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq/content) · author `0x1af4820204ddcd1a882359198227798f463f3058` |
 
 The author-to-flip mapping was checked against the explorer's epoch-230 author listings. The four files in `visuals/idenaai{2,3}-public-{1,2}.jpg` preserve the returned bytes. The words in the captions come from the explorer metadata. The examples were selected with the repository owner's permission; they are not repository test fixtures.
+
+The complete four-picture example (flowers, cat, spilled water and sponges) comes from the [Idena whitepaper's flip illustration](https://docs.idena.io/docs/wp/technology#flips), available as [the public source image](https://docs.idena.io/img/wp/flip-sample.png). `visuals/idena-public-demo.png` preserves that image unchanged. The storyboards embed it and use viewports to display the original individual pictures and arrangements. The drawings cover or uncover this **already-public demonstration** to explain a private purchase; it is not an IdenaAI 2/3 flip, an actual offer, or new private material. Attribution and scope are also recorded in [THIRD_PARTY.md](../THIRD_PARTY.md#documentation-illustrations).
 
 ## Current UI
 
@@ -85,9 +105,7 @@ Proving, hosting and private delivery can incur additional local costs. Those co
 
 ## Use case: buy flips for a gated session
 
-![An author supplies historical flips, a provider acquires and prepares them, participants solve a session, and an application decides access](visuals/use-case.svg)
-
-For example, a provider could buy historical flip access and use the content in a session that gates a testnet-faucet claim or dapp access. The marketplace settles the content purchase; the provider hosts the session, and the application applies its own verification and access policy. This is an intended integration use case, not a demonstrated complete v7 purchase-to-access flow. It does not guarantee unique personhood or rule out automated solving.
+For example, a provider could buy historical flip access and use the content in a session that gates a free trial, testnet-faucet claim or app access. The marketplace settles the content purchase; the provider hosts the session, and the application applies its own verification and access policy. Visitors would only solve the puzzle; they would not need to buy keys or operate a wallet. The concept illustration at the top shows this intended integration, not a demonstrated complete v7 purchase-to-access flow. It does not guarantee unique personhood or rule out automated solving.
 
 ## Sources and scope
 
@@ -99,4 +117,4 @@ For example, a provider could buy historical flip access and use the content in 
 | Price, bonds and reimbursement | [`curve.rs`](../contracts/direct-escrow-v7/src/curve.rs), [`lib.rs`](../contracts/direct-escrow-v7/src/lib.rs): `required_bond`, `seller_bond_for_rate`, `fallback_reimbursement` |
 | Gated-session examples | [`GateSetup.tsx`](../app/src/views/GateSetup.tsx), [`utility/README.md`](../utility/README.md) |
 
-The diagrams are editable, self-contained SVGs with accessible titles and descriptions. The UI screenshots are PNGs; the public flip previews are unchanged JPEGs. Refresh the captures and rules together when their owning sources change. The v7 guide records one owner-operated funded pilot; funded cooperative confirmation, refund and resale, an unproved funded fallback with a v7-bound proof, and an independent security audit remain unverified at this baseline.
+The diagrams are editable, self-contained SVGs with accessible titles and descriptions. Embedded public images retain their original bytes. The actual UI screenshots are PNGs; the public flip previews are unchanged JPEGs. Refresh the captures and rules together when their owning sources change. The v7 guide records one owner-operated funded pilot; funded cooperative confirmation, refund and resale, an unproved funded fallback with a v7-bound proof, and an independent security audit remain unverified at this baseline.

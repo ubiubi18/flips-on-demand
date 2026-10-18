@@ -42,6 +42,13 @@ React, React DOM, and Scheduler. The tracked WASM contracts in `release/` are
 this project's own builds. The bundled React license notices remain in the HTML;
 the full permission notice for those packages follows.
 
+### Documentation illustrations
+
+The README concept drawings use public picture examples to explain the format:
+
+- `docs/visuals/idenaai{2,3}-public-{1,2}.jpg`: unchanged public explorer previews from the owner's IdenaAI 2 and IdenaAI 3 examples, used at the owner's request. Author addresses, original flip identifiers and retrieval links are recorded in the [visual guide](docs/VISUAL_GUIDE.md#real-flip-previews).
+- `docs/visuals/idena-public-demo.png`: the already-public four-picture flip illustration from the [Idena whitepaper](https://docs.idena.io/docs/wp/technology#flips), retrieved unchanged from [docs.idena.io](https://docs.idena.io/img/wp/flip-sample.png) on 18 October 2026. The concept SVGs embed these original bytes and frame individual pictures to explain the sequence. Credit: Idena documentation and the original image creators. This attribution does not claim ownership of the photographs or extend this repository's MIT license to them.
+
 ### React, React DOM, and Scheduler (MIT)
 
 Copyright (c) Meta Platforms, Inc. and affiliates.
