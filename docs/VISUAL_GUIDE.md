@@ -6,9 +6,9 @@ UI captures and diagrams based on repository revision [`792e234`](https://github
 
 The README opens with **illustrated product concepts**, followed by a six-step private purchase. These are explanatory drawings, not screenshots of implemented checkout or CAPTCHA functionality. They show the value to a website visitor before introducing contract mechanics.
 
-![A concept market with hidden flip pictures, unlocking keys and a website CAPTCHA](visuals/use-case.svg?v=8fa5e1b)
+![A concept market with hidden flip pictures, unlocking keys and a website CAPTCHA](visuals/balloon-market.svg)
 
-![Hidden listing, key purchase, private unlock and check, buyer acceptance, author payment and website use](visuals/trade-overview.svg?v=8fa5e1b)
+![Hidden listing, key purchase, private unlock and check, buyer acceptance, author payment and website use](visuals/balloon-trade-flow.svg)
 
 The story deliberately shows the buyer unlocking and checking the pictures **before** accepting the trade. That private reveal differs from public fallback, where working keys are disclosed to everyone. The illustrated service hosts the CAPTCHA and decides access; the market settles the content purchase.
 
