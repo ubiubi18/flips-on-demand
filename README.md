@@ -8,9 +8,9 @@ Idena has produced **tens of thousands of human-reviewed picture puzzles**, call
 
 Imagine a website offering a free trial. Its CAPTCHA provider buys and unlocks a collection of flips. Visitors solve a few before continuing. **The service pays. Visitors just solve—no wallet or crypto knowledge needed.**
 
-![Illustrated market and CAPTCHA: real IdenaAI flip previews with two hidden pictures, an unlocking key, and a website visitor choosing a picture story](docs/visuals/use-case.svg)
+![A Seller offers a partly hidden balloon flip; the same four pictures appear unlocked in a website CAPTCHA](docs/visuals/use-case.svg)
 
-*Concept screens. Real IdenaAI 2/3 previews; already-public Idena CAPTCHA example. [Picture sources →](docs/VISUAL_GUIDE.md#real-flip-previews)*
+*Concept screens. The same balloon flip is shown partly hidden for sale and fully unlocked as a CAPTCHA. [Picture source →](docs/VISUAL_GUIDE.md#real-flip-previews)*
 
 ## Why could this be useful?
 
@@ -28,7 +28,7 @@ One historical session alone recorded **32,593 qualified flips** ([epoch 80](htt
 
 ![Six-step illustrated trade: hidden flip listed, key purchased, buyer unlocks and checks, buyer accepts, author receives payment, website uses the flip as a CAPTCHA](docs/visuals/trade-overview.svg)
 
-The buyer checks the complete puzzle **before** accepting, then serves it to visitors. Normal trades keep keys private.
+The intended private delivery channel is an **encrypted idena.social message**; automatic sending is not yet integrated. The buyer checks the complete puzzle **before** accepting, then serves it to visitors.
 
 ## What if the trade goes wrong—and what does it cost?
 

@@ -44,10 +44,7 @@ the full permission notice for those packages follows.
 
 ### Documentation illustrations
 
-The README concept drawings use public picture examples to explain the format:
-
-- `docs/visuals/idenaai{2,3}-public-{1,2}.jpg`: unchanged public explorer previews from the owner's IdenaAI 2 and IdenaAI 3 examples, used at the owner's request. Author addresses, original flip identifiers and retrieval links are recorded in the [visual guide](docs/VISUAL_GUIDE.md#real-flip-previews).
-- `docs/visuals/idena-public-demo.png`: the already-public four-picture flip illustration from the [Idena whitepaper](https://docs.idena.io/docs/wp/technology#flips), retrieved unchanged from [docs.idena.io](https://docs.idena.io/img/wp/flip-sample.png) on 18 October 2026. The concept SVGs embed these original bytes and frame individual pictures to explain the sequence. Credit: Idena documentation and the original image creators. This attribution does not claim ownership of the photographs or extend this repository's MIT license to them.
+The README concept drawings embed four unchanged PNG pictures from the owner's IdenaAI 3 balloon / smoke flip (`docs/visuals/balloon-{1,2,3,4}.png`). The owner explicitly requested the complete example for these illustrations. The visible market role is “Seller”; the original author, flip identifier, picture provenance and recorded arrangements are documented in the [visual guide](docs/VISUAL_GUIDE.md#real-flip-previews). This attribution does not extend the repository's MIT license to third-party image rights.
 
 ### React, React DOM, and Scheduler (MIT)
 

@@ -12,6 +12,8 @@ The README opens with **illustrated product concepts**, followed by a six-step p
 
 The story deliberately shows the buyer unlocking and checking the pictures **before** accepting the trade. That private reveal differs from public fallback, where working keys are disclosed to everyone. The illustrated service hosts the CAPTCHA and decides access; the market settles the content purchase.
 
+**Intended delivery channel: an encrypted idena.social direct message.** The seller would send the buyer-encrypted key package there; the buyer verifies the received package and confirms the trade. Current v7 market tools prepare and verify delivery files but do not automatically send them through idena.social. The diagram labels this integration as planned. The contract checks settlement evidence, not whether a social message was received.
+
 ### Resource size and human agreement
 
 The README's “tens of thousands” claim describes historical production, not available marketplace stock. On 18 October 2026 the official explorer API returned **37,633 total flips** for [epoch 80](https://api.idena.io/api/epoch/80/flips/count), with **32,593 `Qualified`**, 3,178 `QualifiedByNone`, 868 `NotQualified` and 881 `WeaklyQualified` in its [status summary](https://api.idena.io/api/epoch/80/flipStatesSummary). The `Qualified` count alone supports the claim; the other categories are not added to it. That session took place on 22 January 2022. These counts do not establish that original files and keys remain available or eligible for sale.
@@ -22,16 +24,15 @@ The v7 [`qualify` implementation](../contracts/direct-escrow-v7/src/lib.rs) chec
 
 ## Real flip previews
 
-The opening market concept embeds unchanged public JPEG previews from two epoch-230 flips, with two drawn lock placeholders per flip. They were retrieved on 18 October 2026 from the Idena explorer API. Each response contained two public pictures; no encrypted private part was opened. The positions in the concept are illustrative, not a reconstruction of the private sequence. These are illustrations of the puzzle format, not a new claim of marketplace eligibility or a complete playable flip.
+The opening market concept shows a single **Seller** and one balloon / smoke flip. Both the website CAPTCHA and the six-step trade story use all four original pictures from that same flip. The other two pictures on the seller side are covered with drawn locks to illustrate a private sale.
 
-| Example | Public source and author |
-| --- | --- |
-| IdenaAI 2 — avalanche / punch | [Flip](https://scan.idena.io/flip/bafybeicpa2wypblq7ri4522azsjb6y3676nyq4y7se7x4ay7ppy6fcnvj4) · [picture response](https://api.idena.io/api/flip/bafybeicpa2wypblq7ri4522azsjb6y3676nyq4y7se7x4ay7ppy6fcnvj4/content) · author `0xace93bd09e9e8c3fa75d3cb7de810ccfeb333a99` |
-| IdenaAI 3 — balloon / smoke | [Flip](https://scan.idena.io/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq) · [picture response](https://api.idena.io/api/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq/content) · author `0x1af4820204ddcd1a882359198227798f463f3058` |
+Source: [epoch-230 balloon / smoke flip](https://scan.idena.io/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq), originally submitted by IdenaAI 3, author `0x1af4820204ddcd1a882359198227798f463f3058`. The visible role is “Seller”; the original author is credited here for provenance.
 
-The author-to-flip mapping was checked against the explorer's epoch-230 author listings. The four files in `visuals/idenaai{2,3}-public-{1,2}.jpg` preserve the returned bytes. The words in the captions come from the explorer metadata. The examples were selected with the repository owner's permission; they are not repository test fixtures.
+The four `visuals/balloon-{1,2,3,4}.png` files preserve the original picture bytes. They were extracted from the owner's local copy of this exact flip on 18 October 2026, following the owner's explicit request to publish the complete balloon example. The first two match the [public explorer picture response](https://api.idena.io/api/flip/bafybeihodzhdrfo47w64d5gad3t5em3tzw5556ya43omq24eajtqigyhtq/content) byte for byte. The other two came from the flip's encrypted private part; they are not claimed to have been returned by the public preview API. Only these requested pictures were exported; no keys, private witness files or other flip content are included.
 
-The complete four-picture example (flowers, cat, spilled water and sponges) comes from the [Idena whitepaper's flip illustration](https://docs.idena.io/docs/wp/technology#flips), available as [the public source image](https://docs.idena.io/img/wp/flip-sample.png). `visuals/idena-public-demo.png` preserves that image unchanged. The storyboards embed it and use viewports to display the original individual pictures and arrangements. The drawings cover or uncover this **already-public demonstration** to explain a private purchase; it is not an IdenaAI 2/3 flip, an actual offer, or new private material. Attribution and scope are also recorded in [THIRD_PARTY.md](../THIRD_PARTY.md#documentation-illustrations).
+The CAPTCHA preserves the flip's original arrangements, numbered by these filenames: **A = 1, 2, 4, 3** and **B = 2, 3, 1, 4**. B tells the story: the child holds the balloon, it moves over the barbecue, it bursts, and the child sees the remains. B is selected in the illustration, matching the explorer's recorded answer. The left preview and unlocked trade views follow B, covering pictures 3 and 4 while showing the originally public pictures 2 and 1.
+
+This complete example is now intentionally disclosed for documentation. The locks illustrate the market mechanism; they do not make the published example secret or establish that it is an eligible private offer. Attribution is also recorded in [THIRD_PARTY.md](../THIRD_PARTY.md#documentation-illustrations).
 
 ## Current UI
 
@@ -117,4 +118,4 @@ For example, a provider could buy historical flip access and use the content in 
 | Price, bonds and reimbursement | [`curve.rs`](../contracts/direct-escrow-v7/src/curve.rs), [`lib.rs`](../contracts/direct-escrow-v7/src/lib.rs): `required_bond`, `seller_bond_for_rate`, `fallback_reimbursement` |
 | Gated-session examples | [`GateSetup.tsx`](../app/src/views/GateSetup.tsx), [`utility/README.md`](../utility/README.md) |
 
-The diagrams are editable, self-contained SVGs with accessible titles and descriptions. Embedded public images retain their original bytes. The actual UI screenshots are PNGs; the public flip previews are unchanged JPEGs. Refresh the captures and rules together when their owning sources change. The v7 guide records one owner-operated funded pilot; funded cooperative confirmation, refund and resale, an unproved funded fallback with a v7-bound proof, and an independent security audit remain unverified at this baseline.
+The diagrams are editable, self-contained SVGs with accessible titles and descriptions. Embedded public images retain their original bytes. The actual UI screenshots and original balloon pictures are PNGs. Refresh the captures and rules together when their owning sources change. The v7 guide records one owner-operated funded pilot; funded cooperative confirmation, refund and resale, an unproved funded fallback with a v7-bound proof, and an independent security audit remain unverified at this baseline.
