@@ -222,7 +222,7 @@ func poolV7JournalMatches(journal []byte, offer *poolV7Offer, contract string) b
 		return false
 	}
 	bound := hex.EncodeToString(journal[36:56])
-	return bound == contract || (bound == "92f664db85805d707016febbfa55bd2beaaf808b" &&
+	return bound == contract || (bound == poolV7LegacyContentContract &&
 		offer.epoch == 230 && offer.status == 0 && offer.openOrder == 0 && !offer.everSold)
 }
 

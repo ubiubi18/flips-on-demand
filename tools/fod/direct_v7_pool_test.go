@@ -80,6 +80,25 @@ func TestDirectV7PoolOfferIDAndRustCallLayouts(t *testing.T) {
 	}
 }
 
+func TestDirectV7PreSaleLegacyProofBinding(t *testing.T) {
+	contract := strings.Repeat("11", 20)
+	for _, operation := range []string{"qualify", "proveBundle"} {
+		if !poolV7ProofBindingAllowed(poolV7LegacyContentContract, contract, 230, operation) {
+			t.Fatalf("epoch-230 legacy proof rejected for %s", operation)
+		}
+		if !poolV7ProofBindingAllowed(contract, contract, 231, operation) {
+			t.Fatalf("native proof rejected for %s", operation)
+		}
+		if poolV7ProofBindingAllowed(poolV7LegacyContentContract, contract, 231, operation) ||
+			poolV7ProofBindingAllowed(strings.Repeat("22", 20), contract, 230, operation) {
+			t.Fatalf("unbound proof accepted for %s", operation)
+		}
+	}
+	if poolV7ProofBindingAllowed(poolV7LegacyContentContract, contract, 230, "startFallback") {
+		t.Fatal("legacy content proof accepted for a funded fallback")
+	}
+}
+
 func TestDirectV7RecordsAndQuoteUseV7OffsetsAndCurve(t *testing.T) {
 	var raw [222]byte
 	copy(raw[:20], bytes.Repeat([]byte{0x11}, 20))

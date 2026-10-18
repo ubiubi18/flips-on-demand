@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+const poolV7LegacyContentContract = "92f664db85805d707016febbfa55bd2beaaf808b"
+
+func poolV7ProofBindingAllowed(proofContract, contract string, epoch uint16, operation string) bool {
+	return proofContract == contract ||
+		(proofContract == poolV7LegacyContentContract && epoch == 230 &&
+			(operation == "qualify" || operation == "proveBundle"))
+}
+
 func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 	if o.DirectVersion != 7 || o.Node == nil || !directLocalRPC(o.Node.url) ||
 		o.PreparedPath == "" || o.MaxFeeText == "" || !isHex(strings.ToLower(strings.TrimPrefix(o.CodeHash, "0x")), 32) ||
@@ -79,7 +87,7 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 			return errors.New("invalid v7 content journal")
 		}
 		proofContract := hex.EncodeToString(journal[36:56])
-		if proofContract != contract && !(proofContract == "92f664db85805d707016febbfa55bd2beaaf808b" && session.Epoch == 230 && o.Operation == "proveBundle") {
+		if !poolV7ProofBindingAllowed(proofContract, contract, session.Epoch, o.Operation) {
 			return errors.New("v7 proof is bound to another contract")
 		}
 		if err := verifyDirectV5FastHost(o.ProofPath, o.ProofHostPath, proofContract, fastContentV5ImageIDHex); err != nil {
