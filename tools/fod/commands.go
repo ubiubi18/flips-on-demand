@@ -78,6 +78,8 @@ var commandModes = map[string]string{
 	"direct-pool-qualify":       "direct-pool-qualify",
 	"direct-pool-prove-bundle":  "direct-pool-prove-bundle",
 	"direct-v7-prepare":         "direct-v7-prepare",
+	"direct-v7-dm":              "direct-v7-dm",
+	"direct-v7-receive":         "direct-v7-receive",
 	"direct-list":               "direct-list",
 	"direct-buy":                "direct-buy",
 	"direct-dm":                 "direct-dm",
@@ -185,6 +187,8 @@ func usageText() string {
 	b.WriteString("  direct-pool-qualify  prepare and estimate v6 qualify from a sealed proof and canonical session (-direct-version 6)\n")
 	b.WriteString("  direct-pool-prove-bundle  prepare and estimate v6 proveBundle for the same author and offer (-direct-version 6)\n")
 	b.WriteString("  direct-v7-prepare  prepare and estimate one typed v7 pool operation (-direct-version 7 -operation NAME)\n")
+	b.WriteString("  direct-v7-dm       prepare private ciphertext for one funded v7 order without sending it\n")
+	b.WriteString("  direct-v7-receive  verify funded v7 ciphertext and original flips, then save a buyer receipt and vault\n")
 	b.WriteString("  direct-list    prepare a canonical original-flip sale\n")
 	b.WriteString("  direct-buy     retain original flips and prepare a funded purchase\n")
 	b.WriteString("  direct-dm      export encrypted delivery text for a private message\n")

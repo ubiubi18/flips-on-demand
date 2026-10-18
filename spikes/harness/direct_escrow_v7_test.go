@@ -16,7 +16,9 @@ import (
 	"github.com/idena-network/idena-wasm-binding/lib"
 )
 
-const directV7WasmPath = "../../contracts/direct-escrow-v7/target/fod_direct_escrow_v7.lowered.wasm"
+// By default exercise the released bytes; a candidate build passes its path
+// through FOD_DIRECT_V7_TEST_WASM instead of relying on an ignored local target.
+const directV7WasmPath = "../../release/artifacts/fod_direct_escrow_v7.wasm"
 const directV7FastContentImageID = "4fd124c8cb91370dab60d3e1d7c4e666e79485e210b5f20ed36cc2104883726c"
 
 type directV7Fixture struct {
@@ -309,15 +311,17 @@ func TestDirectV7PrimaryPayoutTracksCurrentCurve(t *testing.T) {
 		t.Fatal("first-sale payout was not fixed to the buyer's live curve payment")
 	}
 	f.env.SetCaller(buyer)
-	f.call(t, "confirm", join(u64Arg(1), bytes.Repeat([]byte{0x42}, 32)))
+	ciphertext := []byte("the exact buyer-verified private delivery")
+	deliveryHash := sha256.Sum256(ciphertext)
+	f.call(t, "confirm", join(u64Arg(1), deliveryHash[:]))
 	f.amount(t, "pool/reserve", f.reserve)
 	if f.env.BalanceOf(firstAuthor).Cmp(new(big.Int).Add(quote, bond)) != 0 {
 		t.Fatal("first-sale author did not receive the live buyer price and returned bond")
 	}
 	f.units(t, "pool/units", 11)
 	f.units(t, "pool/primary-units", 10)
-	if got := f.get("pool/order/1"); len(got) != 215 || got[181] != 2 {
-		t.Fatal("buyer confirmation did not settle")
+	if got := f.get("pool/order/1"); len(got) != 215 || got[181] != 2 || !bytes.Equal(got[182:214], deliveryHash[:]) {
+		t.Fatal("buyer confirmation did not settle with the exact ciphertext hash")
 	}
 }
 
@@ -350,6 +354,102 @@ func TestDirectV7RefundRestoresBuyerWithoutSpendingSeed(t *testing.T) {
 	}
 	f.env.SetCaller(buyer)
 	f.reject(t, "confirm", join(u64Arg(1), bytes.Repeat([]byte{0x42}, 32)))
+}
+
+func TestDirectV7PrivateResaleReturnsToSecondaryQueue(t *testing.T) {
+	f := newDirectV7Fixture(t)
+	author := addressFromHex(t, hexOf(bytes.Repeat([]byte{0x91}, 20)))
+	id := f.listProved(t, author, 230)
+	buyer := addressFromHex(t, hexOf(bytes.Repeat([]byte{0xb2}, 20)))
+	firstQuote := new(big.Int).Div(new(big.Int).Add(f.reserve, big.NewInt(10)), big.NewInt(11))
+	bond := big.NewInt(5_000_000)
+	f.env.SetCaller(buyer)
+	f.env.SetPayAmount(new(big.Int).Add(firstQuote, bond))
+	f.env.CreditContractBalance(new(big.Int).Add(firstQuote, bond))
+	f.call(t, "buy", join(id[:], DeliveryKeyBytes(NewDeliveryKey(t))))
+	f.call(t, "confirm", join(u64Arg(1), bytes.Repeat([]byte{0x42}, 32)))
+	if offer := f.get("pool/offer/" + string(id[:])); len(offer) != 222 || offer[122] != 4 || offer[123] != 1 {
+		t.Fatal("private first sale did not become eligible for resale")
+	}
+	f.env.SetCaller(author)
+	f.env.SetPayAmount(bond)
+	f.env.CreditContractBalance(bond)
+	f.call(t, "relist", join(id[:], u128ArgValue(big.NewInt(0))))
+	if !bytes.Equal(f.get("pool/secondary-head"), f.seedID[:]) {
+		t.Fatal("private resale displaced the earlier public seed")
+	}
+	seedQuote := new(big.Int).Div(new(big.Int).Add(f.reserve, big.NewInt(10)), big.NewInt(11))
+	f.env.SetCaller(buyer)
+	f.env.SetPayAmount(seedQuote)
+	f.env.CreditContractBalance(seedQuote)
+	f.call(t, "buyPublicSeed", f.seedID[:])
+	if !bytes.Equal(f.get("pool/secondary-head"), id[:]) {
+		t.Fatal("private resale did not become the selectable secondary head")
+	}
+	reserveAfterSeed := new(big.Int).Add(f.reserve, new(big.Int).Div(seedQuote, big.NewInt(2)))
+	resaleQuote := new(big.Int).Div(new(big.Int).Add(reserveAfterSeed, big.NewInt(10)), big.NewInt(11))
+	f.env.SetPayAmount(new(big.Int).Add(resaleQuote, bond))
+	f.env.CreditContractBalance(new(big.Int).Add(resaleQuote, bond))
+	f.call(t, "buy", join(id[:], DeliveryKeyBytes(NewDeliveryKey(t))))
+	order := f.get("pool/order/2")
+	if len(order) != 215 || new(big.Int).SetBytes(order[149:165]).Cmp(new(big.Int).Div(resaleQuote, big.NewInt(2))) != 0 {
+		t.Fatal("resale order did not lock half-price author payout")
+	}
+	f.call(t, "confirm", join(u64Arg(2), bytes.Repeat([]byte{0x43}, 32)))
+	f.amount(t, "pool/reserve", new(big.Int).Add(reserveAfterSeed, new(big.Int).Sub(resaleQuote, new(big.Int).Div(resaleQuote, big.NewInt(2)))))
+	if !bytes.Equal(f.get("pool/secondary-head"), f.seedID[:]) ||
+		!bytes.Equal(f.get("pool/order/2")[0:32], id[:]) {
+		t.Fatal("resale disturbed the permanent public seed")
+	}
+}
+
+func TestDirectV7PrivateHeadExpiryAndRelist(t *testing.T) {
+	f := newDirectV7Fixture(t)
+	author := addressFromHex(t, hexOf(bytes.Repeat([]byte{0x92}, 20)))
+	id := f.listProved(t, author, 230)
+	f.env.SetBlockNumber(1000 + 30_240 - 1)
+	f.reject(t, "expireHead", id[:])
+	f.env.SetBlockNumber(1000 + 30_240)
+	f.env.SetCaller(addressFromHex(t, hexOf(bytes.Repeat([]byte{0xa7}, 20))))
+	f.call(t, "expireHead", id[:])
+	if offer := f.get("pool/offer/" + string(id[:])); len(offer) != 222 || offer[122] != 5 ||
+		!bytes.Equal(f.get("pool/secondary-head"), f.seedID[:]) {
+		t.Fatal("private head expiry did not cancel the offer and preserve the seed")
+	}
+	f.units(t, "pool/units", 1)
+	f.env.SetCaller(author)
+	bond := big.NewInt(5_000_000)
+	f.env.SetPayAmount(bond)
+	f.env.CreditContractBalance(bond)
+	f.call(t, "relist", join(id[:], u128ArgValue(big.NewInt(0))))
+	if !bytes.Equal(f.get("pool/primary-head"), id[:]) {
+		t.Fatal("expired first sale did not return to the primary queue")
+	}
+}
+
+func TestDirectV7UnprovedConfirmedSaleCanBeSlashed(t *testing.T) {
+	f := newDirectV7Fixture(t)
+	author := addressFromHex(t, hexOf(bytes.Repeat([]byte{0x93}, 20)))
+	id := f.listQualified(t, author, 230, false)
+	quote := new(big.Int).Div(new(big.Int).Add(f.reserve, big.NewInt(10)), big.NewInt(11))
+	bond := big.NewInt(5_000_000)
+	f.env.SetCaller(addressFromHex(t, hexOf(bytes.Repeat([]byte{0xb2}, 20))))
+	f.env.SetPayAmount(new(big.Int).Add(quote, bond))
+	f.env.CreditContractBalance(new(big.Int).Add(quote, bond))
+	f.call(t, "buy", join(id[:], DeliveryKeyBytes(NewDeliveryKey(t))))
+	f.call(t, "confirm", join(u64Arg(1), bytes.Repeat([]byte{0x44}, 32)))
+	f.env.SetBlockNumber(1000 + 12_960)
+	f.env.SetCaller(addressFromHex(t, hexOf(bytes.Repeat([]byte{0xa7}, 20))))
+	f.call(t, "slashUnproved", u64Arg(1))
+	insurance := mustAmount("1000000000000000000000")
+	f.amount(t, "pool/reserve", new(big.Int).Add(f.reserve, insurance))
+	f.amount(t, "pool/insurance", insurance)
+	if offer := f.get("pool/offer/" + string(id[:])); len(offer) != 222 || offer[122] != 6 ||
+		offer[205] != 0 || offer[220] != 0 {
+		t.Fatal("unproved settled sale was not retired after slashing")
+	}
+	f.env.SetCaller(author)
+	f.reject(t, "relist", join(id[:], u128ArgValue(big.NewInt(0))))
 }
 
 func TestDirectV7SealedContentProofAgainstCanonicalSession(t *testing.T) {

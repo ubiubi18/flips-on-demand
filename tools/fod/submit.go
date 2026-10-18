@@ -52,9 +52,17 @@ var preparedFormats = map[string]string{
 	preparedPoolV7Activate:              "activate",
 	preparedPoolV7List:                  "list",
 	preparedPoolV7Buy:                   "buy",
+	preparedPoolV7PublicBuy:             "buyPublicSeed",
+	preparedPoolV7Confirm:               "confirm",
 	preparedPoolV7Challenge:             "challenge",
 	preparedPoolV7Start:                 "startFallback",
 	preparedPoolV7Reveal:                "proveAndReveal",
+	preparedPoolV7Refund:                "refund",
+	preparedPoolV7Relist:                "relist",
+	preparedPoolV7Cancel:                "cancel",
+	preparedPoolV7Expire:                "expireHead",
+	preparedPoolV7TopUp:                 "topUpBond",
+	preparedPoolV7Slash:                 "slashUnproved",
 	"fod.prepared-withdrawal":           operationWithdrawal,
 	"fod.prepared-withdraw-reserve":     operationReserveWithdrawal,
 	"fod.prepared-buy":                  operationBuy,
@@ -249,7 +257,7 @@ func readPreparedAction(path string) (*preparedAction, error) {
 // BuildTransaction assembles and signs the contract call, then checks its own
 // work with the node's decoder before returning the bytes.
 func BuildTransaction(prepared *preparedAction, identity *ecdsa.PrivateKey, nonce uint32, epoch uint16, maxFee, tips *big.Int) ([]byte, common.Address, error) {
-	if prepared.Operation == operationConfirm && !prepared.confirmValidated {
+	if prepared.Operation == operationConfirm && !isPoolV7Format(prepared.Format) && !prepared.confirmValidated {
 		return nil, common.Address{}, fmt.Errorf("confirm requires signing-time validation of the buyer's usable-content receipt")
 	}
 	if prepared.Operation == operationBuy && !isPoolV7Format(prepared.Format) {
@@ -643,7 +651,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 		}
 		prepared.buyTargetValidated = prepared.Contract
 	}
-	if prepared.Operation == operationConfirm && !isDirectFormat(prepared.Format) {
+	if prepared.Operation == operationConfirm && !isDirectFormat(prepared.Format) && !isPoolV7Format(prepared.Format) {
 		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
 		if err := validatePreparedConfirm(c, prepared, identity); err != nil {
 			fmt.Fprintf(os.Stderr, "confirmation refused before signing: %v\n", err)

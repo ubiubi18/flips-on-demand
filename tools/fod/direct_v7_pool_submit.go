@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/idena-network/idena-go/crypto"
 )
@@ -19,9 +20,17 @@ const (
 	preparedPoolV7Activate  = "fod.prepared-direct-v7-activate"
 	preparedPoolV7List      = "fod.prepared-direct-v7-list"
 	preparedPoolV7Buy       = "fod.prepared-direct-v7-buy"
+	preparedPoolV7PublicBuy = "fod.prepared-direct-v7-buy-public-seed"
+	preparedPoolV7Confirm   = "fod.prepared-direct-v7-confirm"
 	preparedPoolV7Challenge = "fod.prepared-direct-v7-challenge"
 	preparedPoolV7Start     = "fod.prepared-direct-v7-start-fallback"
 	preparedPoolV7Reveal    = "fod.prepared-direct-v7-prove-and-reveal"
+	preparedPoolV7Refund    = "fod.prepared-direct-v7-refund"
+	preparedPoolV7Relist    = "fod.prepared-direct-v7-relist"
+	preparedPoolV7Cancel    = "fod.prepared-direct-v7-cancel"
+	preparedPoolV7Expire    = "fod.prepared-direct-v7-expire-head"
+	preparedPoolV7TopUp     = "fod.prepared-direct-v7-top-up-bond"
+	preparedPoolV7Slash     = "fod.prepared-direct-v7-slash-unproved"
 )
 
 var poolV7Formats = map[string]string{
@@ -31,9 +40,17 @@ var poolV7Formats = map[string]string{
 	preparedPoolV7Activate:  "activate",
 	preparedPoolV7List:      "list",
 	preparedPoolV7Buy:       "buy",
+	preparedPoolV7PublicBuy: "buyPublicSeed",
+	preparedPoolV7Confirm:   "confirm",
 	preparedPoolV7Challenge: "challenge",
 	preparedPoolV7Start:     "startFallback",
 	preparedPoolV7Reveal:    "proveAndReveal",
+	preparedPoolV7Refund:    "refund",
+	preparedPoolV7Relist:    "relist",
+	preparedPoolV7Cancel:    "cancel",
+	preparedPoolV7Expire:    "expireHead",
+	preparedPoolV7TopUp:     "topUpBond",
+	preparedPoolV7Slash:     "slashUnproved",
 }
 
 func isPoolV7Format(format string) bool { _, ok := poolV7Formats[format]; return ok }
@@ -148,8 +165,30 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 		if err != nil || !equalBytes(calldata[at+2:], wire) {
 			return errors.New("v7 proof wire differs from canonical session")
 		}
-		if offer.status != 0 && offer.status != 1 && offer.status != 2 {
-			return errors.New("v7 independent proof needs an unfunded qualified or queued offer")
+		switch offer.status {
+		case 0, 1, 2: // Qualified or queued before funding.
+		case 3, 4: // A funded or privately settled offer may still recover collateral.
+			if offer.openOrder == 0 {
+				return errors.New("v7 funded proof has no open order")
+			}
+			order, err := readPoolV7Order(c, p.Contract, offer.openOrder)
+			if err != nil {
+				return err
+			}
+			validState := offer.status == 3 && (order.state == 1 || order.state == 4) ||
+				offer.status == 4 && order.state == 2
+			if order.offer != id || !validState {
+				return errors.New("v7 funded proof differs from its order state")
+			}
+			head, _, err := registryHead(c)
+			if err != nil {
+				return err
+			}
+			if order.fundedAt > ^uint64(0)-poolV7ProofWindow || head >= order.fundedAt+poolV7ProofWindow {
+				return errors.New("v7 funded proof window has closed")
+			}
+		default:
+			return errors.New("v7 independent proof needs a qualified, queued, or timely funded offer")
 		}
 	case "seedBundle":
 		if !zero || caller != p.Author || offer.status != 0 || !offer.contentProven || offer.publicSeed ||
@@ -215,9 +254,26 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 			return errors.New("v7 list value differs from current required bond")
 		}
 	case "buy":
-		if caller != p.Buyer || offer.publicSeed || (offer.status != 1 && offer.status != 2) || len(calldata) != 97 ||
+		if caller != p.Buyer || offer.publicSeed || (offer.status != 1 && offer.status != 2) ||
+			p.OrderNonce == 0 || p.OrderNonce != offer.nextNonce || len(calldata) != 97 ||
 			!equalBytes(calldata[:32], id[:]) || p.DeliveryKey != hex.EncodeToString(calldata[32:]) {
 			return errors.New("invalid v7 buyer, queue offer, or delivery key")
+		}
+		if p.DirectSession == nil || p.DirectSession.Author != p.Author || p.DirectSession.Epoch != p.Epoch ||
+			uint32(len(p.DirectSession.Manifest)) != p.CoveredFlips ||
+			inventoryCommitment(p.Author, p.Epoch, p.DirectSession.Manifest) != p.InventoryCommitment {
+			return errors.New("v7 buy has no canonical retained inventory")
+		}
+		if err := directVerifiedSession(c, p.DirectSession); err != nil {
+			return err
+		}
+		if err := requireCheckedAvailability(p.Availability, time.Now()); err != nil {
+			return err
+		}
+		if p.Availability.Author != p.Author || p.Availability.Epoch != p.Epoch ||
+			p.Availability.CoveredFlips != int(p.CoveredFlips) ||
+			p.Availability.InventoryCommitment != p.InventoryCommitment {
+			return errors.New("v7 buy retained blobs differ from the queued inventory")
 		}
 		pub, err := crypto.UnmarshalPubkey(calldata[32:])
 		if err != nil {
@@ -256,6 +312,25 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 		if amount.Cmp(total) != 0 || p.Price != quote.String() {
 			return errors.New("v7 buy amount differs from current quote and bond")
 		}
+	case "confirm":
+		if !zero || p.DirectOrderID == 0 || p.DirectOpened == nil || caller != p.Buyer || len(calldata) != 40 {
+			return errors.New("v7 confirmation needs the funded buyer's verified receipt")
+		}
+		want, err := preparePoolV7Confirm(c, p.Contract, p.DirectOrderID, p.DirectOpened)
+		if err != nil {
+			return err
+		}
+		if p.DirectOfferID != want.DirectOfferID || p.Calldata != want.Calldata ||
+			p.CiphertextSha256 != want.CiphertextSha256 || p.Buyer != want.Buyer ||
+			p.Author != want.Author || p.Epoch != want.Epoch ||
+			p.CoveredFlips != want.CoveredFlips || p.OrderNonce != want.OrderNonce ||
+			p.InventoryCommitment != want.InventoryCommitment || p.KeyCommitment != want.KeyCommitment {
+			return errors.New("v7 confirmation differs from the signed delivery receipt or current order")
+		}
+	case "buyPublicSeed", "relist", "cancel", "expireHead", "topUpBond", "refund", "slashUnproved":
+		if err := validatePoolV7LifecycleCall(c, p, caller, offer, id, calldata, amount); err != nil {
+			return err
+		}
 	case "challenge", "startFallback", "proveAndReveal":
 		if !zero || p.DirectOrderID == 0 || len(calldata) < 8 || binary.BigEndian.Uint64(calldata[:8]) != p.DirectOrderID {
 			return errors.New("invalid v7 order call")
@@ -282,9 +357,16 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 				return errors.New("v7 challenge requires the funded buyer")
 			}
 		case "startFallback":
-			if len(calldata) != 8 || caller != p.Author || order.state != 1 || !offer.contentProven ||
+			if caller != p.Author || order.state != 1 ||
 				head < order.fundedAt+30 || head >= order.fundedAt+poolV7ProofWindow-120 {
-				return errors.New("v7 short fallback is not ready or safely before deadline")
+				return errors.New("v7 fallback is not ready or safely before deadline")
+			}
+			if offer.contentProven {
+				if len(calldata) != 8 || p.DirectSession != nil || p.ImageID != "" || p.ClaimDigest != "" {
+					return errors.New("v7 proved fallback must use the short order-only call")
+				}
+			} else if err := validatePoolV7SealedFallbackStatement(c, p, offer, calldata); err != nil {
+				return err
 			}
 		case "proveAndReveal":
 			if len(calldata) != 114 || caller != p.Author || order.state != 4 ||
@@ -296,6 +378,40 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 		return errors.New("unsupported v7 method")
 	}
 	p.poolV7Validated = true
+	return nil
+}
+
+func validatePoolV7SealedFallbackStatement(c *client, p *preparedAction, offer *poolV7Offer, calldata []byte) error {
+	const header = 8 + fastContentJournalBytes + fastContentSealBytes + 2
+	if p == nil || offer == nil || offer.contentProven || p.DirectSession == nil ||
+		len(calldata) <= header || len(calldata) > header+fastRegistrationMaxWireBytes ||
+		p.ImageID != fastContentV5ImageIDHex || p.DirectOrderID == 0 ||
+		binary.BigEndian.Uint64(calldata[:8]) != p.DirectOrderID {
+		return errors.New("invalid v7 sealed fallback context")
+	}
+	journal := calldata[8 : 8+fastContentJournalBytes]
+	if hex.EncodeToString(journal[36:56]) != p.Contract ||
+		!poolV7JournalMatches(journal, offer, p.Contract) {
+		return errors.New("v7 sealed fallback journal differs from this contract or funded offer")
+	}
+	claim, err := claimDigestFromHex(fastContentV5ImageIDHex, journal)
+	if err != nil || p.ClaimDigest != hex.EncodeToString(claim[:]) ||
+		p.DirectSession.Author != p.Author || p.DirectSession.Epoch != p.Epoch ||
+		uint32(len(p.DirectSession.Manifest)) != p.CoveredFlips ||
+		inventoryCommitment(p.Author, p.Epoch, p.DirectSession.Manifest) != p.InventoryCommitment {
+		return errors.New("v7 sealed fallback claim differs from the pinned content or session")
+	}
+	wire := calldata[header:]
+	if len(wire) == 0 || binary.BigEndian.Uint16(calldata[header-2:header]) != uint16(len(wire)) {
+		return errors.New("v7 sealed fallback has an invalid session length")
+	}
+	if err := directVerifiedSession(c, p.DirectSession); err != nil {
+		return err
+	}
+	want, err := encodeFastRegistrationWire(p.DirectSession)
+	if err != nil || !equalBytes(wire, want) {
+		return errors.New("v7 sealed fallback wire differs from canonical session")
+	}
 	return nil
 }
 

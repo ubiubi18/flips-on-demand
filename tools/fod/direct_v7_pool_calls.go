@@ -35,6 +35,16 @@ func encodePoolV7SeedID(id [32]byte) ([]byte, error) {
 	return append([]byte(nil), id[:]...), nil
 }
 
+func encodePoolV7Relist(id [32]byte, minimum *big.Int) ([]byte, error) {
+	if id == ([32]byte{}) || minimum == nil || minimum.Sign() < 0 || minimum.BitLen() > 128 {
+		return nil, errors.New("v7 relist needs an offer ID and u128 minimum payout")
+	}
+	out := make([]byte, 48)
+	copy(out[:32], id[:])
+	minimum.FillBytes(out[32:])
+	return out, nil
+}
+
 func encodePoolV7Qualify(epoch uint16, covered uint32, inventory, keys [32]byte, wire []byte) ([]byte, error) {
 	if covered == 0 || covered > 32 || inventory == ([32]byte{}) || keys == ([32]byte{}) ||
 		len(wire) == 0 || len(wire) > fastRegistrationMaxWireBytes {
@@ -124,6 +134,18 @@ func encodePoolV7OrderID(id uint64) ([]byte, error) {
 	out := make([]byte, 8)
 	binary.BigEndian.PutUint64(out, id)
 	return out, nil
+}
+
+func encodePoolV7Confirm(id uint64, ciphertext []byte) ([]byte, error) {
+	if len(ciphertext) != directDMCiphertextBytes {
+		return nil, errors.New("v7 confirmation needs the exact private delivery ciphertext")
+	}
+	arg, err := encodePoolV7OrderID(id)
+	if err != nil {
+		return nil, err
+	}
+	digest := sha256.Sum256(ciphertext)
+	return append(arg, digest[:]...), nil
 }
 
 func encodePoolV7ProveAndReveal(id uint64, secrets []byte) ([]byte, error) {

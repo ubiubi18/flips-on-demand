@@ -6,8 +6,43 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/idena-network/idena-go/common"
 	"github.com/idena-network/idena-go/crypto"
+	"github.com/idena-network/idena-go/secstore"
 )
+
+// The CLI's fixed mapping must agree with the exact node source used to build
+// it. A node revision with a different mapping is not a compatible build.
+func TestDeriveEpochKeysMatchesPinnedNode(t *testing.T) {
+	identity, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("generate identity key: %v", err)
+	}
+	keys, err := DeriveEpochKeys(identity, 204)
+	if err != nil {
+		t.Fatalf("derive epoch keys: %v", err)
+	}
+	store := secstore.NewSecStore()
+	store.AddKey(crypto.FromECDSA(identity))
+	defer store.Destroy()
+	publicSecret, privateSecret := keys.SecretBytes()
+	for _, check := range []struct {
+		seed   string
+		actual []byte
+	}{
+		{"flip-key-for-epoch-204", publicSecret},
+		{"flip-private-key-for-epoch-204", privateSecret},
+	} {
+		hash := common.Hash(crypto.Hash([]byte(check.seed)))
+		reference, err := crypto.GenerateKeyFromSeed(bytes.NewReader(store.Sign(hash.Bytes())))
+		if err != nil {
+			t.Fatalf("reference node key for %s: %v", check.seed, err)
+		}
+		if !bytes.Equal(check.actual, crypto.FromECDSA(reference)) {
+			t.Fatalf("the CLI key mapping differs from the node source for %s", check.seed)
+		}
+	}
+}
 
 func TestProtocolKeyFromSeedMatchesLegacyNodeMapping(t *testing.T) {
 	seed := make([]byte, 65)

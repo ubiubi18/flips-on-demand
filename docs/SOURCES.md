@@ -2209,11 +2209,16 @@ secrets decrypt them, and that the decoded content has the supported structure.
 Vector: `proofs/registration/vectors/blob-v1.json`; implementations:
 `tools/fod/commitment.go` and `proofs/registration/core/src/blob.rs`.
 
-The vector was built with the pinned node's own primitives through the CLI: a
-throwaway identity key, the epoch keys it derives for epoch 204, the node's
+The vector was built with a historical node revision's primitives through the CLI:
+a throwaway identity key, that revision's epoch keys for epoch 204, the node's
 `crypto/ecies` encryption of two short parts, and the node's protobuf message. It
 carries the nodekey, the author, the epoch, both secrets, both plaintexts, the
 blob, its CID, the canonical secrets, and the commitment.
+That revision's `GenerateKeyFromSeed` used the first 32 signature bytes. The
+public CLI build recipe now pins a revision with the original 40-byte mapping.
+The frozen blob therefore checks historical decryption with its recorded keys;
+`TestDeriveEpochKeysMatchesPinnedNode` separately checks new derivation against
+the node source used to build the CLI.
 
 | Fact | Value and source |
 |---|---|
@@ -2226,7 +2231,7 @@ Who checks what:
 
 | Side | Test | What it establishes |
 |---|---|---|
-| the CLI | `tools/fod/blob_vector_test.go` | the vector's nodekey derives the vector's secrets and author, the node's own library decrypts both parts to the vector's plaintexts, the CID matches, and the canonical secrets and commitment are the vector's |
+| the CLI | `tools/fod/blob_vector_test.go` | the vector's nodekey yields its author, and importing the recorded secrets opens both parts; the CID, canonical secrets, and commitment match the vector |
 | the registration core | `core/tests/blob_v1.rs`, 4 tests | it parses the protobuf, opens both parts with the secrets, renders the CID in the manifest's form, computes the same canonical secrets and commitment, and refuses a tampered, wrongly keyed, truncated, or non-protobuf blob |
 
 The CLI gained `SecretsCanonicalBytes` and `SecretsCommitmentHex` for this: the

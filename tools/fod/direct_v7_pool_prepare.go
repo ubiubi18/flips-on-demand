@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"strings"
 	"time"
 )
@@ -165,16 +166,16 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 		if err != nil {
 			return err
 		}
-	case "activate", "buy":
+	case "activate", "buy", "buyPublicSeed":
 		if id == ([32]byte{}) {
-			return errors.New("v7 activate/buy needs -v7-offer-id")
+			return errors.New("v7 activation or buy needs -v7-offer-id")
 		}
 		if o.Operation == "activate" {
 			calldata, err = encodePoolV7SeedID(id)
 			p.Amount = poolV7SeedAmount
 		} else {
-			if o.DeliveryKeyPath == "" {
-				return errors.New("v7 buy needs -delivery-key output path")
+			if o.Operation == "buy" && (o.DeliveryKeyPath == "" || o.SessionPath == "") {
+				return errors.New("v7 buy needs -session and -delivery-key output path")
 			}
 			// Check the queue before creating the buyer's dedicated key file.
 			primary, err := readPoolV7ID(o.Node, contract, "pool/primary-head")
@@ -191,20 +192,18 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 			if oldest != id {
 				return errors.New("v7 buy target is not the oldest queued offer")
 			}
-			public, err := CreateDeliveryKey(o.DeliveryKeyPath)
-			if err != nil {
-				return err
+			if o.Operation == "buy" {
+				p.Buyer = caller
+			} else {
+				calldata, err = encodePoolV7SeedID(id)
 			}
-			key, _ := hex.DecodeString(public)
-			calldata, err = encodePoolV7Buy(id, key)
-			p.Buyer, p.DeliveryKey = caller, public
 		}
 		if err != nil {
 			return err
 		}
-	case "challenge", "startFallback":
+	case "challenge", "startFallback", "refund", "slashUnproved":
 		if o.OrderID == 0 {
-			return errors.New("v7 challenge/startFallback needs -order")
+			return errors.New("v7 order operation needs -order")
 		}
 		p.DirectOrderID = o.OrderID
 		calldata, err = encodePoolV7OrderID(o.OrderID)
@@ -222,6 +221,60 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 		if o.Operation == "challenge" {
 			p.Buyer = caller
 		}
+	case "relist", "cancel", "expireHead", "topUpBond":
+		if id == ([32]byte{}) {
+			return errors.New("v7 offer operation needs -v7-offer-id")
+		}
+		if o.Operation == "relist" {
+			minimumText := o.MinimumPayout
+			if minimumText == "" {
+				minimumText = "0"
+			}
+			minimum, err := poolV7ValidAmount(minimumText)
+			if err != nil {
+				return err
+			}
+			p.MinimumPayout = minimum.String()
+			calldata, err = encodePoolV7Relist(id, minimum)
+		} else {
+			calldata, err = encodePoolV7SeedID(id)
+		}
+		if err != nil {
+			return err
+		}
+		if o.Operation == "topUpBond" {
+			added, err := poolV7ValidAmount(o.Amount)
+			if err != nil || added.Sign() == 0 {
+				return errors.New("v7 topUpBond needs positive -amount in base units")
+			}
+			p.Amount = added.String()
+		}
+	case "confirm":
+		if o.OrderID == 0 || o.DeliveryPath == "" {
+			return errors.New("v7 confirm needs -order and -delivery verified receipt")
+		}
+		raw, err := os.ReadFile(o.DeliveryPath)
+		if err != nil {
+			return err
+		}
+		var record DirectOpenedDelivery
+		if err := decodeStrict(raw, &record); err != nil {
+			return err
+		}
+		verified, err := preparePoolV7Confirm(o.Node, contract, o.OrderID, &record)
+		if err != nil {
+			return err
+		}
+		preparedID, _ := hex.DecodeString(verified.DirectOfferID)
+		var derived [32]byte
+		copy(derived[:], preparedID)
+		if id != ([32]byte{}) && id != derived {
+			return errors.New("v7 confirm offer differs from the signed receipt")
+		}
+		id = derived
+		verified.CodeHash, verified.PreparedAt = p.CodeHash, p.PreparedAt
+		p = verified
+		calldata, _ = hex.DecodeString(p.Calldata)
 	default:
 		return errors.New("unsupported v7 operation")
 	}
@@ -236,6 +289,28 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 		}
 		p.Author, p.Epoch, p.CoveredFlips = hex.EncodeToString(offer.author[:]), offer.epoch, offer.covered
 		p.InventoryCommitment, p.KeyCommitment = hex.EncodeToString(offer.inventory[:]), hex.EncodeToString(offer.keys[:])
+		if o.Operation == "buy" {
+			p.OrderNonce = offer.nextNonce
+		}
+		if o.Operation == "buyPublicSeed" {
+			quote, err := poolV7CurrentQuote(o.Node, contract, false)
+			if err != nil {
+				return err
+			}
+			p.Price, p.Amount = quote.String(), quote.String()
+		}
+		if o.Operation == "startFallback" {
+			if offer.contentProven {
+				if o.SessionPath != "" || o.ProofPath != "" || o.ProofHostPath != "" {
+					return errors.New("v7 proved fallback uses only the order ID")
+				}
+			} else {
+				calldata, err = preparePoolV7SealedFallback(o, contract, offer, p)
+				if err != nil {
+					return err
+				}
+			}
+		}
 		if o.Operation == "list" {
 			if o.SessionPath == "" {
 				return errors.New("v7 list needs -session")
@@ -279,7 +354,37 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 			}
 			p.Amount = bond.String()
 		}
+		if o.Operation == "relist" {
+			rate, err := readFeePerGas(o.Node)
+			if err != nil {
+				return err
+			}
+			bond, err := poolV7Bond(rate)
+			if err != nil {
+				return err
+			}
+			if !offer.contentProven {
+				cap, _ := new(big.Int).SetString(poolV7PriceCap, 10)
+				bond.Add(bond, cap)
+			}
+			p.Amount = bond.String()
+		}
 		if o.Operation == "buy" {
+			session, check, err := retainPoolV7BuyerInventory(o.Node, p, offer, o.SessionPath)
+			if err != nil {
+				return err
+			}
+			p.DirectSession, p.Availability = session, check
+			public, err := CreateDeliveryKey(o.DeliveryKeyPath)
+			if err != nil {
+				return err
+			}
+			key, _ := hex.DecodeString(public)
+			calldata, err = encodePoolV7Buy(id, key)
+			if err != nil {
+				return err
+			}
+			p.DeliveryKey = public
 			rate, err := readFeePerGas(o.Node)
 			if err != nil {
 				return err
@@ -316,4 +421,76 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 	}
 	fmt.Printf("v7 %s prepared for offer %s; read-only estimate %d gas; no transaction signed or sent\n", p.Operation, p.DirectOfferID, budget)
 	return nil
+}
+
+func retainPoolV7BuyerInventory(c *client, p *preparedAction, offer *poolV7Offer, path string) (*SessionBundle, *AvailabilityCheck, error) {
+	session, err := readVerifiedFastSession(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := directVerifiedSession(c, session); err != nil {
+		return nil, nil, err
+	}
+	if offer == nil || p == nil || session.Author != p.Author || session.Epoch != p.Epoch ||
+		uint32(len(session.Manifest)) != offer.covered ||
+		inventoryCommitment(session.Author, session.Epoch, session.Manifest) != p.InventoryCommitment {
+		return nil, nil, errors.New("v7 buyer session differs from the queued original inventory")
+	}
+	advisory := &AvailabilityAdvisory{Author: session.Author, Epoch: session.Epoch, Flips: make([]AvailabilityFlip, 0, len(session.Manifest))}
+	for _, cid := range session.Manifest {
+		advisory.Flips = append(advisory.Flips, AvailabilityFlip{CID: cid})
+	}
+	check := recheckAvailability(advisory, oneSource(ipfsFetch(c), "buyer node"), nodeCIDComputer(c))
+	check.Binding = bindingCommitted
+	check.InventoryCommitment = p.InventoryCommitment
+	if err := requireCheckedAvailability(check, time.Now()); err != nil {
+		return nil, nil, err
+	}
+	return session, check, nil
+}
+
+func preparePoolV7SealedFallback(o directCommandOptions, contract string, offer *poolV7Offer, p *preparedAction) ([]byte, error) {
+	if o.OrderID == 0 || offer == nil || p == nil || o.SessionPath == "" || o.ProofPath == "" || o.ProofHostPath == "" {
+		return nil, errors.New("v7 unproved fallback needs -order -session -proof -registration-host")
+	}
+	session, err := readVerifiedFastSession(o.SessionPath)
+	if err != nil {
+		return nil, err
+	}
+	if err := directVerifiedSession(o.Node, session); err != nil {
+		return nil, err
+	}
+	var proof fastContentArtefact
+	if err := readFastPublicJSON(o.ProofPath, &proof); err != nil {
+		return nil, err
+	}
+	registration, err := assembleFastRegistration(NetworkNamePinned, contract, &proof, session, fastContentV5ImageIDHex)
+	if err != nil {
+		return nil, err
+	}
+	journal, err := hex.DecodeString(proof.Journal)
+	if err != nil || !poolV7JournalMatches(journal, offer, contract) ||
+		registration.Author != p.Author || registration.Epoch != p.Epoch ||
+		registration.CoveredFlips != p.CoveredFlips ||
+		registration.InventoryCommitment != p.InventoryCommitment ||
+		hex.EncodeToString(journal[241:273]) != p.KeyCommitment {
+		return nil, errors.New("v7 sealed fallback differs from the funded offer")
+	}
+	if err := verifyDirectV5FastHost(o.ProofPath, o.ProofHostPath, contract, fastContentV5ImageIDHex); err != nil {
+		return nil, err
+	}
+	seal, err := hex.DecodeString(proof.Seal)
+	if err != nil {
+		return nil, err
+	}
+	wire, err := encodeFastRegistrationWire(session)
+	if err != nil {
+		return nil, err
+	}
+	calldata, err := EncodeDirectStartFallbackV5(o.OrderID, journal, seal, wire)
+	if err != nil {
+		return nil, err
+	}
+	p.DirectSession, p.ImageID, p.ClaimDigest = session, registration.ImageID, registration.ClaimDigest
+	return calldata, nil
 }

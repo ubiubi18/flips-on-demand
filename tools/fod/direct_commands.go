@@ -112,7 +112,15 @@ func checkDirectPaths(o directCommandOptions) error {
 	var paths []string
 	switch o.Mode {
 	case "direct-v7-prepare":
-		paths = []string{o.SessionPath, o.ProofPath, o.ProofHostPath, o.VaultPath, o.DeliveryKeyPath, o.PreparedPath}
+		paths = []string{o.SessionPath, o.ProofPath, o.ProofHostPath, o.VaultPath, o.DeliveryKeyPath, o.DeliveryPath, o.PreparedPath}
+	case "direct-v7-dm":
+		paths = []string{o.VaultPath, o.OutPath}
+	case "direct-v7-receive":
+		messagePath := o.MessagePath
+		if messagePath == "-" {
+			messagePath = ""
+		}
+		paths = []string{messagePath, o.PurchasePath, o.DeliveryKeyPath, o.VaultPath, o.OutPath}
 	case "direct-pool-qualify", "direct-pool-prove-bundle":
 		paths = []string{o.SessionPath, o.ProofPath, o.ProofHostPath, o.PreparedPath}
 	case "direct-list":
@@ -206,6 +214,11 @@ func directCommand(o directCommandOptions) error {
 		o.Broadcast || o.AutoConfirm || o.NodeKeyPath != "" || o.SignedPath != "") {
 		return errors.New("v7 preparation requires -direct-version 7 and a loopback RPC, without signing or broadcast flags")
 	}
+	if (o.Mode == "direct-v7-dm" || o.Mode == "direct-v7-receive") &&
+		(o.Node == nil || !directLocalRPC(o.Node.url) || o.DirectVersion != 7 || o.Broadcast || o.AutoConfirm ||
+			o.NodeKeyPath != "" || o.SignedPath != "") {
+		return errors.New("v7 private delivery needs -direct-version 7 and a loopback RPC, without signing or broadcast")
+	}
 	if isDirectV6PoolPrepareMode(o.Mode) {
 		if err := validateDirectV6PoolPrepareOptions(o); err != nil {
 			return err
@@ -237,7 +250,7 @@ func directCommand(o directCommandOptions) error {
 		return errors.New("v5 direct contract requires -direct-version 5")
 	}
 	var fallbackVersion int
-	if o.Mode != "direct-pool-market" && o.Mode != "direct-v7-prepare" && !isDirectV6PoolPrepareMode(o.Mode) && (o.Mode == "direct-reserve-fallback" || o.Mode == "direct-start-fallback" ||
+	if o.Mode != "direct-pool-market" && o.Mode != "direct-v7-prepare" && o.Mode != "direct-v7-dm" && o.Mode != "direct-v7-receive" && !isDirectV6PoolPrepareMode(o.Mode) && (o.Mode == "direct-reserve-fallback" || o.Mode == "direct-start-fallback" ||
 		o.Mode == "direct-fallback" || o.Mode == "direct-refund" ||
 		o.Mode == "direct-status" || o.Mode == "direct-market" || o.DirectVersion != 0) {
 		fallbackVersion, err = directFallbackVersion(o, contract)
@@ -248,6 +261,79 @@ func directCommand(o directCommandOptions) error {
 	switch o.Mode {
 	case "direct-v7-prepare":
 		return preparePoolV7FromFiles(o, contract)
+	case "direct-v7-dm":
+		if o.DirectVersion != 7 || o.OrderID == 0 || o.VaultPath == "" || !o.OutExplicit || o.OutPath == "" || o.Broadcast || o.AutoConfirm {
+			return errors.New("direct-v7-dm needs -direct-version 7 -order -vault -out; no broadcast")
+		}
+		passphrase, err := readPassphrase("Vault passphrase: ")
+		if err != nil {
+			return err
+		}
+		secrets, _, err := directVaultSecrets(o.VaultPath, passphrase)
+		if err != nil {
+			return err
+		}
+		var active string
+		if err := o.Node.call("dna_getCoinbaseAddr", []any{}, &active); err != nil {
+			return err
+		}
+		caller, err := directAddress(active)
+		if err != nil {
+			return err
+		}
+		message, err := preparePoolV7PrivateMessage(o.Node, contract, o.OrderID, secrets, caller)
+		if err != nil {
+			return err
+		}
+		if err := writeNewPoolV7PrivateFile(o.OutPath, []byte(message)); err != nil {
+			return err
+		}
+		fmt.Println("v7 encrypted delivery written locally; no message sent")
+		return nil
+	case "direct-v7-receive":
+		if o.DirectVersion != 7 || o.OrderID == 0 || o.MessagePath == "" || o.PurchasePath == "" ||
+			o.DeliveryKeyPath == "" || o.VaultPath == "" || !o.OutExplicit || o.OutPath == "" || o.Broadcast || o.AutoConfirm {
+			return errors.New("direct-v7-receive needs -direct-version 7 -order -message -purchase -delivery-key -vault -out; no broadcast")
+		}
+		message, err := readDirectMessageFile(o.MessagePath)
+		if err != nil {
+			return err
+		}
+		purchase, err := readPreparedAction(o.PurchasePath)
+		if err != nil {
+			return err
+		}
+		deliveryKey, err := loadDeliveryKey(o.DeliveryKeyPath)
+		if err != nil {
+			return err
+		}
+		record, payload, err := verifyPoolV7PrivateDelivery(o.Node, contract, o.OrderID, message, purchase, deliveryKey)
+		if err != nil {
+			return err
+		}
+		if err := signDirectOpened(record, deliveryKey); err != nil {
+			return err
+		}
+		passphrase, err := confirmPassphrase()
+		if err != nil {
+			return err
+		}
+		vaultJSON, err := json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+		if err := WriteVault(o.VaultPath, passphrase, vaultJSON); err != nil {
+			return err
+		}
+		receiptJSON, err := json.MarshalIndent(record, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := writeNewPoolV7PrivateFile(o.OutPath, receiptJSON); err != nil {
+			return err
+		}
+		fmt.Printf("verified %d original v7 flips; receipt and private vault saved; no confirmation sent\n", record.UsableFlips)
+		return nil
 	case "direct-pool-qualify", "direct-pool-prove-bundle":
 		return prepareDirectV6PoolFromFiles(o, contract)
 	case "direct-pool-market":

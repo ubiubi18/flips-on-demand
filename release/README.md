@@ -1,5 +1,12 @@
 # Historical release experiments
 
+**Current status (2026-10-18):** The separate direct-v7 one-seed candidate
+completed one owner-operated, funded two-identity mainnet pilot, including a
+private sale, buyer challenge, seller fallback, and public proof and reveal.
+Its candidate artifact is recorded in `DIRECT_V7_MANIFEST.json`. This does not
+qualify other contracts or a general release. The authorization and readiness
+statements below describe earlier prototypes, not the current v7 pilot.
+
 This document records earlier contract candidates and a separate experimental
 v6 build recipe. It does not authorize a deployment. Some recipes and fee
 observations refer to older code and may no longer work as written. Start with
