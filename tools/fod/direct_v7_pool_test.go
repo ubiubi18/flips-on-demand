@@ -239,6 +239,15 @@ func TestDirectV7DeployManifestAndIndependentCodePin(t *testing.T) {
 		prepared.RawTx == "" || prepared.Amount != "1" || prepared.Broadcast {
 		t.Fatalf("matching pin did not produce a one-unit offline deploy: %+v, %v", prepared, err)
 	}
+	signed, err := hex.DecodeString(prepared.RawTx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	shortFee := requiredMaxFeeFor(gas, uint64(len(signed))+directV7DeployHeadroomBytes/2, big.NewInt(1))
+	if err := runPrepareDeployV7(codePath, hex.EncodeToString(hash[:]), keyPath, hex.EncodeToString(deployNonceFixture()), seedID,
+		NetworkNamePinned, filepath.Join(root, "short-fee.json"), 7, 230, big.NewInt(1), shortFee, big.NewInt(0), big.NewInt(1), false); err == nil || !strings.Contains(err.Error(), "below conservative minimum") {
+		t.Fatalf("v7 deploy accepted a max fee without execution headroom: %v", err)
+	}
 	manifest["checks"].(map[string]any)["deploy"].(map[string]any)["payloadBytes"] = len(code)
 	write()
 	if _, err := deployGasForDirectV7Code(codePath, code); err == nil {

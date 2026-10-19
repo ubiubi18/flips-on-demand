@@ -491,6 +491,20 @@ unsafe fn refund_action_sentinel() {
     transfer(&sender, 1);
 }
 
+// Included WASM deployments receive their attached value before execution.
+// The node's deploy estimator runs without that credit. Both paths require
+// the exact sentinel; the estimate has no value to refund or liabilities.
+unsafe fn refund_deploy_sentinel() {
+    if amount(pay_amount()) != Some(1) {
+        refused();
+    }
+    let held = amount(balance()).unwrap_or_else(|| refused());
+    if held != 0 {
+        let sender = address(caller()).unwrap_or_else(|| refused());
+        transfer(&sender, 1);
+    }
+}
+
 unsafe fn virtual_pool() -> (u64, u128) {
     let units = read_u64(PRIMARY_UNITS_KEY)
         .checked_add(read_u64(SECONDARY_UNITS_KEY))
@@ -1065,7 +1079,7 @@ fn refused() -> ! {
 #[no_mangle]
 pub extern "C" fn deploy(arg: u32) -> u32 {
     unsafe {
-        refund_action_sentinel();
+        refund_deploy_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 32 {
             refused();

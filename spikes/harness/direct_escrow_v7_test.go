@@ -220,6 +220,18 @@ func TestDirectV7StrictActionValueRefundsCaller(t *testing.T) {
 	}
 }
 
+func TestDirectV7DeployEstimateWithoutUpfrontBalanceCredit(t *testing.T) {
+	f := newDirectV7UndeployedFixture(t)
+	f.env.SetPayAmount(big.NewInt(1))
+	if _, _, err := lib.Deploy(f.api, f.code, [][]byte{f.seedID[:]}, lib.Address{}, maxCallGasWasm, false); err != nil {
+		t.Fatalf("deploy estimate rejected exact call value without the node's missing balance credit: %v", err)
+	}
+	if f.env.ContractBalance().Sign() != 0 || f.env.BalanceOf(callerAddr).Sign() != 0 {
+		t.Fatal("deploy estimate invented or transferred a balance")
+	}
+	f.units(t, "pool/value-policy", 1)
+}
+
 func (f *directV7Fixture) syntheticSeed(t *testing.T, author lib.Address, epoch uint16, contentProven bool) ([32]byte, []byte) {
 	t.Helper()
 	id := v7OfferID(author, epoch)

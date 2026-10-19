@@ -20,6 +20,8 @@ import (
 	"github.com/idena-network/idena-go/crypto"
 )
 
+const directV7DeployHeadroomBytes uint64 = 2048
+
 func BuildDirectV7PoolDeployTransaction(code, deployNonce, seedID []byte, identity *ecdsa.PrivateKey, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int) ([]byte, common.Address, common.Address, error) {
 	if len(seedID) != 32 || amount == nil || amount.Cmp(big.NewInt(1)) != 0 {
 		return nil, common.Address{}, common.Address{}, errors.New("v7 revised deploy needs one 32-byte seed ID and one refundable base unit")
@@ -79,7 +81,7 @@ func deployGasForDirectV7Code(codePath string, code []byte) (operationGas, error
 		manifest.Checks.Deploy.WasmGas > maxUserGasUpgrade11*wasmGasPerUserGas ||
 		manifest.Checks.Deploy.PayloadBytes != uint64(len(code)+32) ||
 		manifest.Checks.Deploy.ConservativeTransactionGas !=
-			userGasForWasmGas(manifest.Checks.Deploy.WasmGas)+(uint64(len(code)+32)+2048)*10 ||
+			userGasForWasmGas(manifest.Checks.Deploy.WasmGas)+(uint64(len(code)+32)+directV7DeployHeadroomBytes)*10 ||
 		manifest.Checks.Deploy.ConservativeTransactionGas >= maxUserGasUpgrade11 {
 		return operationGas{}, errors.New("v7 candidate manifest differs from measured module or policy")
 	}
@@ -121,8 +123,8 @@ func runPrepareDeployV7(codePath, expectedCodeHash, nodeKeyPath, deployNonceHex,
 	if err != nil {
 		return err
 	}
-	if required := requiredMaxFeeFor(gas.WasmGas, uint64(len(raw)), feePerGas); maxFee.Cmp(required) < 0 {
-		return fmt.Errorf("v7 deploy max fee %s is below measured minimum %s at supplied fee rate", maxFee, required)
+	if required := requiredMaxFeeFor(gas.WasmGas, uint64(len(raw))+directV7DeployHeadroomBytes, feePerGas); maxFee.Cmp(required) < 0 {
+		return fmt.Errorf("v7 deploy max fee %s is below conservative minimum %s at supplied fee rate", maxFee, required)
 	}
 	if maxFee.Cmp(maxMaxFeeFor(feePerGas)) > 0 {
 		return errors.New("v7 deploy max fee exceeds the node fee cap at supplied rate")
