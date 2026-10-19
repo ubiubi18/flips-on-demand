@@ -156,7 +156,7 @@ func TestDirectV7DeployOneArgumentAndSignGate(t *testing.T) {
 	}
 }
 
-func TestDirectV7DeployManifestCountsConstructorBytes(t *testing.T) {
+func TestDirectV7DeployManifestAndIndependentCodePin(t *testing.T) {
 	code := deployModule()
 	root := t.TempDir()
 	codePath := filepath.Join(root, "release", "artifacts", "fod_direct_escrow_v7.wasm")
@@ -193,9 +193,49 @@ func TestDirectV7DeployManifestCountsConstructorBytes(t *testing.T) {
 		}
 	}
 	write()
+	if err := os.WriteFile(codePath, code, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	measured, err := deployGasForDirectV7Code(codePath, code)
 	if err != nil || measured.TxBytes != payloadBytes {
 		t.Fatalf("one-seed deployment must count all constructor bytes: gas=%+v err=%v", measured, err)
+	}
+	seedID := strings.Repeat("01", 32)
+	prepare := func(pin, keyPath, outPath string) error {
+		return runPrepareDeployV7(codePath, pin, keyPath, hex.EncodeToString(deployNonceFixture()), seedID,
+			NetworkNamePinned, outPath, 7, 230, big.NewInt(0), big.NewInt(1_000_000), big.NewInt(0), big.NewInt(1), false)
+	}
+	for _, tc := range []struct {
+		name, pin, want string
+	}{
+		{"missing pin", "", "requires an independent lowercase"},
+		{"wrong pin", strings.Repeat("00", 32), "differs from independent"},
+		{"uppercase pin", strings.ToUpper(hex.EncodeToString(hash[:])), "requires an independent lowercase"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			outPath := filepath.Join(root, tc.name+".json")
+			err := prepare(tc.pin, filepath.Join(root, "missing-nodekey"), outPath)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("pin gate failed before nodekey load: %v", err)
+			}
+			if _, err := os.Stat(outPath); !os.IsNotExist(err) {
+				t.Fatalf("refused deployment wrote a signed file: %v", err)
+			}
+		})
+	}
+	keyPath, _ := writeTestKey(t, root, "nodekey")
+	outPath := filepath.Join(root, "signed.json")
+	if err := prepare(hex.EncodeToString(hash[:]), keyPath, outPath); err != nil {
+		t.Fatalf("matching independent pin refused: %v", err)
+	}
+	raw, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var prepared PreparedDeploy
+	if err := json.Unmarshal(raw, &prepared); err != nil || prepared.CodeHash != hex.EncodeToString(hash[:]) ||
+		prepared.RawTx == "" || prepared.Amount != "0" || prepared.Broadcast {
+		t.Fatalf("matching pin did not produce a zero-value offline deploy: %+v, %v", prepared, err)
 	}
 	manifest["checks"].(map[string]any)["deploy"].(map[string]any)["payloadBytes"] = len(code)
 	write()

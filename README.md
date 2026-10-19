@@ -108,7 +108,7 @@ NODEKEY_FILE='/absolute/path/to/your/nodekey-file'
   -contract "$CONTRACT" -code-hash "$CODE_HASH" -nodekey "$NODEKEY_FILE"
 ```
 
-The executable opens a page bound to `127.0.0.1` and prints its URL if your browser does not open. Omit `-nodekey` for read-only use. The app's private actions, delivery keys, and receipts stay in an owner-only local data folder; keep that folder and the nodekey secure. The browser page cannot send a transaction during preparation: it requires a separate review and signing step. The seller must still transfer a generated ciphertext file to the buyer through a channel of their choice. The standalone page checks the original CID inventory against contract storage, then optionally displays images from the public Idena explorer; missing explorer images do not block trading, and pictures are not content or delivery proof. The node's current fee rate and a read-only call estimate suggest a fee ceiling, which remains visible for review and can be overridden. This is an experimental local interface, not a verified deployment directory or a substitute for an independent security audit.
+The executable opens a page bound to `127.0.0.1` and prints its URL if your browser does not open. Enter the pairing code printed in the terminal before using the page; a reload requires pairing again. Omit `-nodekey` for read-only use. The app's private actions, delivery keys, and receipts stay in an owner-only local data folder; keep that folder and the nodekey secure. Signing attempts also reserve the identity nonce in a separate owner-only local journal until the chain outcome can be reconciled. The browser page cannot send a transaction during preparation: it requires a separate review and signing step. The seller must still transfer a generated ciphertext file to the buyer through a channel of their choice. The standalone page checks the original CID inventory against contract storage, then optionally displays images from the public Idena explorer; missing explorer images do not block trading, and pictures are not content or delivery proof. The node's current fee rate and a read-only call estimate suggest a fee ceiling, which remains visible for review and can be overridden. This is an experimental local interface, not a verified deployment directory or a substitute for an independent security audit.
 
 For a read-only JSON view of the same v7 queue, use `./fod direct-v7-market -direct-version 7 -network idena -rpc "$RPC_URL" -key-file "$RPC_KEY_FILE" -contract "$CONTRACT" -code-hash "$CODE_HASH" -out -`. It includes the oldest selectable offer, the current quote, and open orders; it does not sign or send a transaction.
 
@@ -144,10 +144,12 @@ Compare `contract_getStake.result.Hash` with the manifest's `artifact.codeHash` 
 
 #### If you deploy your own instance
 
-An existing v7 address is unnecessary if you deploy the candidate yourself. The constructor pins **one** seed bundle ID; you must be able to qualify, prove, and publicly disclose that real bundle before activation. From `tools/fod`, `prepare-deploy` signs a **zero-value** transaction into a private file but never broadcasts it. Supply a live base-unit fee rate, sufficient maximum fee for the large WASM deployment, your next nonce, and current epoch:
+An existing v7 address is unnecessary if you deploy the candidate yourself. The constructor pins **one** seed bundle ID; you must be able to qualify, prove, and publicly disclose that real bundle before activation. From `tools/fod`, `prepare-deploy` signs a **zero-value** transaction into a private file but never broadcasts it. Build the reviewed source revision in a separate clean checkout and take its `artifact.codeHash` as the independent `-code-hash` pin; do not take the pin from the manifest beside the WASM you are about to sign. Supply this pin, a live base-unit fee rate, sufficient maximum fee for the large WASM deployment, your next nonce, and current epoch:
 
 ```bash
 SEED_ID='your-verified-64-hex-seed-offer-id'
+REVIEWED_MANIFEST='/absolute/path/to/separate/clean-build/DIRECT_V7_MANIFEST.json'
+CODE_HASH="$(jq -er '.artifact.codeHash' "$REVIEWED_MANIFEST")"
 FEE_PER_GAS_BASE='your-current-base-unit-rate'
 MAX_FEE_BASE='your-reviewed-base-unit-fee-ceiling'
 NEXT_NONCE='your-next-account-nonce'
@@ -155,7 +157,7 @@ TX_EPOCH='your-current-chain-epoch'
 NODEKEY_FILE='/absolute/path/to/your/nodekey-file'
 DEPLOY_SIGNED='/absolute/path/to/private/deploy-signed.json'
 ./fod prepare-deploy -code ../../release/artifacts/fod_direct_escrow_v7.wasm \
-  -v7-seed-id "$SEED_ID" -network idena -nodekey "$NODEKEY_FILE" \
+  -code-hash "$CODE_HASH" -v7-seed-id "$SEED_ID" -network idena -nodekey "$NODEKEY_FILE" \
   -nonce "$NEXT_NONCE" -tx-epoch "$TX_EPOCH" \
   -fee-per-gas "$FEE_PER_GAS_BASE" -max-fee "$MAX_FEE_BASE" \
   -signed "$DEPLOY_SIGNED"

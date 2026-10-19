@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"embed"
 	"encoding/hex"
 	"encoding/json"
@@ -54,6 +55,9 @@ type standaloneServer struct {
 	client     *client
 	origin     string
 	token      string
+	pairCode   string
+	pairFailed int
+	nonceDir   string
 	mu         sync.Mutex
 	runCommand func(context.Context, []string, string) ([]byte, error)
 	market     func() (any, error)
@@ -91,6 +95,14 @@ type standaloneSubmission struct {
 type standalonePrivateResult struct {
 	ID   string `json:"id"`
 	Kind string `json:"kind"`
+}
+
+type standaloneNonceReservation struct {
+	Signer     string `json:"signer"`
+	Nonce      uint32 `json:"nonce"`
+	ActionID   string `json:"actionId"`
+	ReviewHash string `json:"reviewHash"`
+	CreatedAt  string `json:"createdAt"`
 }
 
 func randomStandaloneID() (string, error) {
@@ -167,7 +179,21 @@ func newStandaloneServer(cfg standaloneConfig) (*standaloneServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &standaloneServer{cfg: cfg, client: c, token: token}
+	pairCode, err := randomStandaloneID()
+	if err != nil {
+		return nil, err
+	}
+	s := &standaloneServer{cfg: cfg, client: c, token: token, pairCode: pairCode}
+	if cfg.NodeKey != "" {
+		base, err := os.UserConfigDir()
+		if err != nil {
+			return nil, fmt.Errorf("nonce journal directory unavailable: %w", err)
+		}
+		s.nonceDir = filepath.Join(base, "Flips on Demand nonce journal")
+		if err := standalonePrivateDir(s.nonceDir); err != nil {
+			return nil, err
+		}
+	}
 	s.runCommand = s.command
 	s.market = func() (any, error) { return readPoolV7MarketSnapshot(s.client, s.cfg.Contract, s.cfg.CodeHash) }
 	return s, nil
@@ -195,6 +221,91 @@ func (s *standaloneServer) actionDir(id string) (string, error) {
 		return "", errors.New("invalid action ID")
 	}
 	return filepath.Join(s.cfg.DataDir, "actions", id), nil
+}
+
+func (s *standaloneServer) nonceReservationPath(signer string, nonce uint32) (string, error) {
+	address, err := directAddress(signer)
+	if err != nil || nonce == 0 || s.nonceDir == "" {
+		return "", errors.New("nonce journal unavailable")
+	}
+	if err := standalonePrivateDir(s.nonceDir); err != nil {
+		return "", err
+	}
+	return filepath.Join(s.nonceDir, fmt.Sprintf("%s-%d.json", address, nonce)), nil
+}
+
+func standaloneSyncDir(path string) error {
+	dir, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+	return dir.Sync()
+}
+
+// Reserve before creating an action marker or invoking the signing CLI. The
+// fixed per-user directory keeps this guard when the app data path changes.
+func (s *standaloneServer) reserveNonce(a standaloneAction, nonce uint32) error {
+	path, err := s.nonceReservationPath(a.Signer, nonce)
+	if err != nil {
+		return err
+	}
+	if !standaloneID.MatchString(a.ID) || !isHex(a.ReviewHash, 32) {
+		return errors.New("invalid action for nonce reservation")
+	}
+	record := standaloneNonceReservation{Signer: a.Signer, Nonce: nonce, ActionID: a.ID,
+		ReviewHash: a.ReviewHash, CreatedAt: time.Now().UTC().Format(time.RFC3339)}
+	raw, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	err = writePrivateFile(path, false, func(file *os.File) error {
+		_, err := file.Write(raw)
+		return err
+	})
+	if errors.Is(err, os.ErrExist) {
+		return errors.New("this identity and nonce have an unresolved saved attempt; reconcile it before signing another action")
+	}
+	if err != nil {
+		return fmt.Errorf("nonce journal needs reconciliation: %w", err)
+	}
+	return nil
+}
+
+// A missing receipt leaves the reservation in place. Only an included receipt
+// or a chain nonce that has consumed the reserved value permits its removal.
+func (s *standaloneServer) reconcileNonceReservation(a standaloneAction, signed SubmittedTransaction) error {
+	path, err := s.nonceReservationPath(signed.Sender, signed.AccountNonce)
+	if err != nil {
+		return err
+	}
+	raw, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil // transactions signed before this journal was introduced
+	}
+	if err != nil {
+		return err
+	}
+	var record standaloneNonceReservation
+	if err := json.Unmarshal(raw, &record); err != nil || record.Signer != a.Signer ||
+		record.Nonce != signed.AccountNonce || record.ActionID != a.ID || record.ReviewHash != a.ReviewHash {
+		return errors.New("nonce journal differs from the saved action; review it manually")
+	}
+	if signed.Outcome == nil || !signed.Outcome.Included {
+		var account struct {
+			Nonce uint32 `json:"nonce"`
+		}
+		if err := s.client.call("dna_getBalance", []any{"0x" + a.Signer}, &account); err != nil {
+			return nil // no trustworthy consumed-nonce evidence yet
+		}
+		if account.Nonce < signed.AccountNonce {
+			return nil
+		}
+	}
+	if err := os.Remove(path); err != nil {
+		return err
+	}
+	return standaloneSyncDir(s.nonceDir)
 }
 
 func (s *standaloneServer) privateDir(id string) (string, error) {
@@ -554,6 +665,9 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 	if err := s.client.call("dna_epoch", []any{}, &chainEpoch); err != nil {
 		return standaloneAction{}, err
 	}
+	if err := s.reserveNonce(a, account.Nonce+1); err != nil {
+		return standaloneAction{}, err
+	}
 	dir, _ := s.actionDir(a.ID)
 	marker, err := os.OpenFile(filepath.Join(dir, "attempted"), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
@@ -581,6 +695,10 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 }
 
 func (s *standaloneServer) reconcile(id string) (standaloneAction, error) {
+	a, err := s.readAction(id)
+	if err != nil {
+		return standaloneAction{}, err
+	}
 	dir, err := s.actionDir(id)
 	if err != nil {
 		return standaloneAction{}, err
@@ -597,8 +715,15 @@ func (s *standaloneServer) reconcile(id string) (standaloneAction, error) {
 	if signed.Contract != s.cfg.Contract || !standaloneID.MatchString(id) || !isHex(strings.TrimPrefix(signed.TxHash, "0x"), 32) {
 		return standaloneAction{}, errors.New("saved transaction hash or contract is invalid")
 	}
+	signer, err := directAddress(signed.Sender)
+	if err != nil || signer != a.Signer || signed.AccountNonce == 0 {
+		return standaloneAction{}, errors.New("saved transaction signer or nonce is invalid")
+	}
 	signed.Outcome = recordOutcome(s.client, signed.TxHash)
 	if err := writePrivateJSON(path, &signed); err != nil {
+		return standaloneAction{}, err
+	}
+	if err := s.reconcileNonceReservation(a, signed); err != nil {
 		return standaloneAction{}, err
 	}
 	return s.readAction(id)
@@ -625,7 +750,6 @@ func (s *standaloneServer) handler() http.Handler {
 			}
 			if route == "/" {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				raw = []byte(strings.ReplaceAll(string(raw), "__APP_TOKEN__", s.token))
 			} else if strings.HasSuffix(route, ".js") {
 				w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 			} else {
@@ -634,6 +758,31 @@ func (s *standaloneServer) handler() http.Handler {
 			_, _ = w.Write(raw)
 		})
 	}
+	mux.HandleFunc("/api/pair", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method refused", 405)
+			return
+		}
+		var request struct {
+			Code string `json:"code"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 256)
+		decodeErr := json.NewDecoder(r.Body).Decode(&request)
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if s.pairFailed >= 5 {
+			http.Error(w, "pairing unavailable for this run", http.StatusTooManyRequests)
+			return
+		}
+		if decodeErr != nil || s.pairCode == "" || subtle.ConstantTimeCompare([]byte(request.Code), []byte(s.pairCode)) != 1 {
+			s.pairFailed++
+			http.Error(w, "pairing refused", http.StatusForbidden)
+			return
+		}
+		writeStandaloneJSON(w, struct {
+			Token string `json:"token"`
+		}{Token: s.token})
+	})
 	mux.HandleFunc("/api/market", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method refused", 405)
@@ -794,15 +943,14 @@ func (s *standaloneServer) handler() http.Handler {
 			http.Error(w, "host refused", 403)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/api/") && r.Header.Get("X-FOD-Token") != s.token {
-			http.Error(w, "local request token refused", 403)
+		if origin := r.Header.Get("Origin"); (origin != "" && origin != s.origin) || (r.Method == http.MethodPost && origin != s.origin) {
+			http.Error(w, "origin refused", 403)
 			return
 		}
-		if r.Method == http.MethodPost {
-			if r.Header.Get("Origin") != s.origin || r.Header.Get("X-FOD-Token") != s.token {
-				http.Error(w, "local request token refused", 403)
-				return
-			}
+		if strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/api/pair" &&
+			(s.token == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-FOD-Token")), []byte(s.token)) != 1) {
+			http.Error(w, "local request token refused", 403)
+			return
 		}
 		mux.ServeHTTP(w, r)
 	})
@@ -833,6 +981,7 @@ func runStandaloneApp(cfg standaloneConfig) error {
 	defer listener.Close()
 	s.origin = "http://" + listener.Addr().String()
 	fmt.Println("Flips on Demand local app:", s.origin)
+	fmt.Println("Enter this pairing code in the browser:", s.pairCode)
 	fmt.Println("The page uses your own node. Keep this terminal open; no transaction is sent without the review and submit step.")
 	if err := openStandaloneBrowser(s.origin); err != nil {
 		fmt.Println("Open the local app URL above in your browser.")

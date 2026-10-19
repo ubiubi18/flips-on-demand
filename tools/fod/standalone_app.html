@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="fod-token" content="__APP_TOKEN__">
   <title>Flips on Demand</title>
   <link rel="stylesheet" href="/app.css">
   <script defer src="/app.js"></script>
@@ -13,7 +12,15 @@
     <div class="brand"><span class="mark">F</span><strong>Flips on Demand</strong><span class="version">0.1</span></div>
     <span class="local">Local app · Your node</span>
   </header>
-  <main>
+  <section id="pairing" aria-labelledby="pairing-title">
+    <h1 id="pairing-title">Pair this browser</h1>
+    <form id="pair-form">
+      <label>Code from the app terminal <input id="pair-code" name="code" autocomplete="off" spellcheck="false" required autofocus></label>
+      <button class="primary" type="submit">Pair</button>
+    </form>
+    <p id="pair-message" class="subtle" role="status" aria-live="polite"></p>
+  </section>
+  <main id="workspace" hidden>
     <p class="risk">Experimental trading software. Transactions use real iDNA and cannot be undone. Verify the contract and code before using your funds.</p>
     <div id="message" role="status" aria-live="polite"></div>
     <section class="market" aria-labelledby="market-title">

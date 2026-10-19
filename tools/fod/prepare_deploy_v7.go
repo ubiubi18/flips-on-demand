@@ -84,7 +84,10 @@ func deployGasForDirectV7Code(codePath string, code []byte) (operationGas, error
 	return operationGas{Operation: operationDeployModule, WasmGas: manifest.Checks.Deploy.WasmGas, TxBytes: uint64(len(code) + 32), Runs: 1}, nil
 }
 
-func runPrepareDeployV7(codePath, nodeKeyPath, deployNonceHex, seedIDHex, network, outPath string, nonce uint32, epoch uint16, amount, maxFee, tips, feePerGas *big.Int, broadcast bool) error {
+func runPrepareDeployV7(codePath, expectedCodeHash, nodeKeyPath, deployNonceHex, seedIDHex, network, outPath string, nonce uint32, epoch uint16, amount, maxFee, tips, feePerGas *big.Int, broadcast bool) error {
+	if !isHex(expectedCodeHash, 32) || expectedCodeHash != strings.ToLower(expectedCodeHash) {
+		return errors.New("v7 deploy requires an independent lowercase 32-byte -code-hash pin")
+	}
 	if broadcast || network != NetworkNamePinned || outPath == "" || nodeKeyPath == "" ||
 		amount == nil || amount.Sign() != 0 || maxFee == nil || maxFee.Sign() <= 0 ||
 		tips == nil || tips.Sign() < 0 || feePerGas == nil || feePerGas.Sign() <= 0 ||
@@ -94,6 +97,10 @@ func runPrepareDeployV7(codePath, nodeKeyPath, deployNonceHex, seedIDHex, networ
 	code, err := os.ReadFile(codePath)
 	if err != nil {
 		return err
+	}
+	hash := crypto.Hash(code)
+	if hex.EncodeToString(hash[:]) != expectedCodeHash {
+		return errors.New("v7 module differs from independent -code-hash pin")
 	}
 	gas, err := deployGasForDirectV7Code(codePath, code)
 	if err != nil {
@@ -118,7 +125,6 @@ func runPrepareDeployV7(codePath, nodeKeyPath, deployNonceHex, seedIDHex, networ
 	if maxFee.Cmp(maxMaxFeeFor(feePerGas)) > 0 {
 		return errors.New("v7 deploy max fee exceeds the node fee cap at supplied rate")
 	}
-	hash := crypto.Hash(code)
 	prepared := &PreparedDeploy{
 		Format: preparedDeployFormat, Version: actionRequestVersion, Network: network,
 		Code: codePath, CodeBytes: len(code), CodeHash: hex.EncodeToString(hash[:]),

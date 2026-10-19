@@ -206,7 +206,7 @@ func main() {
 		requireNodeFlag     = flag.Bool("require-node", false, "refuse an indexer cross-check that no node confirmed (assignment and eligibility modes)")
 		epochBlockFlag      = flag.Uint64("epoch-block", 0, "the block an epoch's state root belongs to, when the caller knows it (assignment and eligibility modes; default: ask the indexer)")
 		codePath            = flag.String("code", "", "path to the contract module to deploy (prepare-deploy mode)")
-		codeHashFlag        = flag.String("code-hash", "", "independently verified Keccak-256 hash of deployed contract code (prepare-buy and buy submit)")
+		codeHashFlag        = flag.String("code-hash", "", "independently verified Keccak-256 code hash (v7 prepare-deploy, prepare-buy, and buy submit)")
 		directVersionFlag   = flag.Int("direct-version", 0, "direct contract version; 4 and 5 select proof-backed direct sales, 6 selects v6 pool reads, 7 selects v7 preparation (default: pinned deployed v3)")
 		v7OfferIDFlag       = flag.String("v7-offer-id", "", "32-byte v7 offer ID for direct-v7-prepare")
 		minimumPayoutFlag   = flag.String("minimum-payout", "0", "minimum seller payout in base units for v7 list")
@@ -592,7 +592,7 @@ func main() {
 				fmt.Fprintln(os.Stderr, "v7 deploy cannot use v6 seed IDs")
 				os.Exit(1)
 			}
-			if err := runPrepareDeployV7(*codePath, *nodeKeyPath, *deployNonceFlag, *v7SeedIDFlag, *networkFlag, deployPath, nonce, epoch, amount, maxFee, tips, deployFeePerGas, *broadcastFlag); err != nil {
+			if err := runPrepareDeployV7(*codePath, *codeHashFlag, *nodeKeyPath, *deployNonceFlag, *v7SeedIDFlag, *networkFlag, deployPath, nonce, epoch, amount, maxFee, tips, deployFeePerGas, *broadcastFlag); err != nil {
 				fmt.Fprintf(os.Stderr, "v7 deploy refused: %v\n", err)
 				os.Exit(1)
 			}

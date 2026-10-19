@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const token = document.querySelector('meta[name="fod-token"]').content;
+  let token = null;
   const $ = (id) => document.getElementById(id);
   let selected = null;
   let market = null;
@@ -22,6 +22,7 @@
   };
   const setMessage = (value) => { $('message').textContent = value || ''; };
   const request = async (path, options = {}) => {
+    if (!token) throw new Error('Pair this browser first.');
     const response = await fetch(path, {cache: 'no-store', ...options,
       headers: {...options.headers, 'X-FOD-Token': token}});
     if (!response.ok) throw new Error((await response.text()).trim());
@@ -145,6 +146,24 @@
       }
     } catch (error) { setMessage(error.message); }
   };
+  $('pair-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button'); button.disabled = true;
+    $('pair-message').textContent = '';
+    try {
+      const response = await fetch('/api/pair', {method:'POST', cache:'no-store',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify({code:$('pair-code').value.trim()})});
+      if (!response.ok) throw new Error((await response.text()).trim());
+      const result = await response.json();
+      if (!/^[0-9a-f]{32}$/.test(result.token)) throw new Error('Pairing response was invalid.');
+      token = result.token;
+      $('pair-code').value = '';
+      $('pairing').hidden = true; $('workspace').hidden = false;
+      void refreshMarket(); void loadActions();
+    } catch (error) { $('pair-message').textContent = error.message; }
+    finally { button.disabled = false; }
+  });
   $('prepare-form').addEventListener('submit', async (event) => {
     event.preventDefault(); setMessage('Preparing and estimating against your node…');
     const form = event.currentTarget;
@@ -231,5 +250,4 @@
     $('evidence').hidden = !['session', 'proof', 'registration-host', 'vault', 'delivery'].some((field) => visible.has(field));
   }
   updateFields();
-  void refreshMarket(); void loadActions();
 })();
