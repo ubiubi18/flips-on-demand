@@ -401,7 +401,14 @@ func preparePoolV7FromFiles(o directCommandOptions, contract string) error {
 			p.Amount = new(big.Int).Add(quote, bond).String()
 		}
 	}
-	if o.Amount != "" && o.Amount != "0" && o.Amount != p.Amount {
+	if poolV7IsNonpayable(o.Operation) {
+		value, err := poolV7NonpayableValue(o.Node, contract)
+		if err != nil {
+			return err
+		}
+		p.Amount = value.String()
+	}
+	if (o.AmountExplicit || (o.Amount != "" && o.Amount != "0")) && o.Amount != p.Amount {
 		return errors.New("v7 -amount differs from the exact current method value")
 	}
 	p.Calldata = hex.EncodeToString(calldata)

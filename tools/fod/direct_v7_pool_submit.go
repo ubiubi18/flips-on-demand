@@ -112,10 +112,18 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 			return errors.New("v7 prepared offer metadata differs from current state")
 		}
 	}
-	zero := amount.Sign() == 0
+	nonpayableValue := big.NewInt(0)
+	nonpayableOK := true
+	if poolV7IsNonpayable(method) {
+		nonpayableValue, err = poolV7NonpayableValue(c, p.Contract)
+		if err != nil {
+			return err
+		}
+		nonpayableOK = amount.Cmp(nonpayableValue) == 0
+	}
 	switch method {
 	case "qualify":
-		if !zero || caller != p.Author || p.DirectSession == nil ||
+		if !nonpayableOK || caller != p.Author || p.DirectSession == nil ||
 			p.DirectSession.Author != caller || p.Epoch != p.DirectSession.Epoch ||
 			p.CoveredFlips != uint32(len(p.DirectSession.Manifest)) ||
 			p.InventoryCommitment != inventoryCommitment(caller, p.Epoch, p.DirectSession.Manifest) ||
@@ -144,7 +152,7 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 			return errors.New("v7 qualification calldata differs from canonical session")
 		}
 	case "proveBundle":
-		if !zero || offer.publicSeed || offer.contentProven || len(calldata) < 32+fastContentJournalBytes+fastContentSealBytes+2 ||
+		if !nonpayableOK || offer.publicSeed || offer.contentProven || len(calldata) < 32+fastContentJournalBytes+fastContentSealBytes+2 ||
 			!equalBytes(calldata[:32], id[:]) || !poolV7JournalMatches(calldata[32:32+fastContentJournalBytes], offer, p.Contract) {
 			return errors.New("invalid v7 independent proof context")
 		}
@@ -191,7 +199,7 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 			return errors.New("v7 independent proof needs a qualified, queued, or timely funded offer")
 		}
 	case "seedBundle":
-		if !zero || caller != p.Author || offer.status != 0 || !offer.contentProven || offer.publicSeed ||
+		if !nonpayableOK || caller != p.Author || offer.status != 0 || !offer.contentProven || offer.publicSeed ||
 			len(calldata) != 138 || !equalBytes(calldata[:32], id[:]) || !poolV7SecretsMatch(calldata[32:], offer) {
 			return errors.New("v7 seed must be the author's qualified and proved offer")
 		}
@@ -313,7 +321,7 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 			return errors.New("v7 buy amount differs from current quote and bond")
 		}
 	case "confirm":
-		if !zero || p.DirectOrderID == 0 || p.DirectOpened == nil || caller != p.Buyer || len(calldata) != 40 {
+		if !nonpayableOK || p.DirectOrderID == 0 || p.DirectOpened == nil || caller != p.Buyer || len(calldata) != 40 {
 			return errors.New("v7 confirmation needs the funded buyer's verified receipt")
 		}
 		want, err := preparePoolV7Confirm(c, p.Contract, p.DirectOrderID, p.DirectOpened)
@@ -328,11 +336,11 @@ func validatePreparedPoolV7Caller(c *client, p *preparedAction, caller string) e
 			return errors.New("v7 confirmation differs from the signed delivery receipt or current order")
 		}
 	case "buyPublicSeed", "relist", "cancel", "expireHead", "topUpBond", "refund", "slashUnproved":
-		if err := validatePoolV7LifecycleCall(c, p, caller, offer, id, calldata, amount); err != nil {
+		if err := validatePoolV7LifecycleCall(c, p, caller, offer, id, calldata, amount, nonpayableValue); err != nil {
 			return err
 		}
 	case "challenge", "startFallback", "proveAndReveal":
-		if !zero || p.DirectOrderID == 0 || len(calldata) < 8 || binary.BigEndian.Uint64(calldata[:8]) != p.DirectOrderID {
+		if !nonpayableOK || p.DirectOrderID == 0 || len(calldata) < 8 || binary.BigEndian.Uint64(calldata[:8]) != p.DirectOrderID {
 			return errors.New("invalid v7 order call")
 		}
 		order, err := readPoolV7Order(c, p.Contract, p.DirectOrderID)

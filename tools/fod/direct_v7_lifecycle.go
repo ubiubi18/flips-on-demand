@@ -32,8 +32,8 @@ func poolV7Queued(offer *poolV7Offer) bool {
 			(offer.status == 2 && offer.everSold && offer.contentProven))
 }
 
-func validatePoolV7LifecycleCall(c *client, p *preparedAction, caller string, offer *poolV7Offer, id [32]byte, calldata []byte, amount *big.Int) error {
-	if c == nil || p == nil || offer == nil || amount == nil {
+func validatePoolV7LifecycleCall(c *client, p *preparedAction, caller string, offer *poolV7Offer, id [32]byte, calldata []byte, amount, nonpayableValue *big.Int) error {
+	if c == nil || p == nil || offer == nil || amount == nil || nonpayableValue == nil {
 		return errors.New("missing v7 lifecycle context")
 	}
 	orderID := p.DirectOrderID
@@ -95,13 +95,13 @@ func validatePoolV7LifecycleCall(c *client, p *preparedAction, caller string, of
 			return errors.New("v7 relist value differs from current required bonds")
 		}
 	case "cancel":
-		if amount.Sign() != 0 || !bytes.Equal(calldata, id[:]) || caller != p.Author ||
+		if amount.Cmp(nonpayableValue) != 0 || !bytes.Equal(calldata, id[:]) || caller != p.Author ||
 			offer.publicSeed || !poolV7Queued(offer) {
-			return errors.New("v7 cancellation needs the author's queued private offer and zero value")
+			return errors.New("v7 cancellation needs the author's queued private offer and exact call value")
 		}
 	case "expireHead":
-		if amount.Sign() != 0 || !bytes.Equal(calldata, id[:]) || !poolV7Queued(offer) {
-			return errors.New("v7 head expiry needs a queued offer and zero value")
+		if amount.Cmp(nonpayableValue) != 0 || !bytes.Equal(calldata, id[:]) || !poolV7Queued(offer) {
+			return errors.New("v7 head expiry needs a queued offer and exact call value")
 		}
 		oldest, err := poolV7OldestOffer(c, p.Contract)
 		if err != nil || oldest != id {
@@ -133,9 +133,9 @@ func validatePoolV7LifecycleCall(c *client, p *preparedAction, caller string, of
 			return errors.New("v7 bond top-up needs a queued private author and positive value")
 		}
 	case "refund", "slashUnproved":
-		if amount.Sign() != 0 || orderID == 0 || len(calldata) != 8 ||
+		if amount.Cmp(nonpayableValue) != 0 || orderID == 0 || len(calldata) != 8 ||
 			binary.BigEndian.Uint64(calldata) != orderID {
-			return errors.New("v7 lifecycle order call needs zero value and exact order ID")
+			return errors.New("v7 lifecycle order call needs exact call value and order ID")
 		}
 		order, err := readPoolV7Order(c, p.Contract, orderID)
 		if err != nil || order.offer != id || order.nonce == 0 ||

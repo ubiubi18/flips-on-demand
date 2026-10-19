@@ -15,7 +15,35 @@ import (
 const (
 	poolV7ProofWindow = uint64(12_960)
 	poolV7BondGas     = int64(5_000_000)
+	poolV7ValuePolicy = "pool/value-policy"
 )
+
+// The original deployed v7 has no policy key and accepts zero-value calls.
+// The revised candidate stores 1 and refunds that one base unit in each
+// otherwise nonpayable method. Reject unknown policies before preparing value.
+func poolV7NonpayableValue(c *client, contract string) (*big.Int, error) {
+	policy, err := readPoolV7U64(c, contract, poolV7ValuePolicy)
+	if errors.Is(err, errNotInRegistry) {
+		return big.NewInt(0), nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if policy > 1 {
+		return nil, fmt.Errorf("unsupported v7 attached-value policy %d", policy)
+	}
+	return new(big.Int).SetUint64(policy), nil
+}
+
+func poolV7IsNonpayable(method string) bool {
+	switch method {
+	case "qualify", "proveBundle", "slashUnproved", "seedBundle", "cancel", "expireHead",
+		"challenge", "confirm", "startFallback", "proveAndReveal", "refund":
+		return true
+	default:
+		return false
+	}
+}
 
 type poolV7Offer struct {
 	author          [20]byte

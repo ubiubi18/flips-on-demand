@@ -13,6 +13,35 @@ import (
 	"testing"
 )
 
+func TestDirectV7CallValuePolicy(t *testing.T) {
+	policy := uint64(0)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			Method string `json:"method"`
+			Params []any  `json:"params"`
+		}
+		if json.NewDecoder(r.Body).Decode(&request) != nil || request.Method != "contract_readData" ||
+			len(request.Params) != 3 || request.Params[1] != poolV7ValuePolicy {
+			http.Error(w, "unexpected RPC", http.StatusBadRequest)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"result": "0x" + hex.EncodeToString(binary.BigEndian.AppendUint64(nil, policy))})
+	}))
+	defer server.Close()
+	c := &client{url: server.URL, http: newHTTPClient()}
+	for _, want := range []uint64{0, 1} {
+		policy = want
+		value, err := poolV7NonpayableValue(c, strings.Repeat("11", 20))
+		if err != nil || value.Cmp(new(big.Int).SetUint64(want)) != 0 {
+			t.Fatalf("policy %d returned value %v: %v", want, value, err)
+		}
+	}
+	policy = 2
+	if _, err := poolV7NonpayableValue(c, strings.Repeat("11", 20)); err == nil {
+		t.Fatal("unknown attached-value policy was accepted")
+	}
+}
+
 func TestDirectV7LifecycleCallsRequireCurrentStateAndExactValue(t *testing.T) {
 	contract, codeHash := strings.Repeat("cc", 20), strings.Repeat("cd", 32)
 	var author, buyer [20]byte
@@ -43,6 +72,7 @@ func TestDirectV7LifecycleCallsRequireCurrentStateAndExactValue(t *testing.T) {
 	head := uint64(100 + poolV7ProofWindow - 1)
 	active := hex.EncodeToString(buyer[:])
 	values := map[string][]byte{
+		"pool/value-policy":    encodeU64(0),
 		"pool/seed-id":         id[:],
 		"pool/primary-head":    id[:],
 		"pool/secondary-head":  make([]byte, 32),
@@ -193,5 +223,31 @@ func TestDirectV7LifecycleCallsRequireCurrentStateAndExactValue(t *testing.T) {
 	publicBuy.Amount = new(big.Int).Add(seedAmount, big.NewInt(1)).String()
 	if err := validatePreparedPoolV7Caller(c, publicBuy, hex.EncodeToString(buyer[:])); err == nil {
 		t.Fatal("incorrect public-seed payment was accepted")
+	}
+	values["pool/value-policy"] = encodeU64(1)
+	values["pool/primary-head"] = id[:]
+	values["pool/secondary-head"] = make([]byte, 32)
+	offer[122], offer[221] = 1, 0
+	copy(offer[90:106], encodeU128(feeBond))
+	cancel.Amount = "1"
+	if err := validatePreparedPoolV7Caller(c, cancel, hex.EncodeToString(author[:])); err != nil {
+		t.Fatalf("revised contract's refundable call value was refused: %v", err)
+	}
+	cancel.Amount = "0"
+	if err := validatePreparedPoolV7Caller(c, cancel, hex.EncodeToString(author[:])); err == nil {
+		t.Fatal("revised contract accepted missing call value")
+	}
+	checkPreparation("cancel", hex.EncodeToString(author[:]), "", "", 0)
+	raw, err := os.ReadFile(filepath.Join(preparedDir, "cancel.json"))
+	var revised preparedAction
+	if err != nil || decodeStrict(raw, &revised) != nil || revised.Amount != "1" {
+		t.Fatalf("revised contract prepared wrong call value: %v", err)
+	}
+	if err := preparePoolV7FromFiles(directCommandOptions{
+		DirectVersion: 7, Network: NetworkNamePinned, Node: c, Operation: "cancel",
+		CodeHash: codeHash, OfferID: hex.EncodeToString(id[:]), Amount: "0", AmountExplicit: true,
+		MaxFeeText: "1000000", PreparedPath: filepath.Join(preparedDir, "explicit-zero.json"),
+	}, contract); err == nil || !strings.Contains(err.Error(), "-amount differs") {
+		t.Fatalf("explicit zero value was silently replaced: %v", err)
 	}
 }

@@ -76,6 +76,7 @@ const ORDER_PREFIX: &[u8] = b"pool/order/";
 const REVEAL_PREFIX: &[u8] = b"pool/reveal/";
 const PROOF_RATE_PREFIX: &[u8] = b"pool/proof-rate/";
 const NEXT_ORDER_KEY: &[u8] = b"pool/next-order";
+const VALUE_POLICY_KEY: &[u8] = b"pool/value-policy";
 const NEXT_SEQUENCE_KEY: &[u8] = b"pool/next-sequence";
 const PENDING_KEY: &[u8] = b"pool/pending";
 const RESERVE_KEY: &[u8] = b"pool/reserve";
@@ -472,9 +473,23 @@ unsafe fn require_solvency(reserve: u128, pending: u128) {
     }
 }
 
-// The node omits a zero Amount from serialized transactions. Its WASM
-// pay_amount import traps on that absent value, so only payable methods call
-// it. Value accidentally attached to other methods remains unallocated.
+// The node omits a zero Amount from serialized transactions, so pay_amount
+// traps when absent. State-only actions require one base unit and return it
+// to the immediate caller. Check that liabilities remain covered after refund.
+unsafe fn refund_action_sentinel() {
+    if amount(pay_amount()) != Some(1) {
+        refused();
+    }
+    let liabilities = read_u128(RESERVE_KEY)
+        .checked_add(read_u128(PENDING_KEY))
+        .and_then(|value| value.checked_add(1))
+        .unwrap_or_else(|| refused());
+    if amount(balance()).unwrap_or(0) < liabilities {
+        refused();
+    }
+    let sender = address(caller()).unwrap_or_else(|| refused());
+    transfer(&sender, 1);
+}
 
 unsafe fn virtual_pool() -> (u64, u128) {
     let units = read_u64(PRIMARY_UNITS_KEY)
@@ -1050,6 +1065,7 @@ fn refused() -> ! {
 #[no_mangle]
 pub extern "C" fn deploy(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 32 {
             refused();
@@ -1072,6 +1088,7 @@ pub extern "C" fn deploy(arg: u32) -> u32 {
         write_u64(PRIMARY_UNITS_KEY, 0);
         write_u64(SECONDARY_UNITS_KEY, 0);
         write_u64(NEXT_ORDER_KEY, 1);
+        write_u64(VALUE_POLICY_KEY, 1);
         write_u64(NEXT_SEQUENCE_KEY, 1);
         write_u64(HEAD_SINCE_KEY, 0);
         write_id(PRIMARY_HEAD_KEY, &[0; 32]);
@@ -1138,6 +1155,7 @@ pub extern "C" fn activate(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn qualify(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         let (metadata, wire) = parse_qualification_arg(raw).unwrap_or_else(|| refused());
         let author = address(caller()).unwrap_or_else(|| refused());
@@ -1211,6 +1229,7 @@ pub extern "C" fn qualify(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn proveBundle(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         let (id, journal, seal, wire) = parse_prove_arg(raw).unwrap_or_else(|| refused());
         let mut offer = read_offer(&id).unwrap_or_else(|| refused());
@@ -1278,6 +1297,7 @@ pub extern "C" fn proveBundle(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn slashUnproved(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 8 {
             refused();
@@ -1330,6 +1350,7 @@ pub extern "C" fn slashUnproved(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn seedBundle(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 32 + SECRETS_BYTES {
             refused();
@@ -1439,6 +1460,7 @@ pub extern "C" fn relist(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn cancel(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         let id: [u8; 32] = raw.try_into().unwrap_or_else(|_| refused());
         let mut offer = read_offer(&id).unwrap_or_else(|| refused());
@@ -1466,6 +1488,7 @@ fn queue_head_expired(listed_at: u64, height: u64) -> bool {
 #[no_mangle]
 pub extern "C" fn expireHead(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         let id: [u8; 32] = raw.try_into().unwrap_or_else(|_| refused());
         if id == [0; 32] || oldest_offer_id() != id || read_u128(RESERVE_KEY) == 0 {
@@ -1691,6 +1714,7 @@ pub extern "C" fn buyPublicSeed(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn challenge(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 8 {
             refused();
@@ -1719,6 +1743,7 @@ pub extern "C" fn challenge(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn confirm(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != CONFIRM_ARG_BYTES {
             refused();
@@ -1746,6 +1771,7 @@ pub extern "C" fn confirm(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn startFallback(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() < 8 {
             refused();
@@ -1815,6 +1841,7 @@ pub extern "C" fn startFallback(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn proveAndReveal(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != REVEAL_ARG_BYTES {
             refused();
@@ -1849,6 +1876,7 @@ pub extern "C" fn proveAndReveal(arg: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn refund(arg: u32) -> u32 {
     unsafe {
+        refund_action_sentinel();
         let raw = read_region(arg).unwrap_or_else(|| refused());
         if raw.len() != 8 {
             refused();

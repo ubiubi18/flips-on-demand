@@ -42,6 +42,7 @@ type directCommandOptions struct {
 	OutPath         string
 	OutExplicit     bool
 	Amount          string
+	AmountExplicit  bool
 	OrderID         uint64
 	AutoConfirm     bool
 	Broadcast       bool

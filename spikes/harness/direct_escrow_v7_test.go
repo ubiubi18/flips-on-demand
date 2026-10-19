@@ -47,10 +47,28 @@ func (f *directV7Fixture) get(key string) []byte {
 	return f.env.GetStorage(&lib.GasMeter{}, []byte(key))
 }
 
+func v7SentinelAction(method string) bool {
+	switch method {
+	case "qualify", "proveBundle", "slashUnproved", "seedBundle", "cancel", "expireHead",
+		"challenge", "confirm", "startFallback", "proveAndReveal", "refund":
+		return true
+	}
+	return false
+}
+
+func (f *directV7Fixture) postSentinel() {
+	one := big.NewInt(1)
+	f.env.SetPayAmount(one)
+	f.env.CreditContractBalance(one)
+	f.env.setBalance(f.env.caller, new(big.Int).Sub(f.env.balanceOf(f.env.caller), one))
+}
+
 func (f *directV7Fixture) call(t *testing.T, method string, arg []byte) uint64 {
 	t.Helper()
 	defer f.env.ResetPayAmount()
-	if f.env.payAmount != nil && f.env.payAmount.Sign() == 0 {
+	if v7SentinelAction(method) {
+		f.postSentinel()
+	} else if f.env.payAmount != nil && f.env.payAmount.Sign() == 0 {
 		f.env.payAmount = nil
 	}
 	gas, _, err := lib.Execute(f.api, f.code, method, [][]byte{arg}, lib.Address{}, maxCallGasWasm, false)
@@ -64,7 +82,11 @@ func (f *directV7Fixture) reject(t *testing.T, method string, arg []byte) {
 	t.Helper()
 	restore := f.env.Snapshot()
 	before := f.env.StateDigest()
-	f.env.payAmount = nil
+	if v7SentinelAction(method) {
+		f.postSentinel()
+	} else {
+		f.env.payAmount = nil
+	}
 	_, _, err := lib.Execute(f.api, f.code, method, [][]byte{arg}, lib.Address{}, maxCallGasWasm, false)
 	restore()
 	f.env.ResetPayAmount()
@@ -87,6 +109,29 @@ func (f *directV7Fixture) rejectPayable(t *testing.T, method string, arg []byte,
 	}
 }
 
+func (f *directV7Fixture) rejectActionAmount(t *testing.T, method string, arg []byte, value int64) {
+	t.Helper()
+	restore := f.env.Snapshot()
+	if value == 0 {
+		f.env.payAmount = nil
+	} else {
+		f.env.SetPayAmount(big.NewInt(value))
+		f.env.CreditContractBalance(big.NewInt(value))
+		f.env.setBalance(f.env.caller, new(big.Int).Sub(f.env.balanceOf(f.env.caller), big.NewInt(value)))
+	}
+	var err error
+	if method == "deploy" {
+		_, _, err = lib.Deploy(f.api, f.code, [][]byte{arg}, lib.Address{}, maxCallGasWasm, false)
+	} else {
+		_, _, err = lib.Execute(f.api, f.code, method, [][]byte{arg}, lib.Address{}, maxCallGasWasm, false)
+	}
+	restore()
+	f.env.ResetPayAmount()
+	if err == nil {
+		t.Fatalf("v7 %s accepted %d attached base units", method, value)
+	}
+}
+
 func (f *directV7Fixture) amount(t *testing.T, key string, want *big.Int) {
 	t.Helper()
 	got := new(big.Int).SetBytes(f.get(key))
@@ -103,7 +148,7 @@ func (f *directV7Fixture) units(t *testing.T, key string, want uint64) {
 	}
 }
 
-func newDirectV7DeployedFixture(t *testing.T) *directV7Fixture {
+func newDirectV7UndeployedFixture(t *testing.T) *directV7Fixture {
 	t.Helper()
 	wasmPath := directV7WasmPath
 	if candidate := os.Getenv("FOD_DIRECT_V7_TEST_WASM"); candidate != "" {
@@ -121,7 +166,14 @@ func newDirectV7DeployedFixture(t *testing.T) *directV7Fixture {
 	f := &directV7Fixture{env: env, api: api, code: code, reserve: mustAmount("10000000000000000000000")}
 	f.seedAuthor = addressFromHex(t, hexOf(bytes.Repeat([]byte{0xc1}, 20)))
 	f.seedID = v7OfferID(f.seedAuthor, 228)
-	env.payAmount = nil
+	return f
+}
+
+func newDirectV7DeployedFixture(t *testing.T) *directV7Fixture {
+	t.Helper()
+	f := newDirectV7UndeployedFixture(t)
+	f.postSentinel()
+	env, api, code := f.env, f.api, f.code
 	deployGas, _, err := lib.Deploy(api, code, [][]byte{f.seedID[:]}, lib.Address{}, maxCallGasWasm, false)
 	if err != nil {
 		t.Fatalf("v7 deploy rejected by pinned runtime: %v", err)
@@ -131,7 +183,41 @@ func newDirectV7DeployedFixture(t *testing.T) *directV7Fixture {
 	if !bytes.Equal(f.get("pool/seed-id"), f.seedID[:]) {
 		t.Fatal("deploy did not pin the one public seed offer")
 	}
+	f.units(t, "pool/value-policy", 1)
 	return f
+}
+
+func TestDirectV7StrictActionValueRefundsCaller(t *testing.T) {
+	undeployed := newDirectV7UndeployedFixture(t)
+	for _, value := range []int64{0, 2} {
+		undeployed.rejectActionAmount(t, "deploy", undeployed.seedID[:], value)
+	}
+	if got := undeployed.get("pool/value-policy"); len(got) != 0 {
+		t.Fatal("rejected deploy left the value policy marker")
+	}
+	f := newDirectV7Fixture(t)
+	if f.env.ContractBalance().Cmp(f.reserve) != 0 || f.env.BalanceOf(callerAddr).Sign() != 0 {
+		t.Fatal("deploy or seed action retained its one-unit payment")
+	}
+	for _, method := range []string{"qualify", "proveBundle", "slashUnproved", "seedBundle", "cancel", "expireHead",
+		"challenge", "confirm", "startFallback", "proveAndReveal", "refund"} {
+		for _, value := range []int64{0, 2} {
+			f.rejectActionAmount(t, method, nil, value)
+		}
+	}
+	author := addressFromHex(t, hexOf(bytes.Repeat([]byte{0x9a}, 20)))
+	id := f.listProved(t, author, 230)
+	for _, value := range []int64{0, 2} {
+		f.rejectActionAmount(t, "cancel", id[:], value)
+	}
+	f.env.SetCaller(author)
+	f.call(t, "cancel", id[:])
+	if got := f.env.BalanceOf(author); got.Cmp(big.NewInt(5_000_000)) != 0 {
+		t.Fatalf("cancel returned %s to author, want only the 5000000 bond", got)
+	}
+	if f.env.ContractBalance().Cmp(f.reserve) != 0 {
+		t.Fatal("cancel retained its one-unit payment or failed to return the bond")
+	}
 }
 
 func (f *directV7Fixture) syntheticSeed(t *testing.T, author lib.Address, epoch uint16, contentProven bool) ([32]byte, []byte) {

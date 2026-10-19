@@ -131,7 +131,7 @@ func TestDirectV7DeployOneArgumentAndSignGate(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := [32]byte{1}
-	raw, _, _, err := BuildDirectV7PoolDeployTransaction(deployModule(), deployNonceFixture(), id[:], key, 7, 230, big.NewInt(0), big.NewInt(1_000_000), big.NewInt(0))
+	raw, _, _, err := BuildDirectV7PoolDeployTransaction(deployModule(), deployNonceFixture(), id[:], key, 7, 230, big.NewInt(1), big.NewInt(1_000_000), big.NewInt(0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,14 +140,16 @@ func TestDirectV7DeployOneArgumentAndSignGate(t *testing.T) {
 		t.Fatal(err)
 	}
 	parsed := attachments.ParseDeployContractAttachment(&tx)
-	if parsed == nil || len(parsed.Args) != 1 || !bytes.Equal(parsed.Args[0], id[:]) || tx.Amount != nil {
-		t.Fatal("v7 signed deploy lost the single constructor ID or gained value")
+	if parsed == nil || len(parsed.Args) != 1 || !bytes.Equal(parsed.Args[0], id[:]) || tx.Amount == nil || tx.Amount.Cmp(big.NewInt(1)) != 0 {
+		t.Fatal("v7 signed deploy lost the single constructor ID or refundable call value")
 	}
-	if _, _, _, err := BuildDirectV7PoolDeployTransaction(deployModule(), deployNonceFixture(), append(id[:], id[:]...), key, 7, 230, big.NewInt(0), big.NewInt(1_000_000), big.NewInt(0)); err == nil {
+	if _, _, _, err := BuildDirectV7PoolDeployTransaction(deployModule(), deployNonceFixture(), append(id[:], id[:]...), key, 7, 230, big.NewInt(1), big.NewInt(1_000_000), big.NewInt(0)); err == nil {
 		t.Fatal("v7 accepted v6 two-seed constructor")
 	}
-	if _, _, _, err := BuildDirectV7PoolDeployTransaction(deployModule(), deployNonceFixture(), id[:], key, 7, 230, big.NewInt(1), big.NewInt(1_000_000), big.NewInt(0)); err == nil {
-		t.Fatal("v7 accepted funded deployment")
+	for _, invalid := range []int64{0, 2} {
+		if _, _, _, err := BuildDirectV7PoolDeployTransaction(deployModule(), deployNonceFixture(), id[:], key, 7, 230, big.NewInt(invalid), big.NewInt(1_000_000), big.NewInt(0)); err == nil {
+			t.Fatalf("v7 accepted deployment value %d", invalid)
+		}
 	}
 	p := &preparedAction{Format: preparedPoolV7Challenge, Version: 1, Operation: "challenge", Network: NetworkNamePinned,
 		Contract: strings.Repeat("11", 20), DirectVersion: 7, Amount: "0", Calldata: "0000000000000001"}
@@ -168,7 +170,7 @@ func TestDirectV7DeployManifestAndIndependentCodePin(t *testing.T) {
 	gas := uint64(1200)
 	payloadBytes := uint64(len(code) + 32)
 	manifest := map[string]any{
-		"format": "fod.direct-candidate-manifest", "version": 7, "status": "candidate-only",
+		"format": "fod.direct-candidate-manifest", "version": 7, "status": "candidate-only", "nonpayableCallValue": 1,
 		"artifact": map[string]any{
 			"path": "release/artifacts/fod_direct_escrow_v7.wasm", "bytes": len(code),
 			"sha256": hex.EncodeToString(sha[:]), "codeHash": hex.EncodeToString(hash[:]),
@@ -203,7 +205,7 @@ func TestDirectV7DeployManifestAndIndependentCodePin(t *testing.T) {
 	seedID := strings.Repeat("01", 32)
 	prepare := func(pin, keyPath, outPath string) error {
 		return runPrepareDeployV7(codePath, pin, keyPath, hex.EncodeToString(deployNonceFixture()), seedID,
-			NetworkNamePinned, outPath, 7, 230, big.NewInt(0), big.NewInt(1_000_000), big.NewInt(0), big.NewInt(1), false)
+			NetworkNamePinned, outPath, 7, 230, big.NewInt(1), big.NewInt(1_000_000), big.NewInt(0), big.NewInt(1), false)
 	}
 	for _, tc := range []struct {
 		name, pin, want string
@@ -234,8 +236,8 @@ func TestDirectV7DeployManifestAndIndependentCodePin(t *testing.T) {
 	}
 	var prepared PreparedDeploy
 	if err := json.Unmarshal(raw, &prepared); err != nil || prepared.CodeHash != hex.EncodeToString(hash[:]) ||
-		prepared.RawTx == "" || prepared.Amount != "0" || prepared.Broadcast {
-		t.Fatalf("matching pin did not produce a zero-value offline deploy: %+v, %v", prepared, err)
+		prepared.RawTx == "" || prepared.Amount != "1" || prepared.Broadcast {
+		t.Fatalf("matching pin did not produce a one-unit offline deploy: %+v, %v", prepared, err)
 	}
 	manifest["checks"].(map[string]any)["deploy"].(map[string]any)["payloadBytes"] = len(code)
 	write()
