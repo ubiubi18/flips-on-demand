@@ -28,6 +28,10 @@ type poolV7Offer struct {
 	openOrder       uint64
 	status          byte
 	everSold        bool
+	previous        [32]byte
+	next            [32]byte
+	sequence        uint64
+	listedAt        uint64
 	contentProven   bool
 	fraudCollateral *big.Int
 	publicSeed      bool
@@ -54,11 +58,14 @@ func decodePoolV7Offer(raw []byte) (*poolV7Offer, error) {
 		epoch: binary.BigEndian.Uint16(raw[20:22]), covered: binary.BigEndian.Uint32(raw[22:26]),
 		sellerBond: new(big.Int).SetBytes(raw[90:106]), nextNonce: binary.BigEndian.Uint64(raw[106:114]),
 		openOrder: binary.BigEndian.Uint64(raw[114:122]), status: raw[122], everSold: raw[123] == 1,
+		sequence: binary.BigEndian.Uint64(raw[188:196]), listedAt: binary.BigEndian.Uint64(raw[196:204]),
 		contentProven: raw[204] == 1, fraudCollateral: new(big.Int).SetBytes(raw[205:221]), publicSeed: raw[221] == 1,
 	}
 	copy(o.author[:], raw[:20])
 	copy(o.inventory[:], raw[26:58])
 	copy(o.keys[:], raw[58:90])
+	copy(o.previous[:], raw[124:156])
+	copy(o.next[:], raw[156:188])
 	if o.covered == 0 || o.covered > 32 || o.inventory == ([32]byte{}) || o.keys == ([32]byte{}) || o.nextNonce == 0 {
 		return nil, errors.New("invalid v7 offer identity or commitments")
 	}

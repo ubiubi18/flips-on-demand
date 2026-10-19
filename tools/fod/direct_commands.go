@@ -53,6 +53,9 @@ type directCommandOptions struct {
 	SignedPath      string
 	RPCURL          string
 	APIKey          string
+	RPCExplicit     bool
+	KeyFileExplicit bool
+	KeyFilePath     string
 }
 
 const (
@@ -111,6 +114,11 @@ type directCheckResult struct {
 func checkDirectPaths(o directCommandOptions) error {
 	var paths []string
 	switch o.Mode {
+	case "direct-v7-market":
+		paths = []string{o.KeyFilePath}
+		if o.OutPath != "-" {
+			paths = append(paths, o.OutPath)
+		}
 	case "direct-v7-prepare":
 		paths = []string{o.SessionPath, o.ProofPath, o.ProofHostPath, o.VaultPath, o.DeliveryKeyPath, o.DeliveryPath, o.PreparedPath}
 	case "direct-v7-dm":
@@ -210,6 +218,12 @@ func directListingRiskWarning(c *client, price *big.Int) string {
 }
 
 func directCommand(o directCommandOptions) error {
+	if o.Mode == "direct-v7-market" && (o.DirectVersion != 7 || !o.RPCExplicit || !o.KeyFileExplicit ||
+		o.Node == nil || !directLocalRPC(o.Node.url) || o.APIKey == "" || o.KeyFilePath == "" ||
+		!o.OutExplicit || strings.TrimSpace(o.OutPath) == "" || o.Broadcast || o.AutoConfirm ||
+		o.NodeKeyPath != "" || o.VaultPath != "" || o.PreparedPath != "" || o.SignedPath != "") {
+		return errors.New("direct-v7-market needs -direct-version 7 -rpc LOOPBACK -key-file FILE -network idena -contract ADDRESS -code-hash KECCAK256 -out FILE (or -out -); no signing or broadcast")
+	}
 	if o.Mode == "direct-v7-prepare" && (o.Node == nil || !directLocalRPC(o.Node.url) || o.DirectVersion != 7 ||
 		o.Broadcast || o.AutoConfirm || o.NodeKeyPath != "" || o.SignedPath != "") {
 		return errors.New("v7 preparation requires -direct-version 7 and a loopback RPC, without signing or broadcast flags")
@@ -243,6 +257,13 @@ func directCommand(o directCommandOptions) error {
 	if o.Network != NetworkNamePinned {
 		return errors.New("direct sale requires the pinned network")
 	}
+	if o.Mode == "direct-v7-market" {
+		state, err := readPoolV7MarketSnapshot(o.Node, contract, o.CodeHash)
+		if err != nil {
+			return err
+		}
+		return writePoolV7MarketSnapshot(o.OutPath, state)
+	}
 	if err := checkBuyTarget(o.Node, contract, contract, o.CodeHash); err != nil {
 		return err
 	}
@@ -250,7 +271,7 @@ func directCommand(o directCommandOptions) error {
 		return errors.New("v5 direct contract requires -direct-version 5")
 	}
 	var fallbackVersion int
-	if o.Mode != "direct-pool-market" && o.Mode != "direct-v7-prepare" && o.Mode != "direct-v7-dm" && o.Mode != "direct-v7-receive" && !isDirectV6PoolPrepareMode(o.Mode) && (o.Mode == "direct-reserve-fallback" || o.Mode == "direct-start-fallback" ||
+	if o.Mode != "direct-pool-market" && o.Mode != "direct-v7-market" && o.Mode != "direct-v7-prepare" && o.Mode != "direct-v7-dm" && o.Mode != "direct-v7-receive" && !isDirectV6PoolPrepareMode(o.Mode) && (o.Mode == "direct-reserve-fallback" || o.Mode == "direct-start-fallback" ||
 		o.Mode == "direct-fallback" || o.Mode == "direct-refund" ||
 		o.Mode == "direct-status" || o.Mode == "direct-market" || o.DirectVersion != 0) {
 		fallbackVersion, err = directFallbackVersion(o, contract)

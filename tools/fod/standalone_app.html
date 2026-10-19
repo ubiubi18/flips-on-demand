@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="fod-token" content="__APP_TOKEN__">
+  <title>Flips on Demand</title>
+  <link rel="stylesheet" href="/app.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark">F</span><strong>Flips on Demand</strong><span class="version">0.1</span></div>
+    <span class="local">Local app · Your node</span>
+  </header>
+  <main>
+    <p class="risk">Experimental trading software. Transactions use real iDNA and cannot be undone. Verify the contract and code before using your funds.</p>
+    <div id="message" role="status" aria-live="polite"></div>
+    <section class="market" aria-labelledby="market-title">
+      <div class="section-head"><h1 id="market-title">Market</h1><button id="refresh" type="button">Refresh</button></div>
+      <div id="market-state" class="market-state">Reading your node…</div>
+	  <div id="market-preview" class="market-preview" aria-label="Flip bundle preview"></div>
+      <div id="open-orders" class="open-orders"></div>
+    </section>
+    <section aria-labelledby="action-title">
+      <div class="section-head"><h2 id="action-title">Trade</h2></div>
+      <form id="prepare-form" enctype="multipart/form-data">
+        <div class="fields">
+          <label>Action <select name="operation" id="operation">
+            <optgroup label="Buy">
+              <option value="buy">Buy private bundle</option><option value="buyPublicSeed">Buy public seed</option>
+              <option value="confirm">Confirm verified delivery</option><option value="challenge">Report a delivery problem</option><option value="refund">Claim refund</option>
+            </optgroup>
+            <optgroup label="Sell">
+              <option value="qualify">Qualify my bundle</option><option value="proveBundle">Prove bundle content</option>
+              <option value="list">List private bundle</option><option value="relist">Relist bundle</option>
+              <option value="startFallback">Start fallback</option><option value="proveAndReveal">Prove and publish keys</option>
+              <option value="seedBundle">Publish public seed</option><option value="topUpBond">Top up seller bond</option>
+              <option value="cancel">Cancel listing</option>
+            </optgroup>
+            <optgroup label="Other"><option value="expireHead">Expire oldest offer</option><option value="slashUnproved">Slash unproved order</option></optgroup>
+          </select></label>
+          <label data-for="offerId">Bundle ID <input name="offerId" id="offer-id" autocomplete="off" spellcheck="false" placeholder="Next bundle fills automatically"></label>
+          <label data-for="orderId">Order ID <input name="orderId" inputmode="numeric" autocomplete="off"></label>
+          <label data-for="receiptId">Saved receipt ID <input name="receiptId" autocomplete="off" spellcheck="false" placeholder="From verified private delivery"></label>
+		  <details class="fee-option"><summary>Change suggested network fee ceiling</summary>
+		    <label>Maximum network fee <span class="unit">iDNA base units, optional</span><input name="maxFee" inputmode="numeric" autocomplete="off" placeholder="Suggested from your node when blank"></label>
+		  </details>
+          <label data-for="minimumPayout">Minimum seller payout <span class="unit">base units, optional</span><input name="minimumPayout" inputmode="numeric" autocomplete="off"></label>
+          <label data-for="amount">Attached amount <span class="unit">base units</span><input name="amount" inputmode="numeric" autocomplete="off"></label>
+        </div>
+        <details id="evidence"><summary>Local evidence and delivery files</summary>
+          <p>Select only files needed for this action. They are copied into the app's owner-only local folder and never sent to a central service.</p>
+          <div class="fields">
+            <label data-for="session">Session bundle <input type="file" name="session"></label>
+            <label data-for="proof">Sealed proof <input type="file" name="proof"></label>
+            <label data-for="registration-host">Verifier host <input type="file" name="registration-host"></label>
+            <label data-for="vault">Encrypted vault <input type="file" name="vault"></label>
+            <label data-for="delivery">Verified buyer receipt <input type="file" name="delivery"></label>
+            <label data-for="passphrase">Vault passphrase <input type="password" name="passphrase" autocomplete="off"></label>
+          </div>
+        </details>
+        <button class="primary" id="prepare" type="submit">Prepare and estimate</button>
+      </form>
+    </section>
+    <section aria-labelledby="delivery-title">
+      <h2 id="delivery-title">Private delivery</h2>
+      <p class="subtle">The contract never sends ciphertext. Share the downloaded encrypted file through a channel you choose; this app does not send it to anyone.</p>
+      <div class="delivery-grid">
+        <form id="dm-form" enctype="multipart/form-data">
+          <h3>Seller · Create ciphertext</h3>
+          <label>Funded order ID <input name="orderId" inputmode="numeric" required></label>
+          <label>Encrypted seller vault <input name="vault" type="file" required></label>
+          <label>Vault passphrase <input name="passphrase" type="password" required autocomplete="off"></label>
+          <button type="submit">Create local encrypted file</button>
+          <p id="dm-result" class="subtle"></p>
+        </form>
+        <form id="receive-form" enctype="multipart/form-data">
+          <h3>Buyer · Verify ciphertext</h3>
+          <label>Funded order ID <input name="orderId" inputmode="numeric" required></label>
+          <label>Saved private buy action ID <input name="purchaseId" required autocomplete="off" spellcheck="false"></label>
+          <label>Seller ciphertext file <input name="message" type="file" required></label>
+          <label>New vault passphrase <input name="passphrase" type="password" required autocomplete="new-password"></label>
+          <button type="submit">Verify and save receipt</button>
+          <p id="receive-result" class="subtle"></p>
+        </form>
+      </div>
+    </section>
+    <section aria-labelledby="review-title">
+      <h2 id="review-title">Review before signing</h2>
+      <p class="subtle">Preparing saves an unsigned action. It never sends a transaction. Signing is a separate step.</p>
+      <div id="review" class="review empty">No action prepared yet.</div>
+      <button id="submit" class="primary" type="button" disabled>Sign and broadcast reviewed action</button>
+      <button id="reconcile" type="button" disabled>Check saved transaction</button>
+    </section>
+    <section aria-labelledby="history-title">
+      <div class="section-head"><h2 id="history-title">Saved attempts</h2><button id="reload-actions" type="button">Reload</button></div>
+      <div id="actions" class="history">No saved actions.</div>
+    </section>
+    <p class="foot">Keep this app's private data folder and the buyer delivery key. A failed or uncertain send requires hash and nonce reconciliation before any retry. The interface cannot recover a lost key.</p>
+  </main>
+</body>
+</html>

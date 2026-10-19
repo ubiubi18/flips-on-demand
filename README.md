@@ -59,6 +59,7 @@ The [v7 contract guide](contracts/direct-escrow-v7/README.md) explains settlemen
 
 | Path | What it supports |
 | --- | --- |
+| **Standalone local app → own node** | Build one `fod` executable, run `fod app`, and use the browser page it opens on your computer. No IdenaAI installation or hosted market service is needed. It reads the v7 queue, prepares typed actions, shows a separate review before signing, saves attempts for reconciliation, and handles private ciphertext and receipts as local files. You still need your own synced Idena node and independently verified contract pins. |
 | **IdenaAI → Flip market** | The [development source branch](https://github.com/ubiubi18/IdenaAI/tree/vibe/fod-social-bridge) adds **Flips on Demand v0.1**. It reads the next eligible bundle and quote from your synced loopback node, shows CID-matched public explorer previews, and prepares, reviews, and submits typed actions through a separately built `fod` CLI. The app checks the address and hashes you enter against the node and local file; you must establish the deployment and build provenance independently. Private delivery files remain local. Published desktop binaries do not include this source-only page or the CLI. |
 | **Own node → `fod` CLI** | The typed v7 path for qualifying and proving bundles, publishing the seed, activating, listing, private buying, local encrypted delivery and receipt verification, cooperative confirmation, challenging, and public fallback. It checks the selected contract, code hash, and current state before preparing or signing. |
 | **Own node → JSON-RPC** | Read v7 state and make contract calls manually if you do not use the CLI. You must check method arguments, attached value, fees, account, and changed chain state yourself. |
@@ -92,6 +93,24 @@ go build -modfile=go.local.mod -o fod .
 Compare the candidate WASM's SHA-256 and deployed code hash with the manifest before trusting a deployment. A matching manifest alone does not prove that a contract is safe.
 
 The test in the build recipe rejects a node-source revision whose epoch-key mapping differs from the CLI. The frozen blob fixture was built with an older mapping and checks opening with its recorded keys; it is not a derivation vector for the pinned node source. Before qualifying a new bundle, verify every intended original flip opens with the derived keys.
+
+#### Run the standalone local app
+
+With your own synced node running, start the built executable and supply its loopback RPC, owner-only API-key file, and a contract address and deployed code hash you verified independently:
+
+```bash
+RPC_URL='http://127.0.0.1:9019'
+RPC_KEY_FILE='/absolute/path/to/your/rpc-key-file'
+CONTRACT='your-independently-verified-40-hex-contract-address'
+CODE_HASH='your-independently-verified-64-hex-deployed-code-hash'
+NODEKEY_FILE='/absolute/path/to/your/nodekey-file'
+./fod app -rpc "$RPC_URL" -key-file "$RPC_KEY_FILE" \
+  -contract "$CONTRACT" -code-hash "$CODE_HASH" -nodekey "$NODEKEY_FILE"
+```
+
+The executable opens a page bound to `127.0.0.1` and prints its URL if your browser does not open. Omit `-nodekey` for read-only use. The app's private actions, delivery keys, and receipts stay in an owner-only local data folder; keep that folder and the nodekey secure. The browser page cannot send a transaction during preparation: it requires a separate review and signing step. The seller must still transfer a generated ciphertext file to the buyer through a channel of their choice. The standalone page checks the original CID inventory against contract storage, then optionally displays images from the public Idena explorer; missing explorer images do not block trading, and pictures are not content or delivery proof. The node's current fee rate and a read-only call estimate suggest a fee ceiling, which remains visible for review and can be overridden. This is an experimental local interface, not a verified deployment directory or a substitute for an independent security audit.
+
+For a read-only JSON view of the same v7 queue, use `./fod direct-v7-market -direct-version 7 -network idena -rpc "$RPC_URL" -key-file "$RPC_KEY_FILE" -contract "$CONTRACT" -code-hash "$CODE_HASH" -out -`. It includes the oldest selectable offer, the current quote, and open orders; it does not sign or send a transaction.
 
 #### Read your node and contract
 

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -223,6 +224,7 @@ func main() {
 		proofsFlag          = flag.String("proofs", "", "comma-separated registration artefacts that supply bundle provenance (market mode)")
 		availabilityFlag    = flag.String("availability", "", "content evidence for prepare-buy: an ordinary availability advisory or a sealed fast proof with its copy list")
 		availabilityOutFlag = flag.String("availability-out", "", "write an availability advisory from the inventory here (inventory mode)")
+		appDataDirFlag      = flag.String("app-data-dir", "", "private local data directory for the standalone app")
 	)
 	// Command form: `fod <command> [flags]`. normalizeArgs maps the command to
 	// the internal mode and keeps the older `-mode` flag working.
@@ -234,6 +236,23 @@ func main() {
 	}
 
 	c := &client{url: *rpcURL, key: apiKey, http: newHTTPClient()}
+	if *mode == "app" {
+		appDataDir := *appDataDirFlag
+		if appDataDir == "" {
+			base, err := os.UserConfigDir()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "local app directory unavailable: %v\n", err)
+				os.Exit(2)
+			}
+			appDataDir = filepath.Join(base, "Flips on Demand")
+		}
+		if err := runStandaloneApp(standaloneConfig{RPC: *rpcURL, KeyFile: *apiKeyFile, Contract: *contractFlag,
+			CodeHash: *codeHashFlag, NodeKey: *nodeKeyPath, DataDir: appDataDir}); err != nil {
+			fmt.Fprintf(os.Stderr, "local app refused: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if strings.HasPrefix(*mode, "direct-") {
 		err := directCommand(directCommandOptions{
 			Mode: *mode, DirectVersion: *directVersionFlag, Node: c, Contract: *contractFlag, CodeHash: *codeHashFlag,
@@ -249,6 +268,7 @@ func main() {
 			NonceText: *nonceFlag, TxEpochText: *txEpochFlag, MaxFeeText: *maxFeeFlag,
 			TipsText: *tipsFlag, FeePerGasText: *feePerGasFlag,
 			SignedPath: *signedPath, RPCURL: *rpcURL, APIKey: apiKey,
+			RPCExplicit: flagWasSet("rpc"), KeyFileExplicit: flagWasSet("key-file"), KeyFilePath: *apiKeyFile,
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "direct sale refused: %v\n", err)

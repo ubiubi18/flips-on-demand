@@ -40,6 +40,7 @@ func notSubmitted(preparedPath, note string) {
 // `sync` and `inspect` are the spec's names for the two commands that fetch and
 // summarise public data; the technical names remain as aliases.
 var commandModes = map[string]string{
+	"app":                       "app",
 	"sync":                      "sweep",
 	"sweep":                     "sweep",
 	"inspect":                   "inventory",
@@ -78,6 +79,7 @@ var commandModes = map[string]string{
 	"direct-pool-qualify":       "direct-pool-qualify",
 	"direct-pool-prove-bundle":  "direct-pool-prove-bundle",
 	"direct-v7-prepare":         "direct-v7-prepare",
+	"direct-v7-market":          "direct-v7-market",
 	"direct-v7-dm":              "direct-v7-dm",
 	"direct-v7-receive":         "direct-v7-receive",
 	"direct-list":               "direct-list",
@@ -164,6 +166,7 @@ func usageText() string {
 	b.WriteString("fod - Flips on Demand local CLI (experimental, unverified)\n\n")
 	b.WriteString("usage: fod <command> [flags]\n\n")
 	b.WriteString("commands:\n")
+	b.WriteString("  app            run the local v7 browser app against your own loopback node; no hosted service\n")
 	b.WriteString("  sync / sweep   walk a block range and write a sweep of public data\n")
 	b.WriteString("  inspect / inventory  build one author-epoch inventory from a sweep (node route) or from an indexer with -indexer (Plan B route)\n")
 	b.WriteString("  receive        verify purchased content: -pool-order ID -prepared BUY_FILE -out RECORD_FILE (or decrypt -blob with a vault)\n")
@@ -187,6 +190,7 @@ func usageText() string {
 	b.WriteString("  direct-pool-qualify  prepare and estimate v6 qualify from a sealed proof and canonical session (-direct-version 6)\n")
 	b.WriteString("  direct-pool-prove-bundle  prepare and estimate v6 proveBundle for the same author and offer (-direct-version 6)\n")
 	b.WriteString("  direct-v7-prepare  prepare and estimate one typed v7 pool operation (-direct-version 7 -operation NAME)\n")
+	b.WriteString("  direct-v7-market   export the selected v7 market offer from a keyed loopback node (-out FILE or -out -)\n")
 	b.WriteString("  direct-v7-dm       prepare private ciphertext for one funded v7 order without sending it\n")
 	b.WriteString("  direct-v7-receive  verify funded v7 ciphertext and original flips, then save a buyer receipt and vault\n")
 	b.WriteString("  direct-list    prepare a canonical original-flip sale\n")
