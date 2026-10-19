@@ -34,11 +34,11 @@ The intended private delivery channel is an **encrypted idena.social message**; 
 
 | What happens | Where the money goes |
 | --- | --- |
-| **Buyer checks the key and accepts** | Sale price → author. Buyer and seller delivery deposits return. |
-| **Seller proves and publishes working keys in time** | Author gets paid; keys become public. A challenging buyer pays capped proof costs from their deposit. |
-| **Still unsettled at the deadline** | Refund claim → buyer gets price + deposit back, plus the seller’s delivery deposit as compensation. |
+| **Buyer checks the key and accepts** | First-sale price → author; on resale, half → author and half → shared reserve. Buyer and seller delivery bonds return. |
+| **Seller proves and publishes working keys in time** | The same sale split applies; keys become public. A challenging buyer pays capped proof costs from their bond. |
+| **Still unsettled at the deadline** | Refund claim → buyer gets price + bond back, plus the seller’s delivery bond as compensation. |
 
-The price cap is **1,000 iDNA per collection**, plus deposits and network fees. Both sides deposit money. Example: a buyer locks a 500 iDNA price + 500 deposit; acceptance returns the deposit. These amounts are illustrative. Extra seller collateral for unproved content can remain locked or be forfeited. [Worked costs, deadlines and dispute arrows →](docs/VISUAL_GUIDE.md#direct-v7-listing--trade--resolution)
+The price cap is **1,000 iDNA per collection**, plus bonds and network fees. In a private sale, both sides post bonds. Example: a buyer locks a 500 iDNA price + 500 bond; acceptance returns the bond. These amounts are illustrative. Extra seller collateral for unproved content can remain locked or be forfeited. A public seed purchase settles immediately without a buyer bond. [Worked costs, deadlines and dispute arrows →](docs/VISUAL_GUIDE.md#direct-v7-listing--trade--resolution)
 
 ## What exists today?
 
@@ -51,7 +51,7 @@ One owner-run paid pilot tested purchase, challenge and public key release. The 
 <details>
 <summary>Interfaces, contract versions, setup and command reference</summary>
 
-This repository explores sales of access to the original decryption keys of historical Idena flips. It contains several contract prototypes. **Direct escrow v7** is the one-seed contract described below: one permanently public seed bundle anchors a queue of private first sales and resales. One owner-operated, funded two-identity pilot completed a private purchase, challenge, and public seller fallback. That does not establish an independent audit, reliable delivery, or general readiness.
+This repository explores sales of access to the original decryption keys of historical Idena flips. It contains several contract prototypes. **Direct escrow v7** is the one-seed contract described below: one permanently public seed bundle anchors a queue of private first sales and resales. The candidate has no administrator or platform fee; network transaction fees, bonds, and the contract's published sale and reserve rules still apply. In one funded pilot, a single operator controlled both test identities and completed a private purchase, challenge, and public seller fallback. That does not establish an independent audit, reliable delivery, or general readiness.
 
 The [v7 contract guide](contracts/direct-escrow-v7/README.md) explains settlement and risks. The [v7 manifest](release/DIRECT_V7_MANIFEST.json) identifies the public candidate WASM and its expected code hash; its deployment field is *not* a directory of trusted live contracts. Independently establish the address and deployed code of any contract you intend to call.
 
@@ -59,7 +59,7 @@ The [v7 contract guide](contracts/direct-escrow-v7/README.md) explains settlemen
 
 | Path | What it supports |
 | --- | --- |
-| **IdenaAI → Flip market** | The [development source branch](https://github.com/ubiubi18/IdenaAI/tree/vibe/fod-social-bridge) adds **Direct v7** beside the older v4 page. Build that source and a local `fod` CLI; connect a synced node through loopback RPC and pin an independently verified contract, code hash, CLI path, and CLI SHA-256 in the page. It can prepare, review, and submit typed v7 actions and save or verify private delivery files. It does not send ciphertext to another person. Published desktop binaries do not include this source-only page. |
+| **IdenaAI → Flip market** | The [development source branch](https://github.com/ubiubi18/IdenaAI/tree/vibe/fod-social-bridge) adds **Flips on Demand v0.1**. It reads the next eligible bundle and quote from your synced loopback node, shows CID-matched public explorer previews, and prepares, reviews, and submits typed actions through a separately built `fod` CLI. The app checks the address and hashes you enter against the node and local file; you must establish the deployment and build provenance independently. Private delivery files remain local. Published desktop binaries do not include this source-only page or the CLI. |
 | **Own node → `fod` CLI** | The typed v7 path for qualifying and proving bundles, publishing the seed, activating, listing, private buying, local encrypted delivery and receipt verification, cooperative confirmation, challenging, and public fallback. It checks the selected contract, code hash, and current state before preparing or signing. |
 | **Own node → JSON-RPC** | Read v7 state and make contract calls manually if you do not use the CLI. You must check method arguments, attached value, fees, account, and changed chain state yourself. |
 
