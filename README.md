@@ -42,7 +42,7 @@ The price cap is **1,000 iDNA per collection**, plus bonds and network fees. In 
 
 ## What exists today?
 
-One owner-run paid pilot tested purchase, challenge and public key release. The pictured service is a concept; the complete CAPTCHA integration is not built. There is no independent audit or guarantee of one person per account.
+A newer owner-run funded pilot tested private ciphertext verification and buyer confirmation, relisting and resale, a buyer challenge and public fallback, and repeat purchases of the permanent public seed up to the 1,000 iDNA price cap. Both identities were controlled by one operator. The pictured CAPTCHA service is a concept; the complete integration is not built. Funded refund and expiry tests need another eligible private bundle and the applicable deadlines. There is no independent security audit or guarantee of one person per account.
 
 [See the actual desktop, mobile and order screens →](docs/VISUAL_GUIDE.md#current-ui) · [Technical setup below ↓](#technical-details)
 
@@ -51,7 +51,7 @@ One owner-run paid pilot tested purchase, challenge and public key release. The 
 <details>
 <summary>Interfaces, contract versions, setup and command reference</summary>
 
-This repository explores sales of access to the original decryption keys of historical Idena flips. It contains several contract prototypes. **Direct escrow v7** is the one-seed contract described below: one permanently public seed bundle anchors a queue of private first sales and resales. The candidate has no administrator or platform fee; network transaction fees, bonds, and the contract's published sale and reserve rules still apply. In one funded pilot, a single operator controlled both test identities and completed a private purchase, challenge, and public seller fallback. That does not establish an independent audit, reliable delivery, or general readiness.
+This repository explores sales of access to the original decryption keys of historical Idena flips. It contains several contract prototypes. **Direct escrow v7** is the one-seed contract described below: one permanently public seed bundle anchors a queue of private first sales and resales. The current strict-value candidate has no administrator or platform fee; network transaction fees, bonds, and the contract's published sale and reserve rules still apply. Its funded tests used two identities controlled by one operator and included both cooperative private settlement and challenged public fallback. This does not establish independent delivery, an external audit, or general readiness.
 
 The [v7 contract guide](contracts/direct-escrow-v7/README.md) explains settlement and risks. The [v7 manifest](release/DIRECT_V7_MANIFEST.json) identifies the public candidate WASM and its expected code hash; its deployment field is *not* a directory of trusted live contracts. Independently establish the address and deployed code of any contract you intend to call.
 
