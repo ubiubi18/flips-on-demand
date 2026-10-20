@@ -20,9 +20,11 @@ import (
 	"github.com/idena-network/idena-go/crypto"
 )
 
+const directV7DeployHeadroomBytes uint64 = 2048
+
 func BuildDirectV7PoolDeployTransaction(code, deployNonce, seedID []byte, identity *ecdsa.PrivateKey, nonce uint32, epoch uint16, amount, maxFee, tips *big.Int) ([]byte, common.Address, common.Address, error) {
-	if len(seedID) != 32 || amount == nil || amount.Sign() != 0 {
-		return nil, common.Address{}, common.Address{}, errors.New("v7 deploy needs one 32-byte seed ID and zero value")
+	if len(seedID) != 32 || amount == nil || amount.Cmp(big.NewInt(1)) != 0 {
+		return nil, common.Address{}, common.Address{}, errors.New("v7 revised deploy needs one 32-byte seed ID and one refundable base unit")
 	}
 	var id [32]byte
 	copy(id[:], seedID)
@@ -43,10 +45,11 @@ func deployGasForDirectV7Code(codePath string, code []byte) (operationGas, error
 		return operationGas{}, fmt.Errorf("read v7 candidate manifest: %w", err)
 	}
 	var manifest struct {
-		Format   string `json:"format"`
-		Version  int    `json:"version"`
-		Status   string `json:"status"`
-		Artifact struct {
+		Format              string `json:"format"`
+		Version             int    `json:"version"`
+		Status              string `json:"status"`
+		NonpayableCallValue uint64 `json:"nonpayableCallValue"`
+		Artifact            struct {
 			Path     string `json:"path"`
 			Bytes    int    `json:"bytes"`
 			Sha256   string `json:"sha256"`
@@ -68,6 +71,7 @@ func deployGasForDirectV7Code(codePath string, code []byte) (operationGas, error
 	sha := sha256.Sum256(code)
 	hash := crypto.Hash(code)
 	if manifest.Format != "fod.direct-candidate-manifest" || manifest.Version != 7 || manifest.Status != "candidate-only" ||
+		manifest.NonpayableCallValue != 1 ||
 		manifest.Artifact.Path != "release/artifacts/fod_direct_escrow_v7.wasm" ||
 		manifest.Artifact.Bytes != len(code) || manifest.Artifact.Sha256 != hex.EncodeToString(sha[:]) ||
 		manifest.Artifact.CodeHash != hex.EncodeToString(hash[:]) ||
@@ -77,7 +81,7 @@ func deployGasForDirectV7Code(codePath string, code []byte) (operationGas, error
 		manifest.Checks.Deploy.WasmGas > maxUserGasUpgrade11*wasmGasPerUserGas ||
 		manifest.Checks.Deploy.PayloadBytes != uint64(len(code)+32) ||
 		manifest.Checks.Deploy.ConservativeTransactionGas !=
-			userGasForWasmGas(manifest.Checks.Deploy.WasmGas)+(uint64(len(code)+32)+2048)*10 ||
+			userGasForWasmGas(manifest.Checks.Deploy.WasmGas)+(uint64(len(code)+32)+directV7DeployHeadroomBytes)*10 ||
 		manifest.Checks.Deploy.ConservativeTransactionGas >= maxUserGasUpgrade11 {
 		return operationGas{}, errors.New("v7 candidate manifest differs from measured module or policy")
 	}
@@ -89,10 +93,10 @@ func runPrepareDeployV7(codePath, expectedCodeHash, nodeKeyPath, deployNonceHex,
 		return errors.New("v7 deploy requires an independent lowercase 32-byte -code-hash pin")
 	}
 	if broadcast || network != NetworkNamePinned || outPath == "" || nodeKeyPath == "" ||
-		amount == nil || amount.Sign() != 0 || maxFee == nil || maxFee.Sign() <= 0 ||
+		amount == nil || amount.Cmp(big.NewInt(1)) != 0 || maxFee == nil || maxFee.Sign() <= 0 ||
 		tips == nil || tips.Sign() < 0 || feePerGas == nil || feePerGas.Sign() <= 0 ||
 		!isHex(seedIDHex, 32) || seedIDHex != strings.ToLower(seedIDHex) {
-		return errors.New("v7 deploy preparation needs pinned network, one canonical seed ID, zero value, nodekey, output, and -fee-per-gas; broadcast is disabled")
+		return errors.New("v7 revised deploy preparation needs pinned network, one canonical seed ID, one refundable base unit, nodekey, output, and -fee-per-gas; broadcast is disabled")
 	}
 	code, err := os.ReadFile(codePath)
 	if err != nil {
@@ -119,8 +123,8 @@ func runPrepareDeployV7(codePath, expectedCodeHash, nodeKeyPath, deployNonceHex,
 	if err != nil {
 		return err
 	}
-	if required := requiredMaxFeeFor(gas.WasmGas, uint64(len(raw)), feePerGas); maxFee.Cmp(required) < 0 {
-		return fmt.Errorf("v7 deploy max fee %s is below measured minimum %s at supplied fee rate", maxFee, required)
+	if required := requiredMaxFeeFor(gas.WasmGas, uint64(len(raw))+directV7DeployHeadroomBytes, feePerGas); maxFee.Cmp(required) < 0 {
+		return fmt.Errorf("v7 deploy max fee %s is below conservative minimum %s at supplied fee rate", maxFee, required)
 	}
 	if maxFee.Cmp(maxMaxFeeFor(feePerGas)) > 0 {
 		return errors.New("v7 deploy max fee exceeds the node fee cap at supplied rate")
@@ -130,12 +134,12 @@ func runPrepareDeployV7(codePath, expectedCodeHash, nodeKeyPath, deployNonceHex,
 		Code: codePath, CodeBytes: len(code), CodeHash: hex.EncodeToString(hash[:]),
 		Address: hex.EncodeToString(address[:]), Sender: hex.EncodeToString(sender[:]),
 		DeployNonce: hex.EncodeToString(deployNonce), AccountNonce: nonce, Epoch: epoch,
-		Amount: "0", MaxFee: maxFee.String(), Tips: tips.String(), RawTx: hex.EncodeToString(raw),
+		Amount: amount.String(), MaxFee: maxFee.String(), Tips: tips.String(), RawTx: hex.EncodeToString(raw),
 		Broadcast: false, SignedAt: time.Now().UTC().Format(time.RFC3339),
 	}
 	if err := writePrivateJSON(outPath, prepared); err != nil {
 		return err
 	}
-	fmt.Printf("v7 deploy prepared offline: contract %s, code hash %s, one seed offer %s, zero value; no transaction sent\n", prepared.Address, prepared.CodeHash, seedIDHex)
+	fmt.Printf("v7 deploy prepared offline: contract %s, code hash %s, one seed offer %s, one refundable base unit; no transaction sent\n", prepared.Address, prepared.CodeHash, seedIDHex)
 	return nil
 }

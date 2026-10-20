@@ -183,10 +183,11 @@ try {
   }
 
   const tests = run("go", ["test", `-modfile=${runtime.modfile}`, "-mod=readonly", "-count=1",
-    "-run", "^(TestDirectV7CandidateGas|TestDirectV7UnchallengedFallbackReturnsBuyerBond)$", "-v", "."], harness,
+    "-run", "^(TestDirectV7CandidateGas|TestDirectV7UnchallengedFallbackReturnsBuyerBond|TestDirectV7StrictActionValueRefundsCaller)$", "-v", "."], harness,
     { ...offline, FOD_DIRECT_V7_TEST_WASM: stagedArtifact });
   if (!tests.includes("--- PASS: TestDirectV7CandidateGas") ||
-      !tests.includes("--- PASS: TestDirectV7UnchallengedFallbackReturnsBuyerBond")) {
+      !tests.includes("--- PASS: TestDirectV7UnchallengedFallbackReturnsBuyerBond") ||
+      !tests.includes("--- PASS: TestDirectV7StrictActionValueRefundsCaller")) {
     throw new Error("focused v7 candidate runtime test did not report a pass");
   }
   const measured = Object.fromEntries(["deploy", "seedBundle", "activate", "qualify", "proveBundle",
@@ -239,6 +240,7 @@ try {
   }
   const manifest = {
     format: "fod.direct-candidate-manifest", version: 7, status: "candidate-only",
+    nonpayableCallValue: 1,
     artifact: { path: relative(root, artifact), bytes: code.length, sha256: sha256(code), codeHash },
     source: { inventorySha256: source.sha256, files: before },
     build: {

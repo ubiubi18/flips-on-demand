@@ -263,7 +263,7 @@ func main() {
 			DeliveryPath: *deliveryRecordFlag, ProofPath: *proofPath,
 			ProofHostPath: *proofHostPath,
 			PreparedPath:  *preparedPath, OutPath: *out, OutExplicit: flagWasSet("out"),
-			Amount: *amountFlag, OrderID: *watchOrder,
+			Amount: *amountFlag, AmountExplicit: flagWasSet("amount"), OrderID: *watchOrder,
 			AutoConfirm: *directAutoConfirm, Broadcast: *broadcastFlag,
 			NonceText: *nonceFlag, TxEpochText: *txEpochFlag, MaxFeeText: *maxFeeFlag,
 			TipsText: *tipsFlag, FeePerGasText: *feePerGasFlag,
@@ -591,6 +591,9 @@ func main() {
 			if *v6SeedIDsFlag != "" {
 				fmt.Fprintln(os.Stderr, "v7 deploy cannot use v6 seed IDs")
 				os.Exit(1)
+			}
+			if !flagWasSet("amount") {
+				amount = big.NewInt(1)
 			}
 			if err := runPrepareDeployV7(*codePath, *codeHashFlag, *nodeKeyPath, *deployNonceFlag, *v7SeedIDFlag, *networkFlag, deployPath, nonce, epoch, amount, maxFee, tips, deployFeePerGas, *broadcastFlag); err != nil {
 				fmt.Fprintf(os.Stderr, "v7 deploy refused: %v\n", err)

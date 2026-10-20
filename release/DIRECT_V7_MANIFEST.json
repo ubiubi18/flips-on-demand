@@ -2,16 +2,17 @@
   "format": "fod.direct-candidate-manifest",
   "version": 7,
   "status": "candidate-only",
+  "nonpayableCallValue": 1,
   "artifact": {
     "path": "release/artifacts/fod_direct_escrow_v7.wasm",
-    "bytes": 438065,
-    "sha256": "dbef2283d2fbcbfdf48d6bbb779a7d5d29afe6d08c17776532fa4bebbc307c4a",
-    "codeHash": "d19d7a81f96789b7d28549f54ce34842e75d324bb2b38d802ec802e22ca35a63"
+    "bytes": 440061,
+    "sha256": "852cc3f38833e836f354fe1d9fbf7f0ad408c2548347a62910ae2c92a123b68f",
+    "codeHash": "17c33d6e5a4edfaa8d4f775617cea3e34dfca3dd0375e1247d26f24d93f5f232"
   },
   "source": {
-    "inventorySha256": "aff9ae0475bdaffbc8b62a90075b174c293154a9f6048e0bc3a2299a48a79e62",
+    "inventorySha256": "89094aa678837fe994c381126f839450f245e4208cc6eb221e4e8c74a93e5b0a",
     "files": {
-      "contract": "83c549842a76d471897ec18d69e4458797dd099d4aa9e3c60764cd43cc82d6df",
+      "contract": "5f06f1d94fd6ea72854fc0aed8497c856f73e515c38036bfbe27839a42e05854",
       "curve": "417dc034916da1e9c255f8195e32b678cef77759c738aa791340011b0e81cc59",
       "state": "0d24abf6cc55ca41c7fd09405d87a594354c9a569dd60dedd6d632c221608515",
       "cargoManifest": "dfb2db7d99e352973c275268f240c0ee652e8b79b43e0fbb6f44d738aff8d163",
@@ -30,14 +31,14 @@
       "syntheticSession": "d61fb53e350b54ac6df4d7dab7f757a51fc12b6f5d1ad1d97f978eee3206649a",
       "syntheticFlipVector": "230ee51b364bdd3c84907c35ad5da2ac6a0c761a03a8087bf601d8b52250801e",
       "v5CliImagePin": "931e307a9e05eea05bb78c26cfe47eca583d3e68453343a6ba8dc38110f8376f",
-      "runtimeTest": "ffa3055b5570812b6e486f6e628972e01f18ea58560e511c4a0182b5f131b341",
+      "runtimeTest": "1b52909fd869597278185e312054941d211ae0d03550a9272bdaf1a92bcd74a1",
       "runtimeEnv": "eb2483995e0c3a1a0a7c049350b22428a80e87e64f7739d2a0954d04266e8411",
       "runtimeCosts": "5d1cdb600d94eb7b580a3bc57ae4fcc7d97d92b25a0f940a04af2f2cb253322f",
       "runtimeModule": "9e99744d423511c154174abe100137f84e3fa31f0c05e58135660285bfa004f3",
       "runtimeSums": "013f1de92e969ffc3cbe8ae8bc169f68398962dbff9c60d6260e4e4ae5e00e9e",
       "proofBuilder": "cb78d2ae8e809bfb02adf98e123547a4abaf12042f4d0ecea2cac667dd78aaad",
       "sourceSnapshot": "a3875e623e604b7b83f579c03182db8a23b1f0713a5339648575f01d275788d3",
-      "builder": "c8317fcfe7dd9d509a1b3411bf37db461bcc3a4b3de2168b7a72bd919125d852"
+      "builder": "ec08f592b0288bad778192596a746f8e35c30787150eea5b20f9fd6b33f46c90"
     }
   },
   "build": {
@@ -78,14 +79,14 @@
     ],
     "forbiddenOperators": 0,
     "deploy": {
-      "wasmGas": 4098686,
-      "payloadBytes": 438097,
-      "conservativeTransactionGas": 4442437
+      "wasmGas": 4249123,
+      "payloadBytes": 440093,
+      "conservativeTransactionGas": 4463902
     },
     "seedBundle": {
-      "wasmGas": 1957430,
+      "wasmGas": 2090982,
       "payloadBytes": 138,
-      "conservativeTransactionGas": 41435
+      "conservativeTransactionGas": 42770
     },
     "activate": {
       "wasmGas": 875454,
@@ -93,14 +94,14 @@
       "conservativeTransactionGas": 29555
     },
     "qualify": {
-      "wasmGas": 1072113,
+      "wasmGas": 1205827,
       "payloadBytes": 892,
-      "conservativeTransactionGas": 40122
+      "conservativeTransactionGas": 41459
     },
     "proveBundle": {
-      "wasmGas": 196320911,
+      "wasmGas": 196454625,
       "payloadBytes": 1383,
-      "conservativeTransactionGas": 1997520
+      "conservativeTransactionGas": 1998857
     },
     "listProved": {
       "wasmGas": 1753310,
@@ -113,19 +114,19 @@
       "conservativeTransactionGas": 42933
     },
     "challengeProved": {
-      "wasmGas": 782969,
+      "wasmGas": 916683,
       "payloadBytes": 8,
-      "conservativeTransactionGas": 28390
+      "conservativeTransactionGas": 29727
     },
     "startFallbackShort": {
-      "wasmGas": 1122729,
+      "wasmGas": 1256443,
       "payloadBytes": 8,
-      "conservativeTransactionGas": 31788
+      "conservativeTransactionGas": 33125
     },
     "proveAndRevealShort": {
-      "wasmGas": 2435911,
+      "wasmGas": 2569625,
       "payloadBytes": 114,
-      "conservativeTransactionGas": 45980
+      "conservativeTransactionGas": 47317
     },
     "listSealed": {
       "wasmGas": 1753418,
@@ -138,22 +139,22 @@
       "conservativeTransactionGas": 42933
     },
     "challengeSealed": {
-      "wasmGas": 782969,
+      "wasmGas": 916683,
       "payloadBytes": 8,
-      "conservativeTransactionGas": 28390
+      "conservativeTransactionGas": 29727
     },
     "startFallbackSealed": {
-      "wasmGas": 196539661,
+      "wasmGas": 196673375,
       "payloadBytes": 1359,
-      "conservativeTransactionGas": 1999467
+      "conservativeTransactionGas": 2000804
     },
     "proveAndRevealSealed": {
-      "wasmGas": 2435911,
+      "wasmGas": 2569625,
       "payloadBytes": 114,
-      "conservativeTransactionGas": 45980
+      "conservativeTransactionGas": 47317
     },
-    "conservativeShortFallbackGas": 77768,
-    "conservativeSealedFallbackGas": 2045447,
+    "conservativeShortFallbackGas": 80442,
+    "conservativeSealedFallbackGas": 2048121,
     "buyerBond": {
       "gasBudget": 2500000,
       "feeMargin": 2,

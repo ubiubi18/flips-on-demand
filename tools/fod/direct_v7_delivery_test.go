@@ -73,6 +73,10 @@ func TestDirectV7PrivateDeliveryAndCooperativeConfirm(t *testing.T) {
 		case "contract_iterateMap":
 			result = map[string]any{"items": []any{map[string]any{"key": hex.EncodeToString(id[:]), "value": hex.EncodeToString(offerRaw)}}, "continuationToken": nil}
 		case "contract_readData":
+			if request.Params[1] == "pool/value-policy" {
+				result = "0x0000000000000000"
+				break
+			}
 			if request.Params[1] != "pool/order/1" {
 				http.Error(w, "unexpected state key", http.StatusBadRequest)
 				return

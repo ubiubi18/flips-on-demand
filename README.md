@@ -42,7 +42,7 @@ The price cap is **1,000 iDNA per collection**, plus bonds and network fees. In 
 
 ## What exists today?
 
-One owner-run paid pilot tested purchase, challenge and public key release. The pictured service is a concept; the complete CAPTCHA integration is not built. There is no independent audit or guarantee of one person per account.
+A newer owner-run funded pilot tested private ciphertext verification and buyer confirmation, relisting and resale, a buyer challenge and public fallback, and repeat purchases of the permanent public seed up to the 1,000 iDNA price cap. Both identities were controlled by one operator. The pictured CAPTCHA service is a concept; the complete integration is not built. Funded refund and expiry tests need another eligible private bundle and the applicable deadlines. There is no independent security audit or guarantee of one person per account.
 
 [See the actual desktop, mobile and order screens →](docs/VISUAL_GUIDE.md#current-ui) · [Technical setup below ↓](#technical-details)
 
@@ -51,7 +51,7 @@ One owner-run paid pilot tested purchase, challenge and public key release. The 
 <details>
 <summary>Interfaces, contract versions, setup and command reference</summary>
 
-This repository explores sales of access to the original decryption keys of historical Idena flips. It contains several contract prototypes. **Direct escrow v7** is the one-seed contract described below: one permanently public seed bundle anchors a queue of private first sales and resales. The candidate has no administrator or platform fee; network transaction fees, bonds, and the contract's published sale and reserve rules still apply. In one funded pilot, a single operator controlled both test identities and completed a private purchase, challenge, and public seller fallback. That does not establish an independent audit, reliable delivery, or general readiness.
+This repository explores sales of access to the original decryption keys of historical Idena flips. It contains several contract prototypes. **Direct escrow v7** is the one-seed contract described below: one permanently public seed bundle anchors a queue of private first sales and resales. The current strict-value candidate has no administrator or platform fee; network transaction fees, bonds, and the contract's published sale and reserve rules still apply. Its funded tests used two identities controlled by one operator and included both cooperative private settlement and challenged public fallback. This does not establish independent delivery, an external audit, or general readiness.
 
 The [v7 contract guide](contracts/direct-escrow-v7/README.md) explains settlement and risks. The [v7 manifest](release/DIRECT_V7_MANIFEST.json) identifies the public candidate WASM and its expected code hash; its deployment field is *not* a directory of trusted live contracts. Independently establish the address and deployed code of any contract you intend to call.
 
@@ -135,6 +135,7 @@ CALLER="$(rpc dna_getCoinbaseAddr '[]' | jq -er '.result')"
 rpc dna_getBalance "$(jq -nc --arg a "$CALLER" '[$a]')"
 rpc contract_getStake "$(jq -nc --arg c "0x$CONTRACT" '[$c]')"
 rpc contract_readData "$(jq -nc --arg c "0x$CONTRACT" '[$c,"pool/seed-id","hex"]')"
+rpc contract_readData "$(jq -nc --arg c "0x$CONTRACT" '[$c,"pool/value-policy","hex"]')"
 rpc contract_readData "$(jq -nc --arg c "0x$CONTRACT" '[$c,"pool/primary-head","hex"]')"
 rpc contract_readData "$(jq -nc --arg c "0x$CONTRACT" '[$c,"pool/secondary-head","hex"]')"
 rpc contract_iterateMap "$(jq -nc --arg c "0x$CONTRACT" '[$c,"pool/offer/",null,"hex","hex",200]')"
@@ -144,7 +145,7 @@ Compare `contract_getStake.result.Hash` with the manifest's `artifact.codeHash` 
 
 #### If you deploy your own instance
 
-An existing v7 address is unnecessary if you deploy the candidate yourself. The constructor pins **one** seed bundle ID; you must be able to qualify, prove, and publicly disclose that real bundle before activation. From `tools/fod`, `prepare-deploy` signs a **zero-value** transaction into a private file but never broadcasts it. Build the reviewed source revision in a separate clean checkout and take its `artifact.codeHash` as the independent `-code-hash` pin; do not take the pin from the manifest beside the WASM you are about to sign. Supply this pin, a live base-unit fee rate, sufficient maximum fee for the large WASM deployment, your next nonce, and current epoch:
+An existing v7 address is unnecessary if you deploy the candidate yourself. The constructor pins **one** seed bundle ID; you must be able to qualify, prove, and publicly disclose that real bundle before activation. From `tools/fod`, `prepare-deploy` signs a transaction carrying **one refundable base unit** into a private file but never broadcasts it. Build the reviewed source revision in a separate clean checkout and take its `artifact.codeHash` as the independent `-code-hash` pin; do not take the pin from the manifest beside the WASM you are about to sign. Supply this pin, a live base-unit fee rate, sufficient maximum fee for the large WASM deployment, your next nonce, and current epoch:
 
 ```bash
 SEED_ID='your-verified-64-hex-seed-offer-id'
@@ -163,7 +164,7 @@ DEPLOY_SIGNED='/absolute/path/to/private/deploy-signed.json'
   -signed "$DEPLOY_SIGNED"
 ```
 
-Review the recorded sender, derived address, seed ID, code hash, zero amount, fee, and signed bytes. After a fresh nonce, balance, sync, and fee check, send `rawTx` with your own node's RPC:
+Review the recorded sender, derived address, seed ID, code hash, one-unit amount, fee, and signed bytes. After a fresh nonce, balance, sync, and fee check, send `rawTx` with your own node's RPC:
 
 ```bash
 RAW_TX="$(jq -er '.rawTx' "$DEPLOY_SIGNED")"
@@ -205,27 +206,27 @@ TX_EPOCH='your-current-chain-epoch'
   -rpc "$RPC_URL" -key-file "$RPC_KEY_FILE" -signed "$SIGNED" -broadcast
 ```
 
-The typed CLI also accepts these `-operation` values for `direct-v7-prepare`:
+The typed CLI also accepts these `-operation` values for `direct-v7-prepare`. For an operation marked **Call value**, the revised contract requires exactly **one base unit** (0.000000000000000001 iDNA) and returns it to the caller on success. The older pilot contract has no `pool/value-policy` key and requires zero. Check the exact deployed code and policy; the CLI reads the policy again before signing. Network gas fees still apply.
 
 | Operation | Who and required extra input | Attached value |
 | --- | --- | --- |
-| `qualify` | Bundle author: `-session`, `-proof`, `-registration-host` | Zero |
-| `proveBundle` | Anyone: same proof inputs; proves original content before sale, or with a v7-bound proof before a funded order's deadline | Zero |
-| `seedBundle` | Seed author: `-vault`; **publishes the seed's keys** | Zero |
+| `qualify` | Bundle author: `-session`, `-proof`, `-registration-host` | Call value |
+| `proveBundle` | Anyone: same proof inputs; proves original content before sale, or with a v7-bound proof before a funded order's deadline | Call value |
+| `seedBundle` | Seed author: `-vault`; **publishes the seed's keys** | Call value |
 | `activate` | Any funder: `-v7-offer-id`, after the one seed is proved and published | Exactly 10,000 iDNA, permanently locked without a redeemable share |
 | `list` | Qualified author: `-session`, `-vault`; optional `-minimum-payout` in base units | Current seller delivery bond, plus 1,000 iDNA fraud collateral if content is unproved |
 | `buy` | Private buyer: `-v7-offer-id`, canonical `-session`, `-delivery-key` output path | Current quote plus required buyer bond |
 | `buyPublicSeed` | Buyer: expected oldest public `-v7-offer-id`; settles immediately with no private order | Exact current quote |
-| `confirm` | Funded buyer: `-order`, `-delivery` signed receipt from `direct-v7-receive` | Zero |
-| `challenge` | Funded buyer: `-order` | Zero |
-| `startFallback` | Seller: `-order`. A pre-proven offer uses the short path. An unproved offer also needs `-session`, `-proof`, and `-registration-host` for a sealed proof bound to this v7 contract | Zero |
-| `proveAndReveal` | Seller: `-order`, `-vault`; **publishes the private bundle's keys** | Zero |
-| `refund` | Anyone: `-order`, only after the proof deadline on a still funded order; retires the offer | Zero |
+| `confirm` | Funded buyer: `-order`, `-delivery` signed receipt from `direct-v7-receive` | Call value |
+| `challenge` | Funded buyer: `-order` | Call value |
+| `startFallback` | Seller: `-order`. A pre-proven offer uses the short path. An unproved offer also needs `-session`, `-proof`, and `-registration-host` for a sealed proof bound to this v7 contract | Call value |
+| `proveAndReveal` | Seller: `-order`, `-vault`; **publishes the private bundle's keys** | Call value |
+| `refund` | Anyone: `-order`, only after the proof deadline on a still funded order; retires the offer | Call value |
 | `relist` | Author: sold or cancelled private `-v7-offer-id`; optional `-minimum-payout` | Current seller bond, plus fraud collateral if still unproved |
-| `cancel` | Author: queued private `-v7-offer-id`; an unproved listing forfeits fraud collateral | **Zero** |
-| `expireHead` | Anyone: expected oldest `-v7-offer-id`, after 30,240 selectable blocks; a public seed rotates | Zero |
+| `cancel` | Author: queued private `-v7-offer-id`; an unproved listing forfeits fraud collateral | Call value |
+| `expireHead` | Anyone: expected oldest `-v7-offer-id`, after 30,240 selectable blocks; a public seed rotates | Call value |
 | `topUpBond` | Author: queued private `-v7-offer-id` and explicit positive `-amount` in base units | The specified top-up |
-| `slashUnproved` | Anyone: settled unproved `-order` after its content-proof deadline; retires the offer | Zero |
+| `slashUnproved` | Anyone: settled unproved `-order` after its content-proof deadline; retires the offer | Call value |
 
 Prepare and submit each step separately after the preceding transaction is included and its state is checked. Do not seed or activate a new deployment with sample data. For an unproved `startFallback`, the CLI checks the pinned proof host, v7 contract binding, original CID inventory, key commitment, and canonical session roots before preparing the call; submission checks the live order and proof statement again. The contract verifies the seal and session at execution. `proveBundle` verifies original content; it does not prove that a buyer received a private message. A legacy v6-bound proof is allowed only for an unfunded qualified epoch-230 offer; proving after funding requires a proof bound to the live v7 contract. The fallback deadline is 12,960 blocks from funding; a failed or absent fallback may allow `refund` once that window ends. See the [contract guide](contracts/direct-escrow-v7/README.md) for payouts, bonds, queue order, and deadlines.
 
@@ -317,7 +318,7 @@ For other calls, follow the same JSON-RPC shape but **do not reuse the public-se
 | Offer ID (32) + canonical epoch secrets (106) | `seedBundle` |
 | Order ID (8) + canonical epoch secrets (106) | `proveAndReveal` |
 
-`qualify`, `proveBundle`, `list`, and an unproved `startFallback` carry additional session, proof, or commitment fields. Use the typed CLI to construct and validate those calls, or follow their exact encoders in [`tools/fod/direct_v7_pool_calls.go`](tools/fod/direct_v7_pool_calls.go) and the contract exports. Check the attached value in the operation table above. Nonpayable methods such as `cancel` require **zero attached value**; accidental value can be stranded. Simulate the exact call before sending it.
+`qualify`, `proveBundle`, `list`, and an unproved `startFallback` carry additional session, proof, or commitment fields. Use the typed CLI to construct and validate those calls, or follow their exact encoders in [`tools/fod/direct_v7_pool_calls.go`](tools/fod/direct_v7_pool_calls.go) and the contract exports. Check the attached value in the operation table above. The revised contract rejects a missing or excessive call value on state-only methods. A direct transfer to the contract address is separate from a method call and does not create a withdrawal claim. Simulate the exact call before sending it.
 
 After any broadcast, retain the returned transaction hash and query its receipt and contract state from your own node:
 
