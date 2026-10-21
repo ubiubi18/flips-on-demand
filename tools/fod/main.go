@@ -225,10 +225,18 @@ func main() {
 		availabilityFlag    = flag.String("availability", "", "content evidence for prepare-buy: an ordinary availability advisory or a sealed fast proof with its copy list")
 		availabilityOutFlag = flag.String("availability-out", "", "write an availability advisory from the inventory here (inventory mode)")
 		appDataDirFlag      = flag.String("app-data-dir", "", "private local data directory for the standalone app")
+		appPreviewFlag      = flag.Bool("read-only-preview", false, "open a synthetic standalone app preview without a node, keys, or transactions")
 	)
 	// Command form: `fod <command> [flags]`. normalizeArgs maps the command to
 	// the internal mode and keeps the older `-mode` flag working.
 	flag.CommandLine.Parse(normalizeArgs(os.Args[1:]))
+	if *mode == "app" && *appPreviewFlag {
+		if err := runStandaloneDemo(); err != nil {
+			fmt.Fprintf(os.Stderr, "synthetic app preview refused: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 	apiKey, err := resolveRPCKey(*apiKeyFile, flagWasSet("key-file"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "node RPC key refused: %v\n", err)

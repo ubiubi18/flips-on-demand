@@ -1,12 +1,34 @@
 # Flips on Demand — visual guide
 
-UI captures and diagrams based on repository revision [`792e234`](https://github.com/ubiubi18/flips-on-demand/tree/792e234), checked on **18 October 2026**. These illustrate an experimental implementation; they do not establish a safe funded release.
+This page separates the current standalone browser app from concept diagrams and an older read-only viewer. The standalone screenshots use synthetic data and do not establish a safe funded release.
+
+## Current standalone app
+
+These are captures of the actual `tools/fod/standalone_app.html` interface in its `./fod app -read-only-preview` mode, checked locally on **21 October 2026**. The executable served the same HTML, CSS and JavaScript as the live local app. All displayed orders, identities, prices and pictures are synthetic; the preview mode has no node connection, private files or transaction endpoint. In live mode, a person must supply their own synced node and independently checked contract pins.
+
+**Current standalone app · synthetic market and buyer view**
+
+![Current Flips on Demand standalone app showing the synthetic market, public-preview treatment and next buy action](visuals/standalone-preview-desktop.png)
+
+**Current standalone app · synthetic order view**
+
+![Current Flips on Demand standalone app showing an example funded order and local delivery verification step](visuals/standalone-preview-orders.png)
+
+**Current standalone app · synthetic mobile view**
+
+![Current Flips on Demand standalone app at a narrow mobile viewport](visuals/standalone-preview-mobile.png)
+
+The local app separates Buy, Sell and My orders. An open order shows its proof deadline in chain blocks and the next applicable delivery, fallback or refund path; block timing can vary, and funded refund remains untested in the pilot. Live private confirmation requires a receipt saved after the app verifies the seller's ciphertext and the retained original flips; a public explorer preview never unlocks that action. Before a real signature, a separate review shows the selected identity, contract, attached value, fee ceiling and whether the action publishes keys. A saved uncertain transaction blocks a new signature until reconciliation.
 
 ## The idea in pictures
 
 The README opens with **illustrated product concepts**, followed by a six-step private purchase. These are explanatory drawings, not screenshots of implemented checkout or CAPTCHA functionality. They show the value to a website visitor before introducing contract mechanics.
 
+**Concept illustration · future CAPTCHA use**
+
 ![A concept market with hidden flip pictures, unlocking keys and a website CAPTCHA](visuals/balloon-market.svg)
+
+**Concept illustration · intended private trade**
 
 ![Hidden listing, key purchase, private unlock and check, buyer acceptance, author payment and website use](visuals/balloon-trade-flow.svg)
 
@@ -34,35 +56,45 @@ The CAPTCHA preserves the flip's original arrangements, numbered by these filena
 
 This complete example is now intentionally disclosed for documentation. The locks illustrate the market mechanism; they do not make the published example secret or establish that it is an eligible private offer. Attribution is also recorded in [THIRD_PARTY.md](../THIRD_PARTY.md#documentation-illustrations).
 
-## Current UI
+## Historical read-only viewer prototype
+
+The three captures in this section are based on repository revision [`792e234`](https://github.com/ubiubi18/flips-on-demand/tree/792e234), checked on **18 October 2026**. They show the older synthetic v6 viewer, not the current standalone trading app above.
 
 The screenshots show the actual bundled browser app, rebuilt from source, with the synthetic `snapshot()` fixture in [`app/test/direct-pool.test.ts`](../app/test/direct-pool.test.ts). Addresses, prices, balances, CIDs and order states are examples. The browser clock and fixture timestamp were fixed at `2026-10-18T12:00:00Z` so the app could display fresh sample quotes. No application styles or components were changed for the captures. No node, wallet, private delivery file or external image service was accessed.
 
 **Version matters:** this page accepts **v6 pool snapshots** and is read only. Its price curve and sample amounts do not describe v7 economics. The v7 transaction interface is in the separate [IdenaAI development source branch](https://github.com/ubiubi18/IdenaAI/tree/vibe/fod-social-bridge), not the screenshots here. Published IdenaAI desktop binaries do not include that source-only page as of the baseline above.
 
-### Market on desktop
+### Historical market on desktop
 
 Featured bundle, original-flip references, queue, illustrative price curve and the amounts to lock. Public previews remain unopened; they require a separate explorer request.
 
-![Actual v6 browser viewer with synthetic sample state, captured at 1440 by 1080 CSS pixels](visuals/viewer-v6-market.png)
+**Historical synthetic v6 viewer · market**
+
+![Older read-only v6 browser viewer with synthetic sample state, captured at 1440 by 1080 CSS pixels](visuals/viewer-v6-market.png)
 
 ### Orders and disputes
 
 The same sample snapshot contains a funded order marked as challenged. This view reports imported state; it does not challenge, confirm or refund an order itself.
 
-![Actual orders and disputes section, showing a synthetic funded order and buyer challenge](visuals/viewer-v6-orders.png)
+**Historical synthetic v6 viewer · orders**
+
+![Older read-only orders and disputes section, showing a synthetic funded order and buyer challenge](visuals/viewer-v6-orders.png)
 
 ### Mobile
 
 The existing responsive layout at 390 CSS pixels wide. Open the image for the full resolution capture.
 
-<a href="visuals/viewer-v6-mobile.png"><img src="visuals/viewer-v6-mobile.png" width="320" alt="Full mobile version of the v6 browser viewer, using the same synthetic sample state" /></a>
+**Historical synthetic v6 viewer · mobile**
+
+<a href="visuals/viewer-v6-mobile.png"><img src="visuals/viewer-v6-mobile.png" width="320" alt="Older read-only mobile version of the v6 browser viewer, using the same synthetic sample state" /></a>
 
 The captures used Chrome through the app's installed Playwright dependency at a device scale factor of 2. The build produced no browser errors or external requests during capture. Built HTML SHA-256: `f9e0b20f0c7e358fe430c8d52fd04b50eaa94c693d95b53bb03242669ec6b58d`. Browser appearance can vary with fonts, browser version and operating system.
 
 ## Direct v7: listing → trade → resolution
 
 V7 trades access to the original keys for one author's historical epoch bundle. The oldest first sale has priority; resales follow in their own queue. The buyer keeps authenticated encrypted files before paying. Encrypted key delivery happens through a separate private channel; the contract cannot determine whether that message was sent or received.
+
+**Protocol diagram · v7 trade paths**
 
 ![V7 listing, purchase, private confirmation, buyer challenge, public proof and reveal, refund and public-seed exception](visuals/v7-trade-flow.svg)
 
@@ -85,6 +117,8 @@ Let `h` be the block where the private buy is included and `D = h + 12,960`.
 The 12,960-block window is nominally three days at 20 seconds per block. Actual elapsed time depends on the chain. Merely submitting a transaction does not satisfy an inclusion deadline.
 
 ## Costs and money movements
+
+**Illustrative cost diagram · not a live fee quote**
 
 ![Illustrative v7 first-sale costs, showing locked funds and amounts returned under each resolution](visuals/v7-costs.svg)
 
@@ -118,4 +152,4 @@ For example, a provider could buy historical flip access and use the content in 
 | Price, bonds and reimbursement | [`curve.rs`](../contracts/direct-escrow-v7/src/curve.rs), [`lib.rs`](../contracts/direct-escrow-v7/src/lib.rs): `required_bond`, `seller_bond_for_rate`, `fallback_reimbursement` |
 | Gated-session examples | [`GateSetup.tsx`](../app/src/views/GateSetup.tsx), [`utility/README.md`](../utility/README.md) |
 
-The diagrams are editable, self-contained SVGs with accessible titles and descriptions. Embedded public images retain their original bytes. The actual UI screenshots and original balloon pictures are PNGs. Refresh the captures and rules together when their owning sources change. The v7 guide records one owner-operated funded pilot; funded cooperative confirmation, refund and resale, an unproved funded fallback with a v7-bound proof, and an independent security audit remain unverified at this baseline.
+The diagrams are editable, self-contained SVGs with accessible titles and descriptions. Embedded public images retain their original bytes. The UI screenshots and original balloon pictures are PNGs. Refresh captures and rules together when their owning sources change. The strict-value funded pilot verified local private delivery and cooperative confirmation, relisting and resale, challenged public fallback, and public-seed purchases with both identities controlled by one operator. Funded refund and expiry, a funded unproved fallback with a v7-bound proof, independent operators, and an external security audit remain open.
