@@ -30,11 +30,14 @@ type poolV7MarketOffer struct {
 }
 
 type poolV7MarketOrder struct {
-	OrderID string `json:"orderId"`
-	OfferID string `json:"offerId"`
-	Author  string `json:"author"`
-	Buyer   string `json:"buyer"`
-	State   string `json:"state"`
+	OrderID       string `json:"orderId"`
+	OfferID       string `json:"offerId"`
+	Author        string `json:"author"`
+	Buyer         string `json:"buyer"`
+	State         string `json:"state"`
+	FundedAt      uint64 `json:"fundedAt"`
+	ProofDeadline uint64 `json:"proofDeadline"`
+	Challenged    bool   `json:"challenged"`
 }
 
 type poolV7MarketSnapshot struct {
@@ -315,6 +318,9 @@ func readPoolV7MarketSnapshot(c *client, contract, codeHash string) (*poolV7Mark
 	for _, id := range orderIDs {
 		order := orders[id]
 		offer := offers[hex.EncodeToString(order.offer[:])]
+		if order.fundedAt > ^uint64(0)-poolV7ProofWindow {
+			return nil, fmt.Errorf("v7 order %d has an invalid proof deadline", id)
+		}
 		label := "funded"
 		if order.state == 4 {
 			label = "fallback pending"
@@ -322,6 +328,7 @@ func readPoolV7MarketSnapshot(c *client, contract, codeHash string) (*poolV7Mark
 		state.OpenOrders = append(state.OpenOrders, poolV7MarketOrder{
 			OrderID: strconv.FormatUint(id, 10), OfferID: hex.EncodeToString(order.offer[:]),
 			Author: hex.EncodeToString(offer.author[:]), Buyer: hex.EncodeToString(order.buyer[:]), State: label,
+			FundedAt: order.fundedAt, ProofDeadline: order.fundedAt + poolV7ProofWindow, Challenged: order.challenged,
 		})
 	}
 	if selected != ([32]byte{}) {

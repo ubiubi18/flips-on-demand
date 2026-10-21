@@ -183,7 +183,8 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 		snapshot.NextOffer.Status != "queued-primary" || snapshot.NextOffer.PublicSeed || snapshot.BlockHeight != 120 ||
 		len(snapshot.NextOffer.OriginalCIDs) != 1 || snapshot.NextOffer.OriginalCIDs[0] != cidFor(1) ||
 		len(snapshot.OpenOrders) != 1 || snapshot.OpenOrders[0].OrderID != "1" ||
-		snapshot.OpenOrders[0].State != "funded" {
+		snapshot.OpenOrders[0].State != "funded" || snapshot.OpenOrders[0].FundedAt != 100 ||
+		snapshot.OpenOrders[0].ProofDeadline != 100+poolV7ProofWindow || snapshot.OpenOrders[0].Challenged {
 		t.Fatalf("wrong selected v7 offer or quote: %+v", snapshot)
 	}
 	keyFile := filepath.Join(t.TempDir(), "rpc.key")

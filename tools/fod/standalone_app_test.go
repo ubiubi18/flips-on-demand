@@ -135,6 +135,66 @@ func TestStandalonePairingLocksAfterFailedAttempts(t *testing.T) {
 	}
 }
 
+func TestStandaloneConfirmNeedsLocallyVerifiedReceipt(t *testing.T) {
+	s := &standaloneServer{}
+	for _, tc := range []struct {
+		name, receipt string
+		upload        bool
+		want          string
+	}{
+		{name: "missing receipt", want: "verify the seller ciphertext locally"},
+		{name: "uploaded receipt", receipt: strings.Repeat("a", 32), upload: true, want: "only a buyer receipt verified by this app"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var body bytes.Buffer
+			form := multipart.NewWriter(&body)
+			_ = form.WriteField("operation", "confirm")
+			if tc.receipt != "" {
+				_ = form.WriteField("receiptId", tc.receipt)
+			}
+			if tc.upload {
+				part, err := form.CreateFormFile("delivery", "receipt.json")
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, _ = part.Write([]byte(`{}`))
+			}
+			_ = form.Close()
+			request := httptest.NewRequest(http.MethodPost, "/api/prepare", &body)
+			request.Header.Set("Content-Type", form.FormDataContentType())
+			if _, err := s.prepare(request); err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("unsafe confirmation was not refused: %v", err)
+			}
+		})
+	}
+}
+
+func TestStandaloneDemoHasNoPrivateOrWriteEndpoints(t *testing.T) {
+	origin := "http://127.0.0.1:39441"
+	handler := standaloneDemoHandler(origin)
+	for _, path := range []string{"/", "/app.js", "/app.css", "/api/mode"} {
+		request := httptest.NewRequest(http.MethodGet, origin+path, nil)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("demo %s returned %d", path, response.Code)
+		}
+		if path == "/api/mode" && !strings.Contains(response.Body.String(), `"preview":true`) {
+			t.Fatal("demo did not identify itself as synthetic")
+		}
+	}
+	for _, path := range []string{"/api/submit", "/api/prepare", "/api/private/receive", "/api/private/download/test"} {
+		for _, method := range []string{http.MethodGet, http.MethodPost} {
+			request := httptest.NewRequest(method, origin+path, nil)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code == http.StatusOK {
+				t.Fatalf("demo accepted %s %s", method, path)
+			}
+		}
+	}
+}
+
 func TestStandaloneActionIDsRejectTraversal(t *testing.T) {
 	s := &standaloneServer{cfg: standaloneConfig{DataDir: t.TempDir()}}
 	for _, id := range []string{"../private", "", strings.Repeat("f", 31), strings.Repeat("g", 32)} {

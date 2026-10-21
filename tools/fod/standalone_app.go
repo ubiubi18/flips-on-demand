@@ -82,6 +82,7 @@ type standaloneAction struct {
 	Signer        string                `json:"signer"`
 	PreparedAt    string                `json:"preparedAt"`
 	Attempted     bool                  `json:"attempted"`
+	AttemptNonce  uint32                `json:"attemptNonce,omitempty"`
 	Submission    *standaloneSubmission `json:"submission,omitempty"`
 }
 
@@ -383,6 +384,14 @@ func (s *standaloneServer) prepare(r *http.Request) (standaloneAction, error) {
 	if !standaloneOperations[op] {
 		return standaloneAction{}, errors.New("unsupported action")
 	}
+	if op == "confirm" {
+		if r.FormValue("receiptId") == "" {
+			return standaloneAction{}, errors.New("verify the seller ciphertext locally and select its saved buyer receipt before confirming")
+		}
+		if r.MultipartForm.File["delivery"] != nil {
+			return standaloneAction{}, errors.New("confirm accepts only a buyer receipt verified by this app")
+		}
+	}
 	maxFee := r.FormValue("maxFee")
 	automaticFee := maxFee == ""
 	var rate *big.Int
@@ -429,7 +438,7 @@ func (s *standaloneServer) prepare(r *http.Request) (standaloneAction, error) {
 	if amount := r.FormValue("amount"); amount != "" {
 		args = append(args, "-amount", amount)
 	}
-	for _, field := range []string{"session", "proof", "registration-host", "vault", "delivery"} {
+	for _, field := range []string{"session", "proof", "registration-host", "vault"} {
 		path, err := standaloneSaveUpload(r, field, dir)
 		if err != nil {
 			return standaloneAction{}, err
@@ -438,10 +447,7 @@ func (s *standaloneServer) prepare(r *http.Request) (standaloneAction, error) {
 			args = append(args, "-"+field, path)
 		}
 	}
-	if op == "confirm" && r.FormValue("receiptId") != "" {
-		if r.MultipartForm.File["delivery"] != nil {
-			return standaloneAction{}, errors.New("choose either a saved receipt or an uploaded receipt")
-		}
+	if op == "confirm" {
 		privateDir, err := s.privateDir(r.FormValue("receiptId"))
 		if err != nil {
 			return standaloneAction{}, err
@@ -593,8 +599,9 @@ func (s *standaloneServer) readAction(id string) (standaloneAction, error) {
 		MinimumPayout: prepared.MinimumPayout, MaximumFee: string(fee), Author: prepared.Author,
 		Buyer: prepared.Buyer, PreparedAt: prepared.PreparedAt}
 	a.Signer = string(signer)
-	if _, err := os.Stat(filepath.Join(dir, "attempted")); err == nil {
+	if marker, err := os.ReadFile(filepath.Join(dir, "attempted")); err == nil {
 		a.Attempted = true
+		_, _ = fmt.Sscanf(string(marker), "nonce=%d", &a.AttemptNonce)
 	}
 	var signed SubmittedTransaction
 	if raw, err := os.ReadFile(filepath.Join(dir, "signed.json")); err == nil && json.Unmarshal(raw, &signed) == nil {
@@ -731,6 +738,15 @@ func (s *standaloneServer) reconcile(id string) (standaloneAction, error) {
 
 func (s *standaloneServer) handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/api/mode", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method refused", 405)
+			return
+		}
+		writeStandaloneJSON(w, struct {
+			Preview bool `json:"preview"`
+		}{Preview: false})
+	})
 	assets := map[string]string{"/": "standalone_app.html", "/app.js": "standalone_app.js", "/app.css": "standalone_app.css"}
 	for route, file := range assets {
 		route, file := route, file
@@ -947,7 +963,7 @@ func (s *standaloneServer) handler() http.Handler {
 			http.Error(w, "origin refused", 403)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/api/pair" &&
+		if strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/api/pair" && r.URL.Path != "/api/mode" &&
 			(s.token == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-FOD-Token")), []byte(s.token)) != 1) {
 			http.Error(w, "local request token refused", 403)
 			return

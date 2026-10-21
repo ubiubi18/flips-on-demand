@@ -2,15 +2,27 @@
 
 # Flips on Demand
 
+**Pilot status:** Funded private delivery, resale, challenge fallback and public-seed purchases were tested with two identities run by one operator. Funded refund and expiry paths, independent operators and an external security audit remain open.
+
 **A market for picture puzzles that websites could use as CAPTCHAs.**
 
 Idena has produced **tens of thousands of human-reviewed picture puzzles**, called *flips*. People have already solved them and agreed on their answers. This project explores a second use: authors sell access to past puzzles, and CAPTCHA services buy them for websites.
 
 Imagine a website offering a free trial. Its CAPTCHA provider buys and unlocks a collection of flips. Visitors solve a few before continuing. **The service pays. Visitors just solve—no wallet or crypto knowledge needed.**
 
+## Try the local app
+
+After [building `fod`](#build-the-cli), run `./fod app -read-only-preview` from `tools/fod` to explore synthetic buyer, seller and order screens. This mode needs no node, keys or funds and has no transaction endpoint. Real trading uses `./fod app` with your own synced node and independently verified contract pins; setup is [below](#run-the-standalone-local-app).
+
+![Current standalone Flips on Demand browser app showing a synthetic market and buyer flow](docs/visuals/standalone-preview-desktop.png)
+
+*Current standalone app in synthetic preview mode, captured locally on 21 October 2026. All balances, bundles and pictures shown are examples. [Mobile and order views →](docs/VISUAL_GUIDE.md#current-standalone-app)*
+
+## The idea
+
 ![A Seller offers a partly hidden balloon flip; the same four pictures appear unlocked in a website CAPTCHA](docs/visuals/balloon-market.svg)
 
-*Concept screens. The same balloon flip is shown partly hidden for sale and fully unlocked as a CAPTCHA. [Picture source →](docs/VISUAL_GUIDE.md#real-flip-previews)*
+*Concept illustration, not a trading-app screen. The same balloon flip is shown partly hidden for sale and fully unlocked as a CAPTCHA. [Picture source →](docs/VISUAL_GUIDE.md#real-flip-previews)*
 
 ## Why could this be useful?
 
@@ -28,7 +40,9 @@ One historical session alone recorded **32,593 qualified flips** ([epoch 80](htt
 
 ![Six-step illustrated trade: hidden flip listed, key purchased, buyer unlocks and checks, buyer accepts, author receives payment, website uses the flip as a CAPTCHA](docs/visuals/balloon-trade-flow.svg)
 
-The intended private delivery channel is an **encrypted idena.social message**; automatic sending is not yet integrated. The buyer checks the complete puzzle **before** accepting, then serves it to visitors.
+*Concept illustration. The current local app prepares and checks delivery files; the pictured website CAPTCHA integration is not implemented.*
+
+The seller creates a buyer-specific **encrypted delivery file** and transfers it through a channel they choose. An encrypted idena.social message is optional; the app does not send one. The buyer verifies the delivered puzzle locally **before** accepting, then could serve it to visitors through a separate CAPTCHA service.
 
 ## What if the trade goes wrong—and what does it cost?
 
@@ -42,9 +56,9 @@ The price cap is **1,000 iDNA per collection**, plus bonds and network fees. In 
 
 ## What exists today?
 
-A newer owner-run funded pilot tested private ciphertext verification and buyer confirmation, relisting and resale, a buyer challenge and public fallback, and repeat purchases of the permanent public seed up to the 1,000 iDNA price cap. Both identities were controlled by one operator. The pictured CAPTCHA service is a concept; the complete integration is not built. Funded refund and expiry tests need another eligible private bundle and the applicable deadlines. There is no independent security audit or guarantee of one person per account.
+A source-built `fod` executable provides the standalone local browser app and typed CLI. The IdenaAI page is development source only; published desktop binaries do not include it. The pictured CAPTCHA service is a concept, not a complete integration. There is no guarantee of one person per account.
 
-[See the actual desktop, mobile and order screens →](docs/VISUAL_GUIDE.md#current-ui) · [Technical setup below ↓](#technical-details)
+[See the current desktop, mobile and order screens →](docs/VISUAL_GUIDE.md#current-standalone-app) · [Technical setup below ↓](#technical-details)
 
 ## Technical details
 

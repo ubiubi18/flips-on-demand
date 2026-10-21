@@ -20,3 +20,16 @@
 .preview-pictures{display:flex;gap:6px;align-items:center;justify-content:center;min-height:105px;color:#9ca9ba;font-size:12px}
 .preview-pictures img{width:calc(50% - 3px);height:105px;object-fit:contain;background:#202a37;border-radius:4px}
 .preview-cid{color:#9ca9ba;font-size:12px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar{min-height:66px;height:auto;gap:12px}.brand{min-width:0;flex-wrap:wrap}.brand strong{white-space:nowrap}.version{border:1px solid #6a5430;border-radius:999px;padding:3px 8px;color:#f1cb78;white-space:nowrap}
+.mode-nav{display:flex;gap:8px;margin:18px 0}.mode-nav button{min-width:110px}.mode-nav button.active{background:#e5b85c;border-color:#e5b85c;color:#211909;font-weight:700}
+.demo-scenario{max-width:320px;margin:0 0 16px}.demo-scenario select{margin-top:6px}
+.market-kind{margin-top:12px;font-size:14px;font-weight:650;line-height:1.45}.technical .meta{display:grid;gap:8px}.technical .meta span{overflow-wrap:anywhere}
+.copyable{display:flex;align-items:center;gap:8px}.copyable code{font:inherit}.copyable button{padding:3px 7px;font-size:11px}
+.market-preview:not(:empty){border:1px dashed #718198;border-radius:8px;padding:14px}.preview-caption{display:inline-block;border:1px solid #8896aa;border-radius:999px;padding:5px 10px;color:#eef2f7;background:#293340}
+.history-section{border:1px solid #293340;border-radius:12px;padding:17px 23px;background:#171f2a;margin:16px 0}.history-section summary{font-size:15px;font-weight:650}.history-section button{margin-top:12px}
+#uncertain-warning{border-left-color:#e5b85c;background:#302716;color:#ffdfa0}
+#sign-dialog{width:min(620px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;border:1px solid #8190a5;border-radius:12px;background:#171f2a;color:#edf2f7;padding:24px;box-shadow:0 28px 80px #000b}
+#sign-dialog::backdrop{background:#03070bd9}#sign-dialog .review{margin:0}#sign-dialog dl{display:grid;grid-template-columns:150px minmax(0,1fr);gap:9px;font-size:13px}#sign-dialog dt{color:#a9b5c5}#sign-dialog dd{margin:0;overflow-wrap:anywhere}#sign-disclosure{border-left-color:#f07171;background:#382125;color:#fff0ed;font-size:14px;font-weight:650}
+.acknowledge{display:flex;gap:10px;align-items:flex-start;margin:20px 0;color:#edf2f7;line-height:1.5}.acknowledge input{width:20px;min-width:20px;height:20px;min-height:20px;margin:1px 0 0}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+summary:focus-visible,.mode-nav button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #e5b85c;outline-offset:2px}
+@media(max-width:660px){.mode-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.mode-nav button{min-width:0;padding:10px 5px}.brand{gap:6px}.brand strong{font-size:14px}#sign-dialog{padding:18px}#sign-dialog dl{grid-template-columns:1fr;gap:3px}#sign-dialog dt:not(:first-child){margin-top:8px}.dialog-actions button{width:100%}}
