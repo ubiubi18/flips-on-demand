@@ -30,14 +30,15 @@ type poolV7MarketOffer struct {
 }
 
 type poolV7MarketOrder struct {
-	OrderID       string `json:"orderId"`
-	OfferID       string `json:"offerId"`
-	Author        string `json:"author"`
-	Buyer         string `json:"buyer"`
-	State         string `json:"state"`
-	FundedAt      uint64 `json:"fundedAt"`
-	ProofDeadline uint64 `json:"proofDeadline"`
-	Challenged    bool   `json:"challenged"`
+	OrderID            string `json:"orderId"`
+	OfferID            string `json:"offerId"`
+	Author             string `json:"author"`
+	Buyer              string `json:"buyer"`
+	State              string `json:"state"`
+	FundedAt           uint64 `json:"fundedAt"`
+	ProofDeadline      uint64 `json:"proofDeadline"`
+	Challenged         bool   `json:"challenged"`
+	InvalidDeliveryKey bool   `json:"invalidDeliveryKey"`
 }
 
 type poolV7MarketSnapshot struct {
@@ -206,12 +207,6 @@ func readPoolV7MarketSnapshot(c *client, contract, codeHash string) (*poolV7Mark
 			return nil, fmt.Errorf("v7 order %d has invalid offer reference or amount", id)
 		}
 		if order.state == 1 || order.state == 4 {
-			if order.deliveryKey[0] != 4 {
-				return nil, fmt.Errorf("v7 order %d has invalid delivery key", id)
-			}
-			if _, keyErr := crypto.UnmarshalPubkey(order.deliveryKey[:]); keyErr != nil {
-				return nil, fmt.Errorf("v7 order %d has invalid delivery key", id)
-			}
 			expected := order.paid
 			if offer.everSold {
 				expected = new(big.Int).Rsh(new(big.Int).Set(order.paid), 1)
@@ -325,10 +320,12 @@ func readPoolV7MarketSnapshot(c *client, contract, codeHash string) (*poolV7Mark
 		if order.state == 4 {
 			label = "fallback pending"
 		}
+		_, keyErr := crypto.UnmarshalPubkey(order.deliveryKey[:])
 		state.OpenOrders = append(state.OpenOrders, poolV7MarketOrder{
 			OrderID: strconv.FormatUint(id, 10), OfferID: hex.EncodeToString(order.offer[:]),
 			Author: hex.EncodeToString(offer.author[:]), Buyer: hex.EncodeToString(order.buyer[:]), State: label,
 			FundedAt: order.fundedAt, ProofDeadline: order.fundedAt + poolV7ProofWindow, Challenged: order.challenged,
+			InvalidDeliveryKey: order.deliveryKey[0] != 4 || keyErr != nil,
 		})
 	}
 	if selected != ([32]byte{}) {

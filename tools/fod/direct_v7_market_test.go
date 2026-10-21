@@ -74,13 +74,23 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 		"pool/next-sequence": uint64Bytes(4), "pool/activated-at": uint64Bytes(80),
 		"pool/reserve": amountBytes(seedAmount), "pool/insurance": amountBytes(big.NewInt(0)),
 	}
-	newNode := func(syncing, drift, corruptOrder, publicHead, corruptInventory bool) *client {
+	newNode := func(syncing, drift, corruptOrder, publicHead, corruptInventory, invalidDeliveryKey bool) *client {
 		t.Helper()
 		headReads := 0
 		localFields := make(map[string][]byte, len(fields))
 		for key, value := range fields {
 			localFields[key] = value
 		}
+		localOrder := append([]byte(nil), order...)
+		if corruptOrder {
+			localOrder[0] ^= 0xff
+		}
+		if invalidDeliveryKey {
+			for i := 53; i < 117; i++ {
+				localOrder[i] = 0
+			}
+		}
+		localFields["pool/order/1"] = localOrder
 		if publicHead {
 			localFields["pool/primary-head"] = make([]byte, 32)
 			localFields["pool/primary-tail"] = make([]byte, 32)
@@ -140,11 +150,7 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 						directMarketItem(active[:], offerBytes(3, 3, 10, 2, 1, 3, false)),
 					}}
 				case poolV6OrderPrefix:
-					value := append([]byte(nil), order...)
-					if corruptOrder {
-						value[0] ^= 0xff
-					}
-					result = mapPage{Items: []*mapItem{directMarketItem([]byte("1"), value)}}
+					result = mapPage{Items: []*mapItem{directMarketItem([]byte("1"), localOrder)}}
 				case poolV6InventoryPrefix:
 					entry := func(author byte) []byte {
 						cid := cidFor(author)
@@ -173,7 +179,7 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 		return &client{url: server.URL, key: "test-rpc-key", http: newHTTPClient()}
 	}
 
-	node := newNode(false, false, false, false, false)
+	node := newNode(false, false, false, false, false, false)
 	snapshot, err := readPoolV7MarketSnapshot(node, contract, codeHash)
 	if err != nil {
 		t.Fatal(err)
@@ -184,7 +190,8 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 		len(snapshot.NextOffer.OriginalCIDs) != 1 || snapshot.NextOffer.OriginalCIDs[0] != cidFor(1) ||
 		len(snapshot.OpenOrders) != 1 || snapshot.OpenOrders[0].OrderID != "1" ||
 		snapshot.OpenOrders[0].State != "funded" || snapshot.OpenOrders[0].FundedAt != 100 ||
-		snapshot.OpenOrders[0].ProofDeadline != 100+poolV7ProofWindow || snapshot.OpenOrders[0].Challenged {
+		snapshot.OpenOrders[0].ProofDeadline != 100+poolV7ProofWindow || snapshot.OpenOrders[0].Challenged ||
+		snapshot.OpenOrders[0].InvalidDeliveryKey {
 		t.Fatalf("wrong selected v7 offer or quote: %+v", snapshot)
 	}
 	keyFile := filepath.Join(t.TempDir(), "rpc.key")
@@ -193,7 +200,7 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 	}
 	out := filepath.Join(t.TempDir(), "market.json")
 	if err := directCommand(directCommandOptions{
-		Mode: "direct-v7-market", DirectVersion: 7, Node: newNode(false, false, false, false, false),
+		Mode: "direct-v7-market", DirectVersion: 7, Node: newNode(false, false, false, false, false, false),
 		Contract: contract, CodeHash: codeHash, Network: NetworkNamePinned,
 		OutPath: out, OutExplicit: true, RPCExplicit: true, KeyFileExplicit: true,
 		KeyFilePath: keyFile, APIKey: "test-rpc-key",
@@ -209,12 +216,43 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 		strings.Contains(string(raw), hex.EncodeToString(deliveryKey)) {
 		t.Fatalf("v7 snapshot contains unexpected data or invalid JSON: %v", err)
 	}
-	publicSnapshot, err := readPoolV7MarketSnapshot(newNode(false, false, false, true, false), contract, codeHash)
+	publicSnapshot, err := readPoolV7MarketSnapshot(newNode(false, false, false, true, false, false), contract, codeHash)
 	if err != nil || publicSnapshot.NextOffer == nil || !publicSnapshot.NextOffer.PublicSeed ||
 		publicSnapshot.NextOffer.OfferID != hex.EncodeToString(seed[:]) || publicSnapshot.Quote == nil ||
 		*publicSnapshot.Quote != poolV7PriceCap {
 		t.Fatalf("public seed did not receive its v7 quote: %v, %+v", err, publicSnapshot)
 	}
+	t.Run("invalid delivery key remains visible", func(t *testing.T) {
+		badNode := newNode(false, false, false, false, false, true)
+		server := &standaloneServer{
+			origin: "http://127.0.0.1:39441", token: strings.Repeat("a", 32),
+			market: func() (any, error) { return readPoolV7MarketSnapshot(badNode, contract, codeHash) },
+		}
+		request := httptest.NewRequest(http.MethodGet, server.origin+"/api/market", nil)
+		request.Header.Set("X-FOD-Token", server.token)
+		response := httptest.NewRecorder()
+		server.handler().ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("funded order made market unavailable: HTTP %d", response.Code)
+		}
+		var got poolV7MarketSnapshot
+		if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
+			t.Fatal(err)
+		}
+		if got.NextOffer == nil || got.Quote == nil || len(got.OpenOrders) != 1 ||
+			got.OpenOrders[0].OrderID != "1" || got.OpenOrders[0].State != "funded" ||
+			!got.OpenOrders[0].InvalidDeliveryKey {
+			t.Fatalf("market omitted the unsafe funded order or warning: %+v", got)
+		}
+		if strings.Contains(response.Body.String(), "deliveryKey\":") ||
+			strings.Contains(response.Body.String(), "04"+strings.Repeat("00", 64)) {
+			t.Fatal("market exposed the buyer delivery key")
+		}
+		if _, err := readPoolV7FundedDelivery(badNode, contract, 1); err == nil ||
+			!strings.Contains(err.Error(), "invalid buyer delivery key") {
+			t.Fatalf("private delivery accepted an invalid buyer key: %v", err)
+		}
+	})
 	for _, tc := range []struct {
 		name, want                        string
 		syncing, drift, bad, badInventory bool
@@ -225,7 +263,7 @@ func TestDirectV7MarketSnapshotAndRefusals(t *testing.T) {
 		{"invalid inventory", "invalid public CID inventory", false, false, false, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := readPoolV7MarketSnapshot(newNode(tc.syncing, tc.drift, tc.bad, false, tc.badInventory), contract, codeHash); err == nil || !strings.Contains(err.Error(), tc.want) {
+			if _, err := readPoolV7MarketSnapshot(newNode(tc.syncing, tc.drift, tc.bad, false, tc.badInventory, false), contract, codeHash); err == nil || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("expected %q refusal, got %v", tc.want, err)
 			}
 		})
