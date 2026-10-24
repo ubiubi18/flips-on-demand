@@ -1,0 +1,167 @@
+{
+  "format": "fod.bonded-v9.candidate",
+  "version": 1,
+  "status": "deployed-and-verified; five-funded-buyer-orders-and-two-collateralized-seller-offers-confirmed",
+  "builtAtUtc": "2026-10-24T18:06:55.223020+00:00",
+  "baseline": {
+    "marketCheckout": "995a228",
+    "nativeClientCheckout": "23c3b614",
+    "priorDirtyWorkPreserved": true
+  },
+  "flow": {
+    "upfrontContentProof": false,
+    "separateRegistration": false,
+    "atomicCanonicalListingAndCollateral": true,
+    "cooperativeAcceptanceNeedsProof": false,
+    "disputeNeedsOriginalContentAndExactDeliveryProofs": true,
+    "automaticProver": false,
+    "starPremium": false,
+    "starPriority": false,
+    "queuePolicy": "earliest compatible buyer then earliest compatible seller"
+  },
+  "wasm": {
+    "path": "contracts/bonded-market-v9/target/bonded-v9.wasm",
+    "bytes": 506233,
+    "sha256": "7de6eae79c1744f996580a3e0c0ba1f83099707187f5f6d24b4f8cc6a9d3a194",
+    "codeHash": "4c151e3e6f2c4a54597783b7ea2cae7b0c0078ba99ff30eeb03ba5be8a764319",
+    "optimizer": "wasm-opt --llvm-memory-copy-fill-lowering -Oz",
+    "build": "cargo build --release --target wasm32-unknown-unknown --locked --offline"
+  },
+  "localCli": {
+    "path": "build/fod-standalone-v9",
+    "bytes": 101461314,
+    "sha256": "e144a41f211a2d9ffb843d3ffa4927f3436cfffe3f1f59cab8fac60979b5ee09",
+    "platform": "Darwin arm64",
+    "build": "go build -modfile=go.local.mod -o ../../build/fod-standalone-v9 .",
+    "linuxReleaseBuilt": true
+  },
+  "checks": {
+    "rustTestsPassed": 16,
+    "goCliAndStandaloneTestsPassed": 27,
+    "standaloneModelTestsPassed": 6,
+    "nativeClientAndUiTestsPassed": 50,
+    "nativeWasmTopLevelTestsPassed": 2,
+    "nativeWasmPaths": [
+      "atomic canonical listing and cooperative settlement",
+      "genuine combined proof after explicit challenge",
+      "genuine combined proof after missing acceptance"
+    ],
+    "nativeUserGas": {
+      "atomicListing": 24514,
+      "challengedCombinedProof": 3960409,
+      "missingAcceptanceCombinedProof": 3959407
+    },
+    "nativeGasScope": "execution gas only; excludes transaction-size fee; not a live fee estimate",
+    "rendererProductionBuildPassed": true,
+    "targetedNativeLintPassed": true,
+    "standaloneV9BrowserReviewPassed": true,
+    "focusedDiffWhitespaceChecksPassed": true,
+    "priceUpdateVerification": {
+      "rust": 16,
+      "goCliAndStandalone": 27,
+      "browserModel": 6,
+      "nativeUi": 9,
+      "nativeWasmTopLevel": 2,
+      "exact500IdnaPriceInNativeTradeRecord": true,
+      "rendererBuild": true,
+      "targetedUiLint": true,
+      "browserShows500Idna": true,
+      "unchangedServiceTestsFromPreviousVerifiedRun": 41
+    }
+  },
+  "syntheticProof": {
+    "productionIdentityUsed": false,
+    "deliveryReceiptSha256": "fe587a101773c478a884f450e53aaba65b2f37b23595ff85c4ead6b8a99250f6",
+    "proveSeconds": 983.969911208,
+    "cycles": 7602176,
+    "segments": 8,
+    "contentReceipt": "proofs/fast-content/dist/synthetic-v5-one-flip.json",
+    "contentReceiptSha256": "7bb3549fe37925c22fee5844225c7d490a633282e39047af9d1576ce8ddad67b",
+    "scope": "genuine local synthetic delivery receipt matched to the existing genuine original-content receipt; not a production five-flip proof benchmark"
+  },
+  "limits": {
+    "deployed": true,
+    "installedOnLiveIdentities": true,
+    "productionProofGenerated": false,
+    "depositsFunded": true,
+    "ordersSubmitted": true,
+    "purchasesMade": false,
+    "fundedProductionTradeVerified": false,
+    "newLiveDeploymentEstimate": true,
+    "proofReimbursement": "min(feePerGas * 2500000, trade price / 20); can be far below combined proof costs",
+    "productionProvingTimeMeasured": false,
+    "deploymentRequiresFreshArtifactFeeAndAuthorityReview": true,
+    "liveCliAvailableForAllThreeIdentities": true,
+    "nativeAppV9Installed": true
+  },
+  "sources": {
+    "contracts/bonded-market-v9/Cargo.lock": "0c6247d7da0fb9ae1f758c2e0f5c1b204d5a66880beda67bf0447fbbbd1e4f46",
+    "contracts/bonded-market-v9/Cargo.toml": "3b6cb88eb2c52b817d843e5fc583704870410d76a4110d0d0b2574fcc716cda9",
+    "contracts/bonded-market-v9/src/curve.rs": "e3c718656356c8ff3a9eb49709f44fdde7ecdc5f0fbcb9bc01058fc397b5c785",
+    "contracts/bonded-market-v9/src/host.rs": "7dff3429ffb52c32a8dbfb441f79a695f210a1d8a69f4c13d07d14932fe431e2",
+    "contracts/bonded-market-v9/src/lib.rs": "f995406165fec3cd7a3ea72803e45819a489b698aafba22cf94af1c6523122fb",
+    "contracts/bonded-market-v9/src/market.rs": "492b9b2b5c6e63e408d1fcb4c8ed4a53fb86263f66d67f7ca3d2775b03175525",
+    "contracts/bonded-market-v9/src/proof.rs": "7bd13914fe651e9d3e03e900ed7b245a307750c109c382bb6788becd61141711",
+    "contracts/bonded-market-v9/src/records.rs": "1355f14898fb60fd75b175625dc38469e5f14b960083940140bc38f91d03502f",
+    "contracts/bonded-market-v9/src/tests.rs": "108343f3b3e8dca2da7b173c8018329bea8d4f9ece3b906673a5c1a51fde1675",
+    "proofs/delivery/dist/bonded-v9-synthetic.json": "fe587a101773c478a884f450e53aaba65b2f37b23595ff85c4ead6b8a99250f6",
+    "proofs/delivery/orders/bonded-v9-synthetic.json": "04cb4435066e29774a26141c739ca22f59b7e4f73c1da860d75ba3ee8f8e1c74",
+    "spikes/harness/bonded_v9_test.go": "811af0f8de05c7c8b8b11469c746e61d7a98908b70714d5fcfa4f1444c3ae329",
+    "tools/fod/bonded_v8.go": "752dcb6cc5338bcb3651fa25ae0fbdb10dcb0760204d7a8a3c3dddb385c04b63",
+    "tools/fod/bonded_v8_content.go": "d4089b69be687f0a1089f360a6d0e2371a27f4273891fc8f0e76718705e4f3db",
+    "tools/fod/bonded_v9_listing.go": "e128a5d0053b596045db5d9a11c60167711d2a8f928397da377cc8122f8ee02d",
+    "tools/fod/bonded_v9_test.go": "c29e7e4ae57737ad1272c342d4fd7d22ef2b85ea35d5b503d750d457f2a098c1",
+    "tools/fod/main.go": "da00bd9aafbe8525c6edb2b65b805357f0d5cecd5c82fbfb4d282763f9627bbc",
+    "tools/fod/standalone_app.go": "d84952612172c15fc2bd236bedd75a11ca23ae553622e598eb80e1e92783f2fb",
+    "tools/fod/standalone_v8.go": "0345f05760213eef756d4f2798a748d13cf978cdddb0b0e28d5a2bd9fbfd6a8d",
+    "tools/fod/standalone_v8.html": "a3c17069b182255b49a34a32bb781f50297dfe6c356d24622d6a3dd001bd8071",
+    "tools/fod/standalone_v8.js": "636a4a5a97224590b3e0890a737ead4da93af37f0507d4de7a0b89147a6ddc15",
+    "tools/fod/standalone_v8_model.mjs": "7b49c23cede63342a49ab627878b754901ee56ca27554a605d7926a0c8b017f4",
+    "tools/fod/standalone_v8_packages.go": "f9e6605d3bee6ae81f295fa1445a2f21d9a5e45b27280fcbcd31ab64e3fac9d6",
+    "tools/fod/standalone_v8_model.test.mjs": "91beeb135413649fd65db80f676b814d42600b7c9ddf1c66add5c96f13897541",
+    "tools/fod/standalone_v8_test.go": "65c088fb4f6174da026d53cdc4cfb168c61288ffa5f0c9a6ebf2921d3989733f"
+  },
+  "nativeClientSources": {
+    "main/fod-v7.js": "9c9a32f713f18f246e93e9421bbf713a7d07af82da53d96487546f62c3d7dfc9",
+    "main/fod-v7.test.js": "300c0f10e12e071467227af17cc7b5f9eb7b05868bbd4582580b7bd36d9315b7",
+    "main/fod-v8.js": "cb5d5a31b0053c33853a89f0ff951393bd804a3253fc75b23b6a2efd8f19c945",
+    "main/fod-v8.test.js": "25a396390760cae2b9df901a02e9e3631ebb8fc394309d53dd4a3b606c3da9fa",
+    "main/index.js": "841351f2bdc9afe9844720670f2c10d46850ced2e41c0cb221440b281ebc4a58",
+    "main/preload.js": "1ea027e3b2acfa6b535c252064f0b27eccb80c7c9db2fa8fb553c6565e6cb6a5",
+    "renderer/pages/flip-market.js": "b999a39773c37e92cdd853f75972d9af9e192b1a766bdc9cd639fe7cf5144d07",
+    "renderer/shared/components/flip-market-v8.js": "c6645b373894ef5f2ed970d0e00c2e7a1b8159acaf77e26e96ebcdefe264fa2e",
+    "renderer/shared/components/flip-market-v8.test.js": "03061494374ffb37bea56d4799ec5fa351c8479baff2287d050e9c885b16f07f"
+  },
+  "pricing": {
+    "initialBuyerPriceIdna": "500",
+    "initialSellerQuoteIdna": "409.090909090909090909",
+    "initialState": "zero funded reserve and zero acquired inventory",
+    "virtualReserveIdna": "4500",
+    "virtualUnits": 1000,
+    "unitsPerBundle": 100,
+    "subsequentPrices": "existing constant-product curve from funded reserve and acquired inventory",
+    "unfilledQueueMovesPrice": false,
+    "v8Unchanged": true
+  },
+  "linuxCli": {
+    "bytes": 120744536,
+    "sha256": "099a40529ce03021bb68be22afbad46571439527cc257822499d3c70cc19fd37",
+    "platform": "Linux amd64",
+    "builder": "golang:1.26.8-bookworm",
+    "build": "CGO_ENABLED=1 go build -modfile=/build/go.mod -trimpath -o /build/fod-linux-amd64 .",
+    "sourceManifestMatched": true
+  },
+  "deploymentEvidence": "docs/evidence/v9-deployment-and-queue-preparation.json",
+  "liveQueue": {
+    "buyerOrders": 5,
+    "sellerOffers": 2,
+    "buyerEscrowIdna": "2750",
+    "buyerCollateralIdna": "2750",
+    "collateralPerSellerIdna": "750",
+    "buyerMaximumPerSetIdna": "550",
+    "buyerSetupFeeCeilingIdna": "50",
+    "buyerActualSetupFeesIdna": "43.3125774218051291",
+    "verifiedNativeNodes": 3
+  },
+  "nativeUiRolloutEvidence": "docs/evidence/v9-native-ui-rollout.json"
+}

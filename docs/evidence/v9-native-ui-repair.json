@@ -1,0 +1,40 @@
+{
+  "verifiedAtUtc": "2026-10-24T21:55:08.907260+00:00",
+  "cause": "Social App omitted postTipsRef from route outlet context; the first populated post crashed the embedded feed.",
+  "fixes": [
+    "Restore shared postTipsRef to feed/post routes.",
+    "Show buying or selling controls before optional trading setup.",
+    "Show package import only in seller flow, expanded on request.",
+    "Suggest quote plus 5 percent as the per-trade limit rather than the entire deposit.",
+    "Correct v9 first-deposit copy: no upfront registered proof required."
+  ],
+  "installedIdentities": [
+    "IdenaAI 1",
+    "IdenaAI 2",
+    "IdenaAI 3"
+  ],
+  "uiFilesVerifiedPerApp": 14,
+  "serviceRestarts": 0,
+  "privateMarketFilesUnchanged": true,
+  "backupsCreated": true,
+  "verification": {
+    "socialRouteRegressionPassed": 1,
+    "marketUiTestsPassed": 10,
+    "socialTypescriptAndProductionBuild": "passed",
+    "focusedLint": "passed",
+    "diffWhitespace": "passed",
+    "idenaAI1LiveSocialFeedWithPosts": "verified",
+    "idenaAI1LiveBuyView": "verified",
+    "newSocialBundleFatalErrors": 0
+  },
+  "limits": {
+    "automaticTradingEnabled": false,
+    "newTransactionsSignedOrBroadcast": 0,
+    "otherTwoLiveSocialViews": "Not opened; installed artifact hashes verified."
+  },
+  "sourceSha256": {
+    "vendor/idena.social-ui/src/App.tsx": "6a7be15ff3ebab27e3cffdbb350f7c7b41f2e3db7cf72f8813a96531d2d2ae17",
+    "renderer/shared/components/flip-market-v8.js": "32cba7246c6d81bc3e3f6a8cac352f967ddc0ec02a5c14286b76774247557497"
+  },
+  "screenshot": "docs/visuals/native-v9-market-repaired.png"
+}

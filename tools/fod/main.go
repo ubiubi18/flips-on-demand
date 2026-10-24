@@ -55,9 +55,10 @@ type rpcTx struct {
 }
 
 type client struct {
-	url  string
-	key  string
-	http *httpClient
+	url           string
+	key           string
+	http          *httpClient
+	bondedVersion int
 }
 
 func (c *client) call(method string, params any, result any) error {
@@ -124,6 +125,28 @@ type TxSummary struct {
 }
 
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "app-v8" || os.Args[1] == "app-v9") {
+		version := 8
+		if os.Args[1] == "app-v9" {
+			version = 9
+		}
+		if err := runStandaloneBonded(os.Args[2:], version); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) > 1 && (os.Args[1] == "v8" || os.Args[1] == "v9") {
+		version := 8
+		if os.Args[1] == "v9" {
+			version = 9
+		}
+		if err := runBonded(os.Args[2:], version); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	var (
 		rpcURL              = flag.String("rpc", "http://127.0.0.1:9019", "node RPC URL")
 		apiKeyFile          = flag.String("key-file", "", "owner-only file containing the node RPC API key")

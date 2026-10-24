@@ -1,0 +1,16 @@
+{
+  "deployed": true,
+  "verifiedByBothNodes": true,
+  "canonicalBlockMatched": true,
+  "height": 11478465,
+  "codeHash": "63506f3263ba986a2b900f51ed39b1b2273318455c32bc468d11d1df3f34ffd7",
+  "codeSha256": "1e7963ea0e2ff3ac8359b4b63aa4513f4d737e0e4cfeeeeec7193a15cd467616",
+  "actualNetworkCostIdna": "499.413725490325926",
+  "maxFeeIdna": "501.960784313856",
+  "spendingCeilingIdna": "550",
+  "initialPoolReserveIdna": "0",
+  "initialInventory": 0,
+  "initialTradingStakesIdna": "0",
+  "deploymentCount": 1,
+  "nonceGuardReleasedAfterVerification": true
+}

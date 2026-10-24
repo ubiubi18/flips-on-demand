@@ -1,0 +1,318 @@
+{
+  "format": "fod.bonded-v9.live-rollout",
+  "date": "2026-10-24",
+  "deployment": {
+    "deployed": true,
+    "verifiedByBothNodes": true,
+    "canonicalBlockMatched": true,
+    "height": 11481857,
+    "codeHash": "4c151e3e6f2c4a54597783b7ea2cae7b0c0078ba99ff30eeb03ba5be8a764319",
+    "codeSha256": "7de6eae79c1744f996580a3e0c0ba1f83099707187f5f6d24b4f8cc6a9d3a194",
+    "actualNetworkCostIdna": "443.347826086801350",
+    "maxFeeIdna": "445.217391304192",
+    "spendingCeilingIdna": "550",
+    "initialPoolReserveIdna": "0",
+    "initialInventory": 0,
+    "initialTradingStakesIdna": "0",
+    "deploymentCount": 1,
+    "nonceGuardReleasedAfterVerification": true,
+    "verifiedByAllThreeNodes": true
+  },
+  "unsignedEstimate": {
+    "success": true,
+    "error": "",
+    "gasUsed": 33423,
+    "gasCost": "2.9063478260859393",
+    "txFee": "440.351304347671964",
+    "minGasLimit": 33423,
+    "minGasLimitCost": "2.9063478260859393",
+    "unsigned": true,
+    "broadcast": false,
+    "codeHash": "4c151e3e6f2c4a54597783b7ea2cae7b0c0078ba99ff30eeb03ba5be8a764319",
+    "codeSha256": "7de6eae79c1744f996580a3e0c0ba1f83099707187f5f6d24b4f8cc6a9d3a194",
+    "bytes": 506233,
+    "feePerGas": "86956521739100",
+    "totalGas": "5097463.0000000",
+    "totalFee": "443.2576521737579033",
+    "maximumTransactionGas": 5120000,
+    "chainCapPassed": true,
+    "gasHeadroom": "22537.0000000",
+    "signatureSizeIncluded": true,
+    "estimateScope": "Unsigned native constructor execution and transaction-size fee. No signing, broadcast or deployed-state validation.",
+    "builtOptimization": "-Oz with llvm-memory-copy-fill-lowering",
+    "bothNodesSynced": true
+  },
+  "verification": {
+    "nativeNodes": 3,
+    "canonicalDeploymentBlockMatched": true,
+    "linuxExecutableSha256": "099a40529ce03021bb68be22afbad46571439527cc257822499d3c70cc19fd37",
+    "liveClientChecks": [
+      "IdenaAI 1 status and delivery-key generation",
+      "IdenaAI 2 canonical listing and local content checks",
+      "IdenaAI 3 canonical listing and local content checks"
+    ],
+    "allTenSetupReceiptsVerifiedOnAllThreeNodes": true,
+    "canonicalBlocksAndStateRootsMatched": true,
+    "finalGlobalStateSha256": "6150bf159c0206ad6613ca29288efe24fafb6077e4edfb2b560f628d5643eb63",
+    "finalNodeChecks": [
+      {
+        "identity": "idenaai1",
+        "synchronized": true,
+        "codePinVerified": true,
+        "allTenReceiptsAndCanonicalBlocksVerified": true,
+        "buyOrders": 5,
+        "sellOrders": 2,
+        "trades": 0,
+        "escrowIdna": "2750",
+        "totalCollateralIdna": "4250",
+        "ownCollateralIdna": "2750",
+        "ownReservedCollateralIdna": "2750",
+        "twoOriginalFiveFlipInventoriesMatched": true,
+        "fiveDistinctDeliveryKeys": true,
+        "allOrdersUnexpired": true,
+        "minimumOrderExpiryHeight": 11486214,
+        "height": 11481930,
+        "globalStateSha256": "6150bf159c0206ad6613ca29288efe24fafb6077e4edfb2b560f628d5643eb63",
+        "nonceGuardReleased": true
+      },
+      {
+        "identity": "idenaai2",
+        "synchronized": true,
+        "codePinVerified": true,
+        "allTenReceiptsAndCanonicalBlocksVerified": true,
+        "buyOrders": 5,
+        "sellOrders": 2,
+        "trades": 0,
+        "escrowIdna": "2750",
+        "totalCollateralIdna": "4250",
+        "ownCollateralIdna": "750",
+        "ownReservedCollateralIdna": "750",
+        "twoOriginalFiveFlipInventoriesMatched": true,
+        "fiveDistinctDeliveryKeys": true,
+        "allOrdersUnexpired": true,
+        "minimumOrderExpiryHeight": 11486214,
+        "height": 11481931,
+        "globalStateSha256": "6150bf159c0206ad6613ca29288efe24fafb6077e4edfb2b560f628d5643eb63",
+        "nonceGuardReleased": true
+      },
+      {
+        "identity": "idenaai3",
+        "synchronized": true,
+        "codePinVerified": true,
+        "allTenReceiptsAndCanonicalBlocksVerified": true,
+        "buyOrders": 5,
+        "sellOrders": 2,
+        "trades": 0,
+        "escrowIdna": "2750",
+        "totalCollateralIdna": "4250",
+        "ownCollateralIdna": "750",
+        "ownReservedCollateralIdna": "750",
+        "twoOriginalFiveFlipInventoriesMatched": true,
+        "fiveDistinctDeliveryKeys": true,
+        "allOrdersUnexpired": true,
+        "minimumOrderExpiryHeight": 11486214,
+        "height": 11481931,
+        "globalStateSha256": "6150bf159c0206ad6613ca29288efe24fafb6077e4edfb2b560f628d5643eb63",
+        "nonceGuardReleased": true
+      }
+    ]
+  },
+  "buyer": {
+    "identity": "IdenaAI 1",
+    "ordersDrafted": 5,
+    "ordersSubmitted": 5,
+    "maximumPerSetIdna": "550",
+    "purchaseEscrowIdna": "2750",
+    "securityCollateralIdna": "2750",
+    "feeAllowanceIdna": "50",
+    "transferAuthorization": "explicitly approved by user",
+    "ordersVerified": 5,
+    "securityCollateralFundedIdna": "2750",
+    "reservedCollateralIdna": "2750",
+    "escrowFundedIdna": "2750",
+    "actualSetupFeesIdna": "43.3125774218051291",
+    "feeIncreaseAuthorization": "explicitly approved by user: Do it",
+    "additionalTransferNeeded": false,
+    "maximumFeesReservedIdna": "48.1733996948779557"
+  },
+  "sellers": [
+    {
+      "identity": "IdenaAI 2",
+      "epoch": 233,
+      "flips": 5,
+      "validation": "passed Human, clean",
+      "canonicalSessionAndOriginalContentVerified": true,
+      "listingPrepared": true,
+      "listingSubmitted": true,
+      "securityDepositIdna": "750",
+      "depositSubmitted": true,
+      "listingVerified": true,
+      "depositVerified": true,
+      "reservedCollateralIdna": "750",
+      "actualSetupFeesIdna": "9.0713157894722328",
+      "minimumSellerProceedsIdna": "388.636363636363636363"
+    },
+    {
+      "identity": "IdenaAI 3",
+      "epoch": 233,
+      "flips": 5,
+      "validation": "passed Human, clean",
+      "canonicalSessionAndOriginalContentVerified": true,
+      "listingPrepared": true,
+      "listingSubmitted": true,
+      "securityDepositIdna": "750",
+      "depositSubmitted": true,
+      "listingVerified": true,
+      "depositVerified": true,
+      "reservedCollateralIdna": "750",
+      "actualSetupFeesIdna": "9.2528947368406248",
+      "minimumSellerProceedsIdna": "388.636363636363636363"
+    }
+  ],
+  "orderOfExecution": "fund buyer, deposit buyer collateral, confirm five buyer orders, then fund and publish one seller offer per identity",
+  "protected": {
+    "originalWitnessesPreserved": true,
+    "captureWatcherNotRestarted": true,
+    "nativeServicesNotRestarted": true,
+    "productionProofGenerated": false,
+    "originalWitnessHashBaselineUnchanged": true,
+    "captureWatcherOriginalAndActive": true
+  },
+  "fundingTransfer": {
+    "fromIdentity": "IdenaAI 3",
+    "toIdentity": "IdenaAI 1",
+    "amountIdna": "2200",
+    "verified": true,
+    "height": 11481882,
+    "feeIdna": "0.101739130434747"
+  },
+  "status": "complete: five funded buy orders and two collateralized seller offers confirmed",
+  "verifiedAtUtc": "2026-10-24T18:43:22.790592+00:00",
+  "finalMarket": {
+    "buyOrders": 5,
+    "sellOrders": 2,
+    "completedTrades": 0,
+    "purchaseEscrowIdna": "2750",
+    "securityCollateralIdna": "4250",
+    "totalHeldIdna": "7000",
+    "reserveIdna": "0",
+    "inventory": 0,
+    "currentBuyerQuoteIdna": "500",
+    "currentSellerQuoteIdna": "409.090909090909090909",
+    "allOrdersUnexpired": true,
+    "minimumOrderExpiryHeight": 11486214
+  },
+  "confirmedSetupCalls": [
+    {
+      "identity": "idenaai1",
+      "operation": "depositStake",
+      "height": 11481892,
+      "actualFeeIdna": "0.7575652173910392",
+      "maximumFeeIdna": "0.9212173913040254"
+    },
+    {
+      "identity": "idenaai1",
+      "operation": "queueBuy",
+      "height": 11481896,
+      "actualFeeIdna": "8.4236521739100952",
+      "maximumFeeIdna": "9.353913043474987"
+    },
+    {
+      "identity": "idenaai1",
+      "operation": "queueBuy",
+      "height": 11481897,
+      "actualFeeIdna": "8.4449565217361747",
+      "maximumFeeIdna": "9.3773043478228049"
+    },
+    {
+      "identity": "idenaai1",
+      "operation": "queueBuy",
+      "height": 11481917,
+      "actualFeeIdna": "8.5405263157881072",
+      "maximumFeeIdna": "9.4832456140335704"
+    },
+    {
+      "identity": "idenaai1",
+      "operation": "queueBuy",
+      "height": 11481918,
+      "actualFeeIdna": "8.5619298245600336",
+      "maximumFeeIdna": "9.5067543859633912"
+    },
+    {
+      "identity": "idenaai1",
+      "operation": "queueBuy",
+      "height": 11481919,
+      "actualFeeIdna": "8.5839473684196792",
+      "maximumFeeIdna": "9.5309649122791768"
+    },
+    {
+      "identity": "idenaai2",
+      "operation": "depositStake",
+      "height": 11481921,
+      "actualFeeIdna": "0.7642105263156672",
+      "maximumFeeIdna": "0.9292982456138864"
+    },
+    {
+      "identity": "idenaai2",
+      "operation": "queueSell",
+      "height": 11481923,
+      "actualFeeIdna": "8.3071052631565656",
+      "maximumFeeIdna": "9.2264912280686992"
+    },
+    {
+      "identity": "idenaai3",
+      "operation": "depositStake",
+      "height": 11481925,
+      "actualFeeIdna": "0.7642105263156672",
+      "maximumFeeIdna": "0.9292982456138864"
+    },
+    {
+      "identity": "idenaai3",
+      "operation": "queueSell",
+      "height": 11481927,
+      "actualFeeIdna": "8.4886842105249576",
+      "maximumFeeIdna": "9.4262280701739304"
+    }
+  ],
+  "actualTotalSetupFeesIdna": "61.6367879481179867",
+  "captureReverification": {
+    "epoch": 233,
+    "nodesSynchronized": true,
+    "canonicalHeadersAgree": true,
+    "allEightMembershipProofsVerified": true,
+    "originalWitnessLinkageVerified": true,
+    "ownerOnly": true,
+    "distinctIdentities": true,
+    "results": [
+      {
+        "identity": "idenaai2",
+        "validationPassed": true,
+        "finalIdentityState": "Human",
+        "bundleCapturedAndVerified": true,
+        "flipCount": 5,
+        "bundleValidationFlags": 0,
+        "bundleLabel": "clean",
+        "inventoryHeight": 11481365,
+        "verdictHeight": 11481366
+      },
+      {
+        "identity": "idenaai3",
+        "validationPassed": true,
+        "finalIdentityState": "Human",
+        "bundleCapturedAndVerified": true,
+        "flipCount": 5,
+        "bundleValidationFlags": 0,
+        "bundleLabel": "clean",
+        "inventoryHeight": 11481365,
+        "verdictHeight": 11481366
+      }
+    ]
+  },
+  "limitations": {
+    "nativeAppV9Installed": true,
+    "matchingOrDeliveryExecuted": false,
+    "fundedProductionTradeVerified": false,
+    "productionProofGenerated": false
+  },
+  "nativeUiRolloutEvidence": "docs/evidence/v9-native-ui-rollout.json"
+}

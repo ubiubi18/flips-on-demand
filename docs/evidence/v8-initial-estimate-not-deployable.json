@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "error": "",
+  "gasUsed": 33423,
+  "gasCost": "3.2767647058832049",
+  "txFee": "503.414705882483829",
+  "minGasLimit": 33423,
+  "minGasLimitCost": "3.2767647058832049",
+  "unsigned": true,
+  "broadcast": false,
+  "codeHash": "7730578c67a6c9cb78ebc562670574bd93842f7a66c8549e3ed411b61bb46add",
+  "chainCapPassed": false,
+  "reason": "Constructor simulation succeeded but whole transaction exceeded the 5120000 gas cap after including upload size. Superseded by compact artifact."
+}

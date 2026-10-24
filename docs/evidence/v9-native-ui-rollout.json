@@ -1,0 +1,157 @@
+{
+  "format": "fod.native-v9.ui-rollout",
+  "verifiedAtUtc": "2026-10-24T21:29:37Z",
+  "scope": "Upgrade the three existing native apps to the already-deployed v9 market. Preserve existing orders, delivery keys, seller vaults and original captures.",
+  "installedNativeApps": 3,
+  "marketVersion": 9,
+  "nativeSourceSha256": {
+    "main/fod-v7.js": "9c9a32f713f18f246e93e9421bbf713a7d07af82da53d96487546f62c3d7dfc9",
+    "main/fod-v8.js": "cb5d5a31b0053c33853a89f0ff951393bd804a3253fc75b23b6a2efd8f19c945",
+    "main/index.js": "841351f2bdc9afe9844720670f2c10d46850ced2e41c0cb221440b281ebc4a58",
+    "main/preload.js": "1ea027e3b2acfa6b535c252064f0b27eccb80c7c9db2fa8fb553c6565e6cb6a5",
+    "renderer/pages/flip-market.js": "b999a39773c37e92cdd853f75972d9af9e192b1a766bdc9cd639fe7cf5144d07",
+    "renderer/shared/components/flip-market-v8.js": "c6645b373894ef5f2ed970d0e00c2e7a1b8159acaf77e26e96ebcdefe264fa2e"
+  },
+  "linuxExecutableSha256": "099a40529ce03021bb68be22afbad46571439527cc257822499d3c70cc19fd37",
+  "nativeChecks": [
+    {
+      "identity": "idenaai1",
+      "nativeV9ServiceVerified": true,
+      "buyOrders": 5,
+      "sellOffers": 2,
+      "collateralIdna": "2750",
+      "existingConfirmedActions": 6,
+      "originalBuyerKeysVerified": 5,
+      "sellerVaultReady": false,
+      "automaticTrading": false,
+      "nodeSynchronized": true,
+      "height": 11482433,
+      "serviceActive": true,
+      "serviceRestarts": 0,
+      "sixSourceHashesMatched": true,
+      "nodeBinaryUnchanged": true,
+      "contractAndExecutablePinsVerified": true,
+      "nativeConfigOwnerOnly": true,
+      "nonceGuardReleased": true
+    },
+    {
+      "identity": "idenaai2",
+      "nativeV9ServiceVerified": true,
+      "buyOrders": 5,
+      "sellOffers": 2,
+      "collateralIdna": "750",
+      "existingConfirmedActions": 2,
+      "originalBuyerKeysVerified": 0,
+      "sellerVaultReady": true,
+      "automaticTrading": false,
+      "nodeSynchronized": true,
+      "height": 11482438,
+      "serviceActive": true,
+      "serviceRestarts": 0,
+      "sixSourceHashesMatched": true,
+      "nodeBinaryUnchanged": true,
+      "contractAndExecutablePinsVerified": true,
+      "nativeConfigOwnerOnly": true,
+      "nonceGuardReleased": true
+    },
+    {
+      "identity": "idenaai3",
+      "nativeV9ServiceVerified": true,
+      "buyOrders": 5,
+      "sellOffers": 2,
+      "collateralIdna": "750",
+      "existingConfirmedActions": 2,
+      "originalBuyerKeysVerified": 0,
+      "sellerVaultReady": true,
+      "automaticTrading": false,
+      "nodeSynchronized": true,
+      "height": 11482433,
+      "serviceActive": true,
+      "serviceRestarts": 0,
+      "sixSourceHashesMatched": true,
+      "nodeBinaryUnchanged": true,
+      "contractAndExecutablePinsVerified": true,
+      "nativeConfigOwnerOnly": true,
+      "nonceGuardReleased": true
+    }
+  ],
+  "profileIntegration": {
+    "buyerConfirmedActionsImported": 6,
+    "originalBuyerDeliveryKeysVerified": 5,
+    "sellerConfirmedActionsImportedEach": 2,
+    "sellerVaultsLinked": 2,
+    "originalCaptureAndWitnessFilesModified": false,
+    "originalFundingTransferCanonicallyVerified": true,
+    "fundingTransferReservationTyped": true,
+    "allFundingTransferNonceReservationsRetained": true,
+    "originalNonceJournalBackedUp": true
+  },
+  "verification": {
+    "focusedServiceTestsPassed": 31,
+    "unchangedBondedServiceTestsPassed": 11,
+    "unchangedNativeUiTestsPassed": 9,
+    "totalFocusedTests": 51,
+    "focusedLintPassed": true,
+    "javascriptSyntaxPassed": true,
+    "rendererBuildPassed": true,
+    "whitespaceCheckPassed": true,
+    "liveUiVerifiedIdentities": [
+      "idenaai1",
+      "idenaai2",
+      "idenaai3"
+    ],
+    "originalWitnessHashBaselineUnchanged": true,
+    "captureWatcher": {
+      "originalCaptureWatcherActive": true,
+      "originalPidUnchanged": true,
+      "restarts": 0
+    },
+    "capture": {
+      "epoch": 233,
+      "nodesSynchronized": true,
+      "canonicalHeadersAgree": true,
+      "allEightMembershipProofsVerified": true,
+      "originalWitnessLinkageVerified": true,
+      "ownerOnly": true,
+      "distinctIdentities": true,
+      "results": [
+        {
+          "identity": "idenaai2",
+          "validationPassed": true,
+          "finalIdentityState": "Human",
+          "bundleCapturedAndVerified": true,
+          "flipCount": 5,
+          "bundleValidationFlags": 0,
+          "bundleLabel": "clean",
+          "inventoryHeight": 11481365,
+          "verdictHeight": 11481366
+        },
+        {
+          "identity": "idenaai3",
+          "validationPassed": true,
+          "finalIdentityState": "Human",
+          "bundleCapturedAndVerified": true,
+          "flipCount": 5,
+          "bundleValidationFlags": 0,
+          "bundleLabel": "clean",
+          "inventoryHeight": 11481365,
+          "verdictHeight": 11481366
+        }
+      ]
+    }
+  },
+  "limits": {
+    "automaticTradingEnabled": false,
+    "newOrdersCreated": 0,
+    "transactionsSignedOrBroadcast": 0,
+    "tradesMatched": 0,
+    "proofsGenerated": 0,
+    "nodeBinariesChanged": 0,
+    "newServiceStartupConfiguration": false
+  },
+  "screenshots": [
+    "docs/visuals/native-v9-buyer-queue.png",
+    "docs/visuals/native-v9-seller2-queue.png",
+    "docs/visuals/native-v9-seller3-queue.png"
+  ]
+}

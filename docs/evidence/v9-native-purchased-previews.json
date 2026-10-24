@@ -1,0 +1,46 @@
+{
+  "verifiedAt": "2026-10-24T22:57:00Z",
+  "marketVersion": 9,
+  "nativeAppsUpdated": ["IdenaAI 1", "IdenaAI 2", "IdenaAI 3"],
+  "purchasedPreview": {
+    "owner": "IdenaAI 1",
+    "completedSets": 2,
+    "flipsPerSet": 5,
+    "totalImages": 40,
+    "bothSequencesVerified": true,
+    "originalDeliveryKeysUsed": true,
+    "passwordPromptRequired": false,
+    "bothSetsVisuallyOpened": true,
+    "nextPreviousNavigationVerified": true
+  },
+  "market": {
+    "completedPricesIdna": ["500", "510.101010101010101011"],
+    "currentBuyQuoteIdnaRounded": "520.41",
+    "currentSellerQuoteIdnaRounded": "425.79",
+    "availableReserveIdna": "183.654729109274563821",
+    "purchaseEscrowIdna": "1650",
+    "securityDepositsIdna": "4250",
+    "queuedBuys": 3,
+    "openOffers": 0,
+    "allThreeNodesAgree": true,
+    "pendingActions": 0
+  },
+  "preservation": {
+    "privateMarketFileCountsUnchanged": [73, 33, 27],
+    "keysAndVaultsRemainOwnerOnly": true,
+    "captureWatcherUnchanged": true,
+    "newTransactions": 0,
+    "contractChanged": false
+  },
+  "validation": {
+    "nativeTestsPassed": 55,
+    "nativeSuitesPassed": 3,
+    "focusedGoTestsPassed": true,
+    "focusedLintPassed": true,
+    "rendererBuildPassed": true,
+    "linuxCliBuildPassed": true,
+    "installedSourceAndBinaryHashesVerified": true,
+    "allThreeNodesSynchronized": true,
+    "sellerCompactionRecoveredBySequentialStartup": true
+  }
+}

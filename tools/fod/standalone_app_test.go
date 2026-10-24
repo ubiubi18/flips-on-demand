@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/idena-network/idena-go/crypto"
 )
@@ -117,21 +118,41 @@ func TestStandaloneAppRefusesCrossSiteRequestsAndKeepsDataPrivate(t *testing.T) 
 	}
 }
 
-func TestStandalonePairingLocksAfterFailedAttempts(t *testing.T) {
+func TestStandalonePairingCooldownAndOwnerRecovery(t *testing.T) {
 	s := &standaloneServer{origin: "http://127.0.0.1:39441", token: strings.Repeat("a", 32), pairCode: strings.Repeat("b", 32)}
-	for i := 0; i < 6; i++ {
-		code := strings.Repeat("c", 32)
-		if i == 5 {
-			code = s.pairCode
+	call := func(body, origin string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(http.MethodPost, s.origin+"/api/pair", strings.NewReader(body))
+		r.Header.Set("Origin", origin)
+		w := httptest.NewRecorder()
+		s.handler().ServeHTTP(w, r)
+		return w
+	}
+	valid := `{"code":"` + s.pairCode + `"}`
+	for i := 0; i < 5; i++ {
+		if w := call(`{"code":"wrong"}`, s.origin); w.Code != 403 {
+			t.Fatalf("attempt %d: %d", i, w.Code)
 		}
-		body, _ := json.Marshal(map[string]string{"code": code})
-		request := httptest.NewRequest(http.MethodPost, s.origin+"/api/pair", bytes.NewReader(body))
-		request.Header.Set("Origin", s.origin)
-		response := httptest.NewRecorder()
-		s.handler().ServeHTTP(response, request)
-		if (i < 5 && response.Code != http.StatusForbidden) || (i == 5 && response.Code != http.StatusTooManyRequests) || strings.Contains(response.Body.String(), s.token) {
-			t.Fatalf("pairing attempt %d returned %d", i+1, response.Code)
+	}
+	deadline := s.pairRetryAfter
+	for _, body := range []string{`{"code":"wrong"}`, `{`, strings.Repeat("x", 257)} {
+		w := call(body, s.origin)
+		if w.Code != 429 || w.Header().Get("Retry-After") == "" || strings.Contains(w.Body.String(), s.token) || !deadline.Equal(s.pairRetryAfter) {
+			t.Fatal("invalid attempts must be throttled without extending cooldown")
 		}
+	}
+	if w := call(valid, "https://untrusted.example"); w.Code != 403 {
+		t.Fatal("cross-origin recovery accepted")
+	}
+	if w := call(valid, s.origin); w.Code != 200 || !strings.Contains(w.Body.String(), s.token) || s.pairFailed != 0 || !s.pairRetryAfter.IsZero() {
+		t.Fatal("owner could not recover during cooldown")
+	}
+	s.pairFailed = 5
+	s.pairRetryAfter = time.Now().Add(-time.Second)
+	if w := call(`{"code":"wrong"}`, s.origin); w.Code != 403 || s.pairFailed != 1 {
+		t.Fatal("expired cooldown did not reset attempt window")
+	}
+	if w := call(valid, s.origin); w.Code != 200 {
+		t.Fatal("normal pairing failed after cooldown")
 	}
 }
 

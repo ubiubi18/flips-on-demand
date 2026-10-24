@@ -1,0 +1,158 @@
+{
+  "format": "fod.bonded-v9.bounded-two-purchases",
+  "verifiedAt": "2026-10-24 22:26:22 UTC",
+  "allThreeNodesAgree": true,
+  "successfulTransactions": 8,
+  "canonicalReceiptAndTransactionChecks": true,
+  "codePin": "4c151e3e6f2c4a54597783b7ea2cae7b0c0078ba99ff30eeb03ba5be8a764319",
+  "purchases": [
+    {
+      "buyer": "IdenaAI 1",
+      "seller": "IdenaAI 2",
+      "trade": "1",
+      "flips": 5,
+      "state": "completed",
+      "priceIdna": "500",
+      "sellerProceedsIdna": "409.090909090909090909",
+      "canonicalFundingRootVerified": true
+    },
+    {
+      "buyer": "IdenaAI 1",
+      "seller": "IdenaAI 3",
+      "trade": "2",
+      "flips": 5,
+      "state": "completed",
+      "priceIdna": "510.101010101010101011",
+      "sellerProceedsIdna": "417.355371900826446281",
+      "canonicalFundingRootVerified": true
+    }
+  ],
+  "totalPurchasePriceIdna": "1010.101010101010101011",
+  "networkFeesIdna": {
+    "idenaai1": "14.6102631578923992",
+    "idenaai2": "9.2999122807002664",
+    "idenaai3": "9.2999122807002664"
+  },
+  "remainingBuyOrders": [
+    "3",
+    "4",
+    "5"
+  ],
+  "remainingOrderLimitIdna": "550",
+  "remainingPurchaseEscrowIdna": "1650",
+  "remainingReservedBuyerCollateralIdna": "1650",
+  "totalBuyerCollateralIdna": "2750",
+  "sellerCollateralIdna": "750 each",
+  "sellerReservedCollateralIdna": "0 each",
+  "allTenFlipsReverified": true,
+  "buyerEncryptedVaultsReopened": true,
+  "buyerVaultBytesUnchanged": true,
+  "ownerOnlyVaults": true,
+  "originalWitnessesAndCapturesPreserved": true,
+  "newOrdersCreated": 0,
+  "newDeposits": 0,
+  "proofsGenerated": 0,
+  "serviceRestarts": 0,
+  "localBatchStopped": true,
+  "openEndedAutomaticTradingEnabled": false,
+  "finalStateSha256": "ddfe396968824b266c8406092f8ed27e7cd16c4cea5bc36bf6e9951dc6472071",
+  "verifiedHeights": [
+    {
+      "identity": "idenaai1",
+      "height": 11482604
+    },
+    {
+      "identity": "idenaai2",
+      "height": 11482604
+    },
+    {
+      "identity": "idenaai3",
+      "height": 11482605
+    }
+  ],
+  "receipts": [
+    {
+      "identity": "idenaai1",
+      "step": "matchNext:1",
+      "height": 11482573,
+      "transactionSizeFeeAtoms": "111403508771912000",
+      "contractGasCostAtoms": "2462105263157500800",
+      "totalNetworkFeeAtoms": "2573508771929412800",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    },
+    {
+      "identity": "idenaai1",
+      "step": "ready:1",
+      "height": 11482578,
+      "transactionSizeFeeAtoms": "114035087719280000",
+      "contractGasCostAtoms": "1161666666666480800",
+      "totalNetworkFeeAtoms": "1275701754385760800",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    },
+    {
+      "identity": "idenaai1",
+      "step": "accept:1",
+      "height": 11482584,
+      "transactionSizeFeeAtoms": "142982456140328000",
+      "contractGasCostAtoms": "3418070175438049600",
+      "totalNetworkFeeAtoms": "3561052631578377600",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    },
+    {
+      "identity": "idenaai1",
+      "step": "matchNext:2",
+      "height": 11482588,
+      "transactionSizeFeeAtoms": "111403508771912000",
+      "contractGasCostAtoms": "2295877192982088800",
+      "totalNetworkFeeAtoms": "2407280701754000800",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    },
+    {
+      "identity": "idenaai1",
+      "step": "ready:2",
+      "height": 11482594,
+      "transactionSizeFeeAtoms": "114035087719280000",
+      "contractGasCostAtoms": "1161403508771744000",
+      "totalNetworkFeeAtoms": "1275438596491024000",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    },
+    {
+      "identity": "idenaai1",
+      "step": "accept:2",
+      "height": 11482604,
+      "transactionSizeFeeAtoms": "142982456140328000",
+      "contractGasCostAtoms": "3374298245613495200",
+      "totalNetworkFeeAtoms": "3517280701753823200",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    },
+    {
+      "identity": "idenaai2",
+      "step": "deliver:1",
+      "height": 11482581,
+      "transactionSizeFeeAtoms": "310526315789424000",
+      "contractGasCostAtoms": "8989385964910842400",
+      "totalNetworkFeeAtoms": "9299912280700266400",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    },
+    {
+      "identity": "idenaai3",
+      "step": "deliver:2",
+      "height": 11482599,
+      "transactionSizeFeeAtoms": "310526315789424000",
+      "contractGasCostAtoms": "8989385964910842400",
+      "totalNetworkFeeAtoms": "9299912280700266400",
+      "receiptSuccess": true,
+      "exactTransactionVerified": true
+    }
+  ],
+  "passphraseHandling": "A generated buyer password is retained in owner-only storage on the buyer host; existing seller passwords and vaults were reused. No password is included in this report.",
+  "scope": "Exactly the two original seller offers purchased through the installed native service and shared nonce guard. Three original buyer orders remain queued and unchanged.",
+  "feeDefinition": "Transaction-size fee plus contract execution gas cost; excludes the one-atom ABI value attached to each of eight calls."
+}
