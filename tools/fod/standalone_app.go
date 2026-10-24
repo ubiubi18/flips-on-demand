@@ -19,18 +19,20 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/idena-network/idena-go/crypto"
 )
 
-//go:embed standalone_app.html standalone_app.js standalone_app.css
+//go:embed standalone_app.html standalone_app.js standalone_app.css standalone_v8.html standalone_v8.js standalone_v8.css standalone_v8_model.mjs session_indexer.py
 var standaloneAssets embed.FS
 
 const standaloneUploadLimit = 24 << 20
@@ -47,20 +49,26 @@ var standaloneOperations = map[string]bool{
 }
 
 type standaloneConfig struct {
+	NoBrowser                                          bool `json:"-"`
 	RPC, KeyFile, Contract, CodeHash, NodeKey, DataDir string
+	Version                                            int    `json:"version,omitempty"`
+	ArchiveDir                                         string `json:"archiveDir,omitempty"`
+	NodeDataDir                                        string `json:"nodeDataDir,omitempty"`
 }
 
 type standaloneServer struct {
-	cfg        standaloneConfig
-	client     *client
-	origin     string
-	token      string
-	pairCode   string
-	pairFailed int
-	nonceDir   string
-	mu         sync.Mutex
-	runCommand func(context.Context, []string, string) ([]byte, error)
-	market     func() (any, error)
+	cfg            standaloneConfig
+	client         *client
+	origin         string
+	token          string
+	pairCode       string
+	pairFailed     int
+	pairRetryAfter time.Time
+	nonceDir       string
+	mu             sync.Mutex
+	runCommand     func(context.Context, []string, string) ([]byte, error)
+	market         func() (any, error)
+	v8             *standaloneV8Runtime
 }
 
 type standaloneAction struct {
@@ -172,7 +180,7 @@ func newStandaloneServer(cfg standaloneConfig) (*standaloneServer, error) {
 	if err := standalonePrivateDir(filepath.Join(cfg.DataDir, "private")); err != nil {
 		return nil, err
 	}
-	c := &client{url: cfg.RPC, key: key, http: newHTTPClient()}
+	c := &client{url: cfg.RPC, key: key, http: newHTTPClient(), bondedVersion: cfg.Version}
 	if err := checkBuyTarget(c, contract, contract, cfg.CodeHash); err != nil {
 		return nil, err
 	}
@@ -197,6 +205,13 @@ func newStandaloneServer(cfg standaloneConfig) (*standaloneServer, error) {
 	}
 	s.runCommand = s.command
 	s.market = func() (any, error) { return readPoolV7MarketSnapshot(s.client, s.cfg.Contract, s.cfg.CodeHash) }
+	if cfg.Version == 8 || cfg.Version == 9 {
+		s.v8 = &standaloneV8Runtime{}
+		s.market = func() (any, error) { return s.v8Status() }
+		if err := standalonePrivateDir(filepath.Join(cfg.DataDir, "packages")); err != nil {
+			return nil, err
+		}
+	}
 	return s, nil
 }
 
@@ -374,6 +389,9 @@ func standaloneSuggestedFee(output []byte, rate *big.Int) (string, error) {
 }
 
 func (s *standaloneServer) prepare(r *http.Request) (standaloneAction, error) {
+	if s.cfg.Version == 8 || s.cfg.Version == 9 {
+		return s.v8PrepareHTTP(r)
+	}
 	if err := r.ParseMultipartForm(standaloneUploadLimit); err != nil {
 		return standaloneAction{}, err
 	}
@@ -577,8 +595,8 @@ func (s *standaloneServer) readAction(id string) (standaloneAction, error) {
 		return standaloneAction{}, err
 	}
 	prepared, err := readPreparedAction(path)
-	if err != nil || !isPoolV7Format(prepared.Format) || prepared.Contract != s.cfg.Contract || prepared.CodeHash != s.cfg.CodeHash {
-		return standaloneAction{}, errors.New("saved action is not for the selected v7 contract and code")
+	if err != nil || !((s.cfg.Version == 8 || s.cfg.Version == 9) && prepared.BondedV8 != nil && prepared.BondedV8.version() == s.cfg.Version && prepared.Format == bondedFormat(s.cfg.Version)+prepared.Operation || (s.cfg.Version != 8 && s.cfg.Version != 9) && isPoolV7Format(prepared.Format)) || prepared.Contract != s.cfg.Contract || prepared.CodeHash != s.cfg.CodeHash {
+		return standaloneAction{}, errors.New("saved action is not for the selected market version, contract and code")
 	}
 	fee, err := os.ReadFile(filepath.Join(dir, "maximum-fee"))
 	if err != nil {
@@ -620,6 +638,7 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 	var request struct {
 		ID         string `json:"id"`
 		ReviewHash string `json:"reviewHash"`
+		Passphrase string `json:"passphrase,omitempty"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&request); err != nil {
 		return standaloneAction{}, err
@@ -627,6 +646,16 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 	a, err := s.readAction(request.ID)
 	if err != nil {
 		return standaloneAction{}, err
+	}
+	signingPassphrase := ""
+	if s.cfg.Version == 9 && a.Operation == "queueSell" {
+		signingPassphrase = request.Passphrase
+		if signingPassphrase == "" && s.v8GrantValid(a.Signer) {
+			signingPassphrase = s.v8.Grant.Passphrase
+		}
+		if signingPassphrase == "" || len(signingPassphrase) > 1024 {
+			return standaloneAction{}, errors.New("unlock the package vault before signing this sale")
+		}
 	}
 	if request.ReviewHash != a.ReviewHash {
 		return standaloneAction{}, errors.New("action changed since review")
@@ -694,7 +723,7 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 		"-max-fee", a.MaximumFee, "-signed", filepath.Join(dir, "signed.json"), "-broadcast")
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Minute)
 	defer cancel()
-	output, err := s.runCommand(ctx, args, "")
+	output, err := s.runCommand(ctx, args, signingPassphrase)
 	if err != nil {
 		return standaloneAction{}, fmt.Errorf("signing or broadcast needs reconciliation: %s", strings.TrimSpace(string(output)))
 	}
@@ -748,6 +777,10 @@ func (s *standaloneServer) handler() http.Handler {
 		}{Preview: false})
 	})
 	assets := map[string]string{"/": "standalone_app.html", "/app.js": "standalone_app.js", "/app.css": "standalone_app.css"}
+	if s.cfg.Version == 8 || s.cfg.Version == 9 {
+		assets = v8Assets()
+		s.v8Routes(mux)
+	}
 	for route, file := range assets {
 		route, file := route, file
 		mux.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
@@ -766,7 +799,7 @@ func (s *standaloneServer) handler() http.Handler {
 			}
 			if route == "/" {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			} else if strings.HasSuffix(route, ".js") {
+			} else if strings.HasSuffix(route, ".js") || strings.HasSuffix(route, ".mjs") {
 				w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 			} else {
 				w.Header().Set("Content-Type", "text/css; charset=utf-8")
@@ -786,15 +819,29 @@ func (s *standaloneServer) handler() http.Handler {
 		decodeErr := json.NewDecoder(r.Body).Decode(&request)
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		if s.pairFailed >= 5 {
-			http.Error(w, "pairing unavailable for this run", http.StatusTooManyRequests)
-			return
-		}
-		if decodeErr != nil || s.pairCode == "" || subtle.ConstantTimeCompare([]byte(request.Code), []byte(s.pairCode)) != 1 {
+		valid := decodeErr == nil && s.pairCode != "" && subtle.ConstantTimeCompare([]byte(request.Code), []byte(s.pairCode)) == 1
+		if !valid {
+			now := time.Now()
+			if now.Before(s.pairRetryAfter) {
+				seconds := int(time.Until(s.pairRetryAfter).Seconds()) + 1
+				w.Header().Set("Retry-After", strconv.Itoa(seconds))
+				http.Error(w, "too many incorrect codes; try again shortly", http.StatusTooManyRequests)
+				return
+			}
+			if !s.pairRetryAfter.IsZero() {
+				s.pairFailed = 0
+				s.pairRetryAfter = time.Time{}
+			}
 			s.pairFailed++
+			if s.pairFailed >= 5 {
+				s.pairRetryAfter = now.Add(30 * time.Second)
+			}
 			http.Error(w, "pairing refused", http.StatusForbidden)
 			return
 		}
+		// Possession of the random owner code can recover pairing during cooldown.
+		s.pairFailed = 0
+		s.pairRetryAfter = time.Time{}
 		writeStandaloneJSON(w, struct {
 			Token string `json:"token"`
 		}{Token: s.token})
@@ -820,6 +867,10 @@ func (s *standaloneServer) handler() http.Handler {
 	mux.HandleFunc("/api/preview", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method refused", 405)
+			return
+		}
+		if s.cfg.Version == 8 || s.cfg.Version == 9 {
+			http.NotFound(w, r)
 			return
 		}
 		preview, err := s.preview(r.Context())
@@ -887,6 +938,10 @@ func (s *standaloneServer) handler() http.Handler {
 		r.Body = http.MaxBytesReader(w, r.Body, standaloneUploadLimit)
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		if s.cfg.Version == 8 || s.cfg.Version == 9 {
+			http.NotFound(w, r)
+			return
+		}
 		result, err := s.privateAction(r, "dm")
 		if err != nil {
 			http.Error(w, err.Error(), 400)
@@ -902,6 +957,10 @@ func (s *standaloneServer) handler() http.Handler {
 		r.Body = http.MaxBytesReader(w, r.Body, standaloneUploadLimit)
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		if s.cfg.Version == 8 || s.cfg.Version == 9 {
+			http.NotFound(w, r)
+			return
+		}
 		result, err := s.privateAction(r, "receive")
 		if err != nil {
 			http.Error(w, err.Error(), 400)
@@ -954,7 +1013,11 @@ func (s *standaloneServer) handler() http.Handler {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+		policy := "default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		if s.cfg.Version == 8 || s.cfg.Version == 9 {
+			policy += "; frame-src https://idena.social"
+		}
+		w.Header().Set("Content-Security-Policy", policy)
 		if s.origin == "" || r.Host != strings.TrimPrefix(s.origin, "http://") {
 			http.Error(w, "host refused", 403)
 			return
@@ -998,12 +1061,37 @@ func runStandaloneApp(cfg standaloneConfig) error {
 	s.origin = "http://" + listener.Addr().String()
 	fmt.Println("Flips on Demand local app:", s.origin)
 	fmt.Println("Enter this pairing code in the browser:", s.pairCode)
-	fmt.Println("The page uses your own node. Keep this terminal open; no transaction is sent without the review and submit step.")
-	if err := openStandaloneBrowser(s.origin); err != nil {
-		fmt.Println("Open the local app URL above in your browser.")
+	if cfg.Version == 8 || cfg.Version == 9 {
+		fmt.Println("The page uses your own node. Trading requires your explicit review or a bounded automatic-trading permission. Keep this app open for delivery.")
+	} else {
+		fmt.Println("The page uses your own node. Keep this terminal open; no transaction is sent without the review and submit step.")
+	}
+	if !cfg.NoBrowser {
+		if err := openStandaloneBrowser(s.origin); err != nil {
+			fmt.Println("Open the local app URL above in your browser.")
+		}
 	}
 	server := &http.Server{Handler: s.handler(), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second}
-	return server.Serve(listener)
+	if cfg.Version == 8 || cfg.Version == 9 {
+		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		s.startV8Capture(ctx)
+		defer func() {
+			cancel()
+			if s.v8.CaptureDone != nil {
+				select {
+				case <-s.v8.CaptureDone:
+				case <-time.After(10 * time.Second):
+				}
+			}
+		}()
+		go s.v8Background(ctx)
+		go func() { <-ctx.Done(); _ = server.Close() }()
+	}
+	err = server.Serve(listener)
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+	return err
 }
 
 func openStandaloneBrowser(url string) error {

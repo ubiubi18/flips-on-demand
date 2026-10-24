@@ -1,0 +1,109 @@
+{
+  "format": "fod.bonded-v8.candidate",
+  "version": 1,
+  "status": "deployed-and-code-verified; unfunded-trading-candidate",
+  "builtAtUtc": "2026-10-23T23:29:11.690567+00:00",
+  "starPremium": false,
+  "starPriority": false,
+  "queuePolicy": "earliest compatible buyer then earliest compatible seller",
+  "wasm": {
+    "sha256": "1e7963ea0e2ff3ac8359b4b63aa4513f4d737e0e4cfeeeeec7193a15cd467616",
+    "bytes": 505785,
+    "codeHash": "63506f3263ba986a2b900f51ed39b1b2273318455c32bc468d11d1df3f34ffd7",
+    "optimizer": "wasm-opt --llvm-memory-copy-fill-lowering -Oz"
+  },
+  "linuxAmd64Cli": {
+    "sha256": "166e4f7daa4edc7bc1489d2dba45fd8c9c0d105289c1f018095a108c80d277dd",
+    "bytes": 120359120,
+    "toolchain": "golang:1.26.8-bookworm, CGO_ENABLED=1"
+  },
+  "sources": {
+    "contracts/bonded-market-v8/src/host.rs": "0efc15e6c187df2e259b3b0782098b60add9ac6cdaaeae556df70320725a226f",
+    "contracts/bonded-market-v8/src/market.rs": "e3e8b595bf5ed6c470add8059eaf3b87b7c828e458c2d82ae670559687916fe7",
+    "contracts/bonded-market-v8/src/records.rs": "1355f14898fb60fd75b175625dc38469e5f14b960083940140bc38f91d03502f",
+    "contracts/bonded-market-v8/src/lib.rs": "f995406165fec3cd7a3ea72803e45819a489b698aafba22cf94af1c6523122fb",
+    "contracts/bonded-market-v8/src/tests.rs": "60bae33f406784b0bf96c071824e6a85c9d744b7404cae848bba1094891d31e4",
+    "contracts/bonded-market-v8/src/proof.rs": "a0b49edbc99ccaa727b6f8530f567abd5de4c6177243adaa730935eff384a951",
+    "contracts/bonded-market-v8/src/curve.rs": "916bfc4a63352cfcc83f508fd5832c11cc3a9c79654bc5c73e69f8b818eea227",
+    "contracts/bonded-market-v8/Cargo.toml": "6216c6ad650883c480cf079baf6febe378e703c71e67beadaec688bf02bef6b5",
+    "contracts/bonded-market-v8/Cargo.lock": "ccd79e44f6950405f14649e7eb861764de4844d58ccb92b9dba6a1fe89a82a79",
+    "tools/fod/bonded_v8.go": "87bcbb6804a201a98a4ade709fa313ba5c4fdda41e3c13217b0b64a2c4dd0c6c",
+    "tools/fod/bonded_v8_content.go": "675c80e2db25aac1a009084e58bf13fdc106a0e18160d99456492e538a83a3bc",
+    "tools/fod/main.go": "833fe4c7e56cbf3c559330b84cb97f3e0a6bc604d0fb9a5e1a5a2a5e319d44c9",
+    "tools/fod/submit.go": "eb79a30203f330897076f9735ac3ed9155d65dc2ee9142abd8aa859af1580688",
+    "tools/fod/reveal.go": "3ba2f67936e43b09b7083cd303c7a5c2fdf0671fa2ac122262bd3756d4e0dcdc",
+    "tools/fod/direct_estimate.go": "4fdcd0fdae946ceee619c6eba8c8db1c04a3dfbcff109259728128d5950aaeb0"
+  },
+  "checks": {
+    "rustTests": 14,
+    "nativeWasmTests": 2,
+    "nativeRegistrationUserGas": 1968203,
+    "nativeDeliveryProofUserGas": 2002085,
+    "newCliTests": 5,
+    "targetedNativeClientAndUiTests": 44
+  },
+  "mainnetDeployment": {
+    "deployed": true,
+    "verifiedByBothNodes": true,
+    "canonicalBlockMatched": true,
+    "height": 11478465,
+    "codeHash": "63506f3263ba986a2b900f51ed39b1b2273318455c32bc468d11d1df3f34ffd7",
+    "codeSha256": "1e7963ea0e2ff3ac8359b4b63aa4513f4d737e0e4cfeeeeec7193a15cd467616",
+    "actualNetworkCostIdna": "499.413725490325926",
+    "maxFeeIdna": "501.960784313856",
+    "spendingCeilingIdna": "550",
+    "initialPoolReserveIdna": "0",
+    "initialInventory": 0,
+    "initialTradingStakesIdna": "0",
+    "deploymentCount": 1,
+    "nonceGuardReleasedAfterVerification": true
+  },
+  "fundingAuthorized": false,
+  "unsignedDeploymentEstimate": {
+    "success": true,
+    "error": "",
+    "gasUsed": 33423,
+    "gasCost": "3.2767647058832049",
+    "txFee": "496.001960784442686",
+    "minGasLimit": 33423,
+    "minGasLimitCost": "3.2767647058832049",
+    "unsigned": true,
+    "broadcast": false,
+    "codeHash": "63506f3263ba986a2b900f51ed39b1b2273318455c32bc468d11d1df3f34ffd7",
+    "codeSha256": "1e7963ea0e2ff3ac8359b4b63aa4513f4d737e0e4cfeeeeec7193a15cd467616",
+    "bytes": 505785,
+    "feePerGas": "98039215686300",
+    "totalGas": "5092643.0000000",
+    "totalFee": "499.2787254903258909",
+    "maximumTransactionGas": 5120000,
+    "chainCapPassed": true,
+    "gasHeadroom": "27357.0000000",
+    "signatureSizeIncluded": true,
+    "estimateScope": "Unsigned native constructor execution and transaction-size fee. No signing, broadcast or deployed-state validation.",
+    "builtOptimization": "-Oz with llvm-memory-copy-fill-lowering",
+    "bothNodesSynced": true
+  },
+  "journeyRules": {
+    "depositWithdrawal": "explicit full exit only with zero obligations",
+    "penalizedExit": "remaining funds withdrawable; original refill target retained for re-entry",
+    "oneClickOrders": "explicit local scoped permission; user-clicked only; fresh state and quote checked; 5 percent protection",
+    "starPremium": false,
+    "starPriority": false
+  },
+  "nativeClient": {
+    "baseline": "23c3b614",
+    "localSourceSha256": {
+      "main/fod-v7.js": "c819e0946c846484392957010295f91903ddf6f1e0090eadfa90bbe0c9173335",
+      "main/fod-v8.js": "24221b36263c80405b380edd06fe2a5680291f97535b8c43da06fe3a13ef0588",
+      "renderer/shared/components/flip-market-v8.js": "8538c9196fadafc90c6533560045148eba311a83bb8981b049139bddc89eb551"
+    },
+    "installedSourceSha256": {
+      "main/fod-v7.js": "ed9c984311b3b9b487fa5be3fac891ecf13d102bbcbf93cc5294e07ec7f46a99",
+      "main/fod-v8.js": "24221b36263c80405b380edd06fe2a5680291f97535b8c43da06fe3a13ef0588",
+      "renderer/shared/components/flip-market-v8.js": "8538c9196fadafc90c6533560045148eba311a83bb8981b049139bddc89eb551"
+    },
+    "remoteDifference": "Existing v7 source additions preserved when applying scoped signing and dispatch changes.",
+    "rendererBuildPassed": true,
+    "liveDepositSetupVisuallyVerified": true
+  }
+}

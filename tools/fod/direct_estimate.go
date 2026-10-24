@@ -13,9 +13,11 @@ import (
 const directBlockGasCap = 5_120_000
 
 type directEstimate struct {
-	Success bool   `json:"success"`
-	GasUsed uint64 `json:"gasUsed"`
-	Error   string `json:"error"`
+	Success     bool   `json:"success"`
+	GasUsed     uint64 `json:"gasUsed"`
+	Error       string `json:"error"`
+	TxFee       string `json:"txFee"`
+	MinGasLimit uint64 `json:"minGasLimit"`
 }
 
 // The node runs the exact contract method against current state without
@@ -63,7 +65,11 @@ func estimatePreparedDirectCall(c *client, p *preparedAction, sender string, max
 		return 0, nil, fmt.Errorf("direct call simulation refused the current contract state: %s", receipt.Error)
 	}
 	// Keep room for signed-transaction framing and small state/fee changes.
-	budget := receipt.GasUsed + receipt.GasUsed/10 + 1_000
+	gas := receipt.GasUsed
+	if isBondedV8Format(p.Format) && receipt.MinGasLimit > gas {
+		gas = receipt.MinGasLimit
+	}
+	budget := gas + gas/10 + 1_000
 	if budget < receipt.GasUsed || budget > directBlockGasCap {
 		return 0, nil, errors.New("direct call exceeds the chain block gas cap with margin")
 	}
@@ -79,6 +85,18 @@ func estimatePreparedDirectCall(c *client, p *preparedAction, sender string, max
 		return 0, nil, errors.New("direct-call fee rate is unavailable")
 	}
 	required := new(big.Int).Mul(new(big.Int).SetUint64(budget), rate)
+	if isBondedV8Format(p.Format) {
+		// The VM gas does not include transaction-size fees. Preserve a current
+		// per-action estimate instead of charging every action a proof-sized cap.
+		txFee, err := v8IDNAAtoms(receipt.TxFee)
+		if err != nil {
+			return 0, nil, errors.New("v8 simulation omitted a valid transaction fee")
+		}
+		margin := new(big.Int).Add(txFee, big.NewInt(9))
+		margin.Quo(margin, big.NewInt(10))
+		required.Add(required, txFee).Add(required, margin)
+		p.EstimatedMaxFee = required.String()
+	}
 	if maxFee == nil || maxFee.Cmp(required) < 0 {
 		return budget, rate, fmt.Errorf("direct call needs max fee at least %s base units for the current simulation", required)
 	}

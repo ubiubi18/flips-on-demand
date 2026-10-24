@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "error": "",
+  "gasUsed": 33423,
+  "gasCost": "3.2767647058832049",
+  "txFee": "496.162745098168218",
+  "minGasLimit": 33423,
+  "minGasLimitCost": "3.2767647058832049",
+  "unsigned": true,
+  "broadcast": false,
+  "codeHash": "3f9c538614fe5c68ec9eeadb38eeb5ae0bef6022e68feee70341b844c4348cfc",
+  "codeSha256": "8f6e75caa899317f9e83006158290301ac6470923eb1a3955c0b5104485cd971",
+  "bytes": 505914,
+  "feePerGas": "98039215686300",
+  "totalGas": "5094283.0000000",
+  "totalFee": "499.4395098040514229",
+  "maximumTransactionGas": 5120000,
+  "chainCapPassed": true,
+  "gasHeadroom": "25717.0000000",
+  "signatureSizeIncluded": true,
+  "estimateScope": "Unsigned native constructor execution plus transaction-size fee; independent whole-transaction gas-cap check. No signing, broadcast, funding or deployed-state validation.",
+  "builtOptimization": "-Oz with llvm-memory-copy-fill-lowering"
+}

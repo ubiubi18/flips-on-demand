@@ -62,6 +62,29 @@ func TestDirectFallbackNeverSimulatesOnRemoteRPC(t *testing.T) {
 	}
 }
 
+func TestBondedV8EstimateIncludesSizeFeeAndReturnsActionSpecificCap(t *testing.T) {
+	fee := "0.1"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"result": map[string]any{"success": true, "gasUsed": 12000, "minGasLimit": 20000, "txFee": fee}})
+	}))
+	defer server.Close()
+	c := &client{url: server.URL, http: newHTTPClient()}
+	p := &preparedAction{Format: bondedV8Format + "accept", Operation: "accept", Contract: strings.Repeat("aa", 20), Amount: "1", Calldata: "01"}
+	rate := big.NewInt(98_000_000_000_000)
+	cap := new(big.Int).Mul(rate, big.NewInt(5_000_000))
+	budget, _, err := estimatePreparedDirectCall(c, p, strings.Repeat("bb", 20), cap, rate)
+	if err != nil || budget != 23000 || p.EstimatedMaxFee != "2364000000000000000" {
+		t.Fatalf("unexpected v8 fee: %d %s %v", budget, p.EstimatedMaxFee, err)
+	}
+	if _, _, err = estimatePreparedDirectCall(c, p, strings.Repeat("bb", 20), big.NewInt(2_000_000_000_000_000_000), rate); err == nil {
+		t.Fatal("insufficient total fee cap accepted")
+	}
+	fee = ""
+	if _, _, err = estimatePreparedDirectCall(c, p, strings.Repeat("bb", 20), cap, rate); err == nil {
+		t.Fatal("missing transaction fee accepted")
+	}
+}
+
 func TestDirectListingQuotesRefundableBuyerBond(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request struct {

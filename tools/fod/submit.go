@@ -90,6 +90,9 @@ type preparedAction struct {
 	confirmValidated   bool
 	directValidated    bool
 	poolV7Validated    bool
+	bondedV8Validated  bool
+	BondedV8           *bondedV8Request    `json:"bondedV8,omitempty"`
+	EstimatedMaxFee    string              `json:"estimatedMaxFee,omitempty"`
 	VerifiedDelivery   *OpenedPoolDelivery `json:"verifiedDelivery,omitempty"`
 	Format             string              `json:"format"`
 	Version            int                 `json:"version"`
@@ -274,6 +277,9 @@ func BuildTransaction(prepared *preparedAction, identity *ecdsa.PrivateKey, nonc
 	}
 	if isDirectFormat(prepared.Format) && !prepared.directValidated {
 		return nil, common.Address{}, errors.New("direct sale requires signing-time canonical-state validation")
+	}
+	if isBondedV8Format(prepared.Format) && !prepared.bondedV8Validated {
+		return nil, common.Address{}, errors.New("bonded call requires signing-time verification")
 	}
 	if isPoolV7Format(prepared.Format) && !prepared.poolV7Validated {
 		return nil, common.Address{}, errors.New("v7 pool call requires signing-time method, amount, and state validation")
@@ -621,11 +627,11 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 		fmt.Fprintln(os.Stderr, "fast delivery refused: -out FILE is required to keep the buyer-bound proof out of terminal output")
 		os.Exit(1)
 	}
-	if (isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format)) && outPath == "" {
+	if (isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) || isBondedV8Format(prepared.Format)) && outPath == "" {
 		fmt.Fprintln(os.Stderr, "direct sale refused: -signed FILE is required to keep private prepared data out of terminal output")
 		os.Exit(1)
 	}
-	if prepared.Operation == operationBuy || isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) {
+	if prepared.Operation == operationBuy || isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) || isBondedV8Format(prepared.Format) {
 		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
 		if isPoolV7Format(prepared.Format) {
 			if err := validatePoolV7ApprovedHash(prepared, approvedCodeHash); err != nil {
@@ -707,6 +713,20 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 			os.Exit(1)
 		}
 	}
+
+	if isBondedV8Format(prepared.Format) {
+		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		if err := validatePoolV7ApprovedHash(prepared, approvedCodeHash); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		rate, err := checkBondedV8Submission(c, prepared, identity, nonce, epoch, maxFee, tips, feePerGas)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "bonded call refused before signing:", err)
+			os.Exit(1)
+		}
+		feePerGas = rate
+	}
 	raw, sender, err := BuildTransaction(prepared, identity, nonce, epoch, maxFee, tips)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "refused: %v\n", err)
@@ -752,7 +772,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 	fmt.Printf("nonce       %d, epoch %d\n", submitted.AccountNonce, submitted.Epoch)
 	fmt.Printf("max fee     %s, tips %s\n", submitted.MaxFee, submitted.Tips)
 	var shortfall *big.Int
-	if gas, ok := measuredGasFor(prepared.Operation); ok && feePerGas != nil && feePerGas.Sign() > 0 {
+	if gas, ok := measuredGasFor(prepared.Operation); ok && !isBondedV8Format(prepared.Format) && feePerGas != nil && feePerGas.Sign() > 0 {
 		// The requirement is computed from the transaction that was actually
 		// signed: RLP encodes the nonce, epoch, amount, and the max fee itself,
 		// so a signed transaction can be a byte or two longer than the one the
@@ -771,7 +791,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 		if cap := maxMaxFeeFor(feePerGas); maxFee.Cmp(cap) > 0 {
 			fmt.Printf("warning     the max fee is above the node's cap (%s); it is refused as too high\n", cap)
 		}
-	} else if isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) {
+	} else if isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) || isBondedV8Format(prepared.Format) {
 		fmt.Println("estimated   direct call simulated on current contract state; max fee includes gas margin")
 	} else if feePerGas != nil {
 		fmt.Printf("estimated   no measured gas for %s; nothing to compare\n", prepared.Operation)
@@ -832,14 +852,21 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 				os.Exit(1)
 			}
 		}
-		if prepared.Operation == operationBuy || isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) {
+		if prepared.Operation == operationBuy || isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) || isBondedV8Format(prepared.Format) {
 			if err := checkBuyTarget(node, prepared.Contract, approvedContract, approvedCodeHash); err != nil {
 				fmt.Fprintf(os.Stderr, "purchase refused before broadcasting: %v\n", err)
 				os.Exit(1)
 			}
 		}
+
+		if isBondedV8Format(prepared.Format) {
+			if _, err := checkBondedV8Submission(node, prepared, identity, nonce, epoch, maxFee, tips, explicitFeePerGas); err != nil {
+				fmt.Fprintln(os.Stderr, "bonded call refused before broadcast:", err)
+				os.Exit(1)
+			}
+		}
 		var hash string
-		if isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) {
+		if isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) || isBondedV8Format(prepared.Format) {
 			if err := broadcastDirect(node, raw, outPath, submitted); err != nil {
 				fmt.Fprintf(os.Stderr, "direct broadcast needs reconciliation: %v\n", err)
 				os.Exit(1)

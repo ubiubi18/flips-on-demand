@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flips on Demand · Local market</title>
+    <link rel="stylesheet" href="/app.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">Flips on Demand</a><span id="connection">Local market · v8</span>
+    </header>
+    <main>
+      <section id="pairing">
+        <p class="eyebrow">YOUR NODE. YOUR MARKET.</p>
+        <h1>Connect your local market</h1>
+        <p>Enter the pairing code shown by the app on this computer.</p>
+        <form id="pair-form">
+          <label>Pairing code<input id="pair-code" autocomplete="off" required /></label
+          ><button class="primary">Connect</button>
+        </form>
+      </section>
+      <p id="notice" role="status" aria-live="polite"></p>
+      <div id="workspace" hidden>
+        <div id="preview" class="notice" hidden>
+          <strong>Interactive preview</strong> · Example packages and prices. No wallet or
+          transactions.<label
+            >Example<select id="scenario">
+              <option value="waiting">First visit · awaiting validation</option>
+              <option value="ready">Ready · no buyers yet</option>
+              <option value="demand">Ready · buyer waiting</option>
+              <option value="pool">Ready · funded pool</option>
+              <option value="refill">Deposit needs refill</option>
+              <option value="purchased">Completed purchase · view flips</option>
+            </select></label
+          >
+        </div>
+        <nav aria-label="Market sections">
+          <button data-tab="flips" aria-current="page">My flips</button
+          ><button data-tab="market">Market</button><button data-tab="activity">Activity</button
+          ><button data-tab="community">Community</button>
+        </nav>
+        <div class="heading">
+          <div>
+            <p class="eyebrow" id="epoch"></p>
+            <h1 id="page-title">My flips</h1>
+          </div>
+          <button id="refresh">Refresh</button>
+        </div>
+        <p id="next-step" class="next-step"></p>
+        <section id="deposit" class="deposit">
+          <div>
+            <h2 id="deposit-title">First, set up your security deposit</h2>
+            <p id="deposit-copy">
+              Buyers and sellers keep a reusable deposit to cover their open trades. You can
+              withdraw it when all orders, trades and disputes are closed and you finish trading.
+            </p>
+          </div>
+          <form id="deposit-form">
+            <label
+              >Deposit · iDNA<input
+                id="deposit-amount"
+                type="text"
+                inputmode="decimal"
+                required /></label
+            ><button class="primary" id="deposit-button">Review deposit</button>
+          </form>
+          <p class="small">
+            Purchases and network fees are paid separately. A settled dispute can reduce your
+            deposit.
+          </p>
+        </section>
+        <section id="tab-flips">
+          <div class="section-heading">
+            <h2>Your packages</h2>
+            <button id="collect">Collect & check</button>
+          </div>
+          <p class="muted">
+            Your flips are grouped by author and epoch. Original encrypted content stays on your
+            computer.
+          </p>
+          <div id="packages"></div>
+          <div class="section-heading purchased-heading">
+            <h2>Recent purchased sets</h2>
+          </div>
+          <div id="purchased"></div>
+          <details>
+            <summary>Add saved validation evidence</summary>
+            <form id="import-form">
+              <label>Session bundle<input name="session" type="file" required /></label
+              ><button>Verify & add</button>
+            </form>
+            <p class="small">
+              Only evidence that matches your identity and canonical node headers is accepted.
+            </p>
+          </details>
+          <p class="small" id="capture"></p>
+        </section>
+        <section id="tab-market" hidden>
+          <div class="quotes">
+            <div><span>Buy a package</span><strong id="buy-quote">—</strong></div>
+            <div><span>Sell a package</span><strong id="sell-quote">—</strong></div>
+          </div>
+          <p class="small">
+            Live curve quotes. Final amounts can move within your approved limits; queues do not
+            guarantee a fill.
+          </p>
+          <section class="market-history" aria-labelledby="history-title">
+            <div class="section-heading">
+              <h2 id="history-title">Recent completed prices</h2>
+              <span id="price-range" class="small"></span>
+            </div>
+            <div id="price-chart"></div>
+          </section>
+          <div class="trade-grid">
+            <section>
+              <h2>Buy flips</h2>
+              <p id="buy-description"></p>
+              <button class="primary" id="buy">Join buy queue</button>
+            </section>
+            <section>
+              <h2>Sell your package</h2>
+              <label>Package<select id="sell-package"></select></label>
+              <p id="sell-description"></p>
+              <button class="primary" id="sell">Join sell queue</button>
+            </section>
+          </div>
+          <p id="collateral-note" class="small"></p>
+          <div class="market-funds" aria-label="Market funds">
+            <div><span>Pool reserve</span><strong id="reserve">—</strong></div>
+            <div><span>Trade escrow</span><strong id="escrow">—</strong></div>
+            <div><span>Security deposits</span><strong id="stakes">—</strong></div>
+            <div><span>Pending seller proceeds</span><strong id="pending-earnings">—</strong></div>
+          </div>
+          <p class="small">Pool reserve is available for pool purchases. Escrow holds trade funds; security deposits cover obligations.</p>
+          <div class="market-queues">
+            <section><h2 id="sell-queue">Open sell offers</h2><div id="sell-offers"></div></section>
+            <section><h2 id="buy-queue">Open buy demand</h2><div id="buy-demand"></div></section>
+          </div>
+          <div id="unlock-area">
+            <h2>Enable one-click trading</h2>
+            <p>
+              For eight hours, this local app may place orders you click, advance the shared queues,
+              deliver your encrypted keys and accept purchases only after every flip decrypts and is
+              saved. Keep it open for automatic processing.
+            </p>
+            <form id="unlock-form">
+              <div class="field-grid">
+                <label
+                  >Password for saved flip sets<input
+                    name="passphrase"
+                    type="password"
+                    minlength="12"
+                    required
+                    autocomplete="off" /></label
+                ><label
+                  >Maximum per trade · iDNA<input
+                    name="perTrade"
+                    value=""
+                    inputmode="decimal"
+                    required /></label
+                ><label
+                  >Total purchase budget · iDNA<input
+                    name="purchaseBudget"
+                    value=""
+                    inputmode="decimal"
+                    required /></label
+                ><label
+                  >Total network fee budget · iDNA<input
+                    name="feeBudget"
+                    value="10"
+                    inputmode="decimal"
+                    required
+                /></label>
+              </div>
+              <p class="small">
+                This local password protects saved flip keys. It is separate from your wallet
+                password. Use at least 12 characters; sellers use their existing saved-set password.
+              </p>
+              <button class="primary">Enable within these limits</button>
+            </form>
+          </div>
+          <div id="unlocked" hidden>
+            <p id="budget"></p>
+            <button id="lock">Pause automatic trading</button>
+          </div>
+          <p id="readonly" class="small"></p>
+        </section>
+        <section id="tab-community" hidden>
+          <h2>idena.social</h2>
+          <p class="small">
+            Community opens only when you choose this tab. Sign in on idena.social if you want to
+            use it.
+          </p>
+          <div id="social-frame"></div>
+          <p class="small">
+            If the site does not appear here,
+            <a href="https://idena.social/" target="_blank" rel="noopener noreferrer"
+              >open idena.social in a new tab</a
+            >.
+          </p>
+        </section>
+        <section id="tab-activity" hidden>
+          <h2>Orders & delivery</h2>
+          <div id="orders"></div>
+          <p id="worker" class="small"></p>
+          <details>
+            <summary>Register a proven package</summary>
+            <p>
+              After validation, add the canonical session and completed v8 content proof. Generate
+              the proof with the local content prover, then import it here. Proof generation is a
+              separate step. A simulation checks registration before you sign.
+            </p>
+            <form id="registration-form">
+              <label>Session bundle<input name="session" type="file" required /></label
+              ><label>Contract-bound content proof<input name="proof" type="file" required /></label
+              ><button>Verify & review registration</button>
+            </form>
+          </details>
+          <details>
+            <summary>Transaction history</summary>
+            <div id="history"></div>
+          </details>
+          <details>
+            <summary>Finish trading</summary>
+            <p>
+              Cancel queued orders and close all trades and disputes first. This withdraws your full
+              remaining security deposit.
+            </p>
+            <button id="withdraw">Review withdrawal</button>
+          </details>
+        </section>
+        <footer>
+          <span id="wallet"></span><span id="block"></span
+          ><span>Local node · No hosted market service</span>
+        </footer>
+      </div>
+      <dialog id="review">
+        <h2>Review transaction</h2>
+        <dl id="review-values"></dl>
+        <p id="review-copy"></p>
+        <p class="small">Check the destination and amounts. Signing sends a real transaction.</p>
+        <div class="dialog-actions">
+          <button id="review-cancel">Cancel</button
+          ><label id="sign-vault-label" hidden
+            >Password for saved flip sets<input
+              id="sign-vault-passphrase"
+              type="password"
+              autocomplete="off" /></label
+          ><button class="primary" id="sign">Sign and broadcast</button>
+        </div>
+      </dialog>
+      <dialog id="protect">
+        <h2>Protect your package</h2>
+        <p>
+          The app checks every flip using your local identity key, then saves an encrypted epoch-key
+          vault and an owner-only proof witness. Existing witnesses are preserved.
+        </p>
+        <form id="protect-form">
+          <label
+            >Password for saved flip sets<input
+              name="passphrase"
+              type="password"
+              minlength="12"
+              required
+              autocomplete="off"
+          /></label>
+          <div class="dialog-actions">
+            <button type="button" id="protect-cancel">Cancel</button
+            ><button class="primary">Check & save locally</button>
+          </div>
+        </form>
+      </dialog>
+      <dialog id="purchased-preview" aria-labelledby="purchased-preview-title">
+        <div class="section-heading">
+          <h2 id="purchased-preview-title">Purchased flips</h2>
+          <button id="purchased-preview-close" type="button">Close</button>
+        </div>
+        <p id="purchased-preview-meta" class="small"></p>
+        <div id="purchased-preview-images"></div>
+        <div class="preview-controls">
+          <button id="purchased-prev" type="button">Previous flip</button>
+          <span id="purchased-position"></span>
+          <button id="purchased-next" type="button">Next flip</button>
+        </div>
+      </dialog>
+    </main>
+  </body>
+</html>

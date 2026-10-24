@@ -33,6 +33,9 @@ const (
 // late. This is a local containment check, not a guarantee of inclusion or
 // mempool confidentiality. Call it again immediately before broadcasting.
 func validatePreparedDisclosure(c *client, prepared *preparedAction) error {
+	if isBondedV8Format(prepared.Format) {
+		return nil
+	} // Validated by the v8 adapter; ciphertext only.
 	switch prepared.Operation {
 	case operationDeliver, operationReveal, operationFulfill, operationFulfillFast:
 	default:

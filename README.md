@@ -10,7 +10,19 @@ Idena has produced **tens of thousands of human-reviewed picture puzzles**, call
 
 Imagine a website offering a free trial. Its CAPTCHA provider buys and unlocks a collection of flips. Visitors solve a few before continuing. **The service pays. Visitors just solve—no wallet or crypto knowledge needed.**
 
-## Try the local app
+## Optimistic bonded market v9 candidate
+
+The new v9 implementation lets sellers list validated packages with a security deposit and complete normal sales without upfront content-proof registration. Disputes require both original-content and exact-delivery proofs. It includes standalone and IdenaAI clients, with v8 compatibility preserved. **The v9 pilot is deployed:** two five-flip purchases are settled and three buy orders remain queued. The native app can preview completed purchases; the standalone app provides its own local node connection. This is a common-operator pilot, not evidence of independent demand. [Design, usage, verification and limits →](docs/OPTIMISTIC_BONDED_MARKET_V9.md)
+
+## Standalone v8 market
+
+The new `fod app-v8` local browser client adds automatic package collection, reusable security deposits, curve quotes, both queues, private delivery verification and purchase export. It runs with your own synced node and does not require IdenaAI or a hosted market service. Connection pins are remembered after the first verified setup.
+
+Run `./fod app-v8 -read-only-preview` after building the CLI to explore the interface without keys or funds. [Setup, package preparation and current limits →](docs/STANDALONE_V8.md)
+
+The v8 interface is separate from the earlier v7 pilot documented below. Its funded end-to-end mainnet trade remains unverified; proof generation is still a separate local step.
+
+## Try the earlier v7 local app
 
 After [building `fod`](#build-the-cli), run `./fod app -read-only-preview` from `tools/fod` to explore synthetic buyer, seller and order screens. This mode needs no node, keys or funds and has no transaction endpoint. Real trading uses `./fod app` with your own synced node and independently verified contract pins; setup is [below](#run-the-standalone-local-app).
 

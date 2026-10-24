@@ -236,6 +236,7 @@
       void refreshPreview(market.nextOffer);
       const ordersBox = $('open-orders'); ordersBox.replaceChildren();
       $('order-status').textContent = 'Select an order to see its next step and on-chain deadline.';
+      $('order-status').classList.remove('risk');
       $('dm-form').hidden = true;
       $('receive-form').hidden = true;
       const mine = (market.openOrders || []).filter((order) =>
@@ -244,24 +245,30 @@
         for (const order of mine.slice(0, 10)) {
           const button = document.createElement('button'); button.type = 'button';
           const seller = order.author === market.activeIdentity;
-          button.textContent = `Order ${order.orderId} · ${order.state} · ${seller ? 'sell' : 'buy'} · ${short(order.offerId)}`;
+          const invalidDeliveryKey = order.invalidDeliveryKey === true;
+          button.textContent = `Order ${order.orderId} · ${order.state} · ${seller ? 'sell' : 'buy'} · ${short(order.offerId)}${invalidDeliveryKey ? ' · invalid delivery key' : ''}`;
           button.addEventListener('click', () => {
             setMode('orders');
+            $('order-status').classList.toggle('risk', invalidDeliveryKey);
             const deadline = Number(order.proofDeadline);
             const expired = Number.isSafeInteger(deadline) && market.blockHeight >= deadline;
             const remaining = Number.isSafeInteger(deadline) ? Math.max(0, deadline - market.blockHeight) : null;
             const timing = `Funded at block ${order.fundedAt}. ${remaining} blocks remain until the proof deadline at block ${deadline}. Refresh for current chain state; block timing varies.`;
-            if (remaining === null) $('order-status').textContent = 'Refresh the order before acting; deadline data is unavailable.';
-            else if (expired) $('order-status').textContent = `Proof deadline reached at block ${deadline}. Anyone may claim a refund; the locked price, buyer bond, and seller delivery bond go to the buyer. Funded refund remains untested in the pilot.`;
-            else if (order.state === 'fallback pending') $('order-status').textContent = `${timing} Seller fallback is pending. A valid proof publishes the bundle keys for everyone; if it is not completed by the deadline, anyone may claim a refund.`;
-            else $('order-status').textContent = `${timing} ${order.challenged ? 'Buyer challenge recorded. ' : ''}${seller ? 'Deliver privately or use the allowed fallback path.' : 'Verify the encrypted file before confirming, or challenge if delivery fails.'}`;
+            const warning = invalidDeliveryKey ? 'Invalid buyer delivery key on chain. Private delivery cannot be created or verified; do not confirm this order. ' : '';
+            if (remaining === null) $('order-status').textContent = `${warning}Refresh the order before acting; deadline data is unavailable.`;
+            else if (expired) $('order-status').textContent = `${warning}Proof deadline reached at block ${deadline}. Anyone may claim a refund; the locked price, buyer bond, and seller delivery bond go to the buyer. Funded refund remains untested in the pilot.`;
+            else if (order.state === 'fallback pending') $('order-status').textContent = `${warning}${timing} Seller fallback is pending. A valid proof publishes the bundle keys for everyone; if it is not completed by the deadline, anyone may claim a refund.`;
+            else $('order-status').textContent = `${warning}${timing} ${order.challenged ? 'Buyer challenge recorded. ' : ''}${invalidDeliveryKey ?
+              (seller ? 'Use the allowed on-chain fallback path.' : order.challenged ? 'Wait for fallback or the refund deadline.' : 'You may challenge the failed delivery and monitor fallback or refund.') :
+              (seller ? 'Deliver privately or use the allowed fallback path.' : 'Verify the encrypted file before confirming, or challenge if delivery fails.')}`;
             const form = $(seller ? 'dm-form' : 'receive-form');
-            $('dm-form').hidden = !seller || expired || order.state === 'fallback pending';
-            $('receive-form').hidden = seller || expired || order.state === 'fallback pending';
+            $('dm-form').hidden = !seller || expired || order.state === 'fallback pending' || invalidDeliveryKey;
+            $('receive-form').hidden = seller || expired || order.state === 'fallback pending' || invalidDeliveryKey;
             form.querySelector('[name="orderId"]').value = order.orderId;
             $('prepare-form').querySelector('[name="orderId"]').value = order.orderId;
             $('operation').value = expired ? 'refund' : seller ?
-              (order.state === 'fallback pending' ? 'proveAndReveal' : 'startFallback') : 'confirm';
+              (order.state === 'fallback pending' ? 'proveAndReveal' : 'startFallback') :
+              invalidDeliveryKey ? (order.challenged ? 'refund' : 'challenge') : 'confirm';
             updateFields();
             (form.hidden ? $('trade-section') : form).scrollIntoView({behavior: 'smooth', block: 'center'});
           });
