@@ -1,28 +1,30 @@
 # Flips on Demand — visual guide
 
-This page separates the current standalone browser app from concept diagrams and an older read-only viewer. The standalone screenshots use synthetic data and do not establish a safe funded release.
+This page preserves earlier standalone screenshots, concept diagrams and a read-only viewer. The [README](../README.md) shows the current v9 preview and newcomer path. All preview screenshots use synthetic data and do not establish a safe funded release.
 
-## Current standalone app
+<a id="current-standalone-app"></a>
+
+## Earlier standalone app preview
 
 These are captures of the actual `tools/fod/standalone_app.html` interface in its `./fod app -read-only-preview` mode, checked locally on **21 October 2026**. The executable served the same HTML, CSS and JavaScript as the live local app. All displayed orders, identities, prices and pictures are synthetic; the preview mode has no node connection, private files or transaction endpoint. In live mode, a person must supply their own synced node and independently checked contract pins.
 
-**Current standalone app · synthetic market and buyer view**
+**Earlier standalone app · synthetic market and buyer view**
 
-![Current Flips on Demand standalone app showing the synthetic market, public-preview treatment and next buy action](visuals/standalone-preview-desktop.png)
+![Earlier Flips on Demand standalone app showing the synthetic market, public-preview treatment and next buy action](visuals/standalone-preview-desktop.png)
 
-**Current standalone app · synthetic order view**
+**Earlier standalone app · synthetic order view**
 
-![Current Flips on Demand standalone app showing an example funded order and local delivery verification step](visuals/standalone-preview-orders.png)
+![Earlier Flips on Demand standalone app showing an example funded order and local delivery verification step](visuals/standalone-preview-orders.png)
 
-**Current standalone app · synthetic mobile view**
+**Earlier standalone app · synthetic mobile view**
 
-![Current Flips on Demand standalone app at a narrow mobile viewport](visuals/standalone-preview-mobile.png)
+![Earlier Flips on Demand standalone app at a narrow mobile viewport](visuals/standalone-preview-mobile.png)
 
 The local app separates Buy, Sell and My orders. An open order shows its proof deadline in chain blocks and the next applicable delivery, fallback or refund path; block timing can vary, and funded refund remains untested in the pilot. Live private confirmation requires a receipt saved after the app verifies the seller's ciphertext and the retained original flips; a public explorer preview never unlocks that action. Before a real signature, a separate review shows the selected identity, contract, attached value, fee ceiling and whether the action publishes keys. A saved uncertain transaction blocks a new signature until reconciliation.
 
 ## The idea in pictures
 
-The README opens with **illustrated product concepts**, followed by a six-step private purchase. These are explanatory drawings, not screenshots of implemented checkout or CAPTCHA functionality. They show the value to a website visitor before introducing contract mechanics.
+These **illustrated product concepts** show an earlier six-step private purchase. They are explanatory drawings, not screenshots of the current v9 checkout or an implemented CAPTCHA service.
 
 **Concept illustration · future CAPTCHA use**
 
