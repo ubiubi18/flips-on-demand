@@ -1,5 +1,7 @@
 # Sell a validated flip set (v9)
 
+**Start the session capture before your validation.** The node prunes the historical state needed for the bundle soon afterward. If you did not save that evidence and the original encrypted flips in time, you cannot sell that past set.
+
 Flips on Demand sells access to the **original encrypted flips** from one Idena author and epoch. The seller must be that author. A v9 set can contain 1–32 flips, and the canonical validation result must report the same count with a clean verdict. Uploading unrelated pictures or copying someone else's CIDs does not make a sellable set.
 
 ![Four-step v9 seller flow from original flips and validation evidence to an on-chain offer, encrypted key delivery and buyer acceptance](visuals/v9-seller-flow.svg)

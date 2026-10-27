@@ -69,6 +69,8 @@ type poolV7SyncStatus struct {
 	WrongTime    *bool   `json:"wrongTime"`
 }
 
+var errNodeNotSynced = errors.New("v7 node is not confirmed synced")
+
 func readPoolV7SyncedHead(c *client) (rpcBlock, error) {
 	var sync poolV7SyncStatus
 	if err := c.call("bcn_syncing", []any{}, &sync); err != nil {
@@ -76,7 +78,7 @@ func readPoolV7SyncedHead(c *client) (rpcBlock, error) {
 	}
 	if sync.Syncing == nil || sync.CurrentBlock == nil || sync.HighestBlock == nil || sync.WrongTime == nil ||
 		*sync.Syncing || *sync.WrongTime || *sync.CurrentBlock != *sync.HighestBlock {
-		return rpcBlock{}, errors.New("v7 node is not confirmed synced")
+		return rpcBlock{}, errNodeNotSynced
 	}
 	var head rpcBlock
 	if err := c.call("bcn_lastBlock", []any{}, &head); err != nil {

@@ -69,6 +69,18 @@ func canonicalPackage(author string, epoch uint16, cids []string) (standalonePac
 	p.ID = standaloneBundleID(author, epoch)
 	return p, nil
 }
+
+func sameCIDInventory(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	left := append([]string(nil), a...)
+	right := append([]string(nil), b...)
+	sort.Strings(left)
+	sort.Strings(right)
+	return sameStrings(left, right)
+}
+
 func (s *standaloneServer) savePackage(p standalonePackage) error {
 	dir, e := s.packageDir(p.ID)
 	if e != nil {
@@ -546,7 +558,7 @@ func (s *standaloneServer) v8Packages(m *bondedV8Snapshot, epoch uint16) ([]stan
 		qualified := false
 		if raw, e := readBondedV8Private(filepath.Join(dir, "session.json"), 8<<20); e == nil {
 			var session SessionBundle
-			if json.Unmarshal(raw, &session) == nil && session.Author == p.Author && session.Epoch == p.Epoch && sameStrings(session.Manifest, p.CIDs) && directVerifiedSession(s.client, &session) == nil {
+			if json.Unmarshal(raw, &session) == nil && session.Author == p.Author && session.Epoch == p.Epoch && sameCIDInventory(session.Manifest, p.CIDs) && directVerifiedSession(s.client, &session) == nil {
 				p.Session = true
 				if s.cfg.Version == 9 {
 					verdict, err := readBondedV9SessionVerdict(&session)

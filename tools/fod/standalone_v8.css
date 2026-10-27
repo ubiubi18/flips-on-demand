@@ -176,6 +176,14 @@ nav button[aria-current] {
   font-size: 14px;
   font-weight: 600;
 }
+.identity {
+  margin: -14px 0 20px;
+  overflow-wrap: anywhere;
+}
+.action-error {
+  color: #8b3f26;
+  margin: 6px 0 12px;
+}
 .heading,
 .section-heading {
   display: flex;
@@ -385,6 +393,16 @@ details form button {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 18px;
+}
+.field-help {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.tx-hash {
+  overflow-wrap: anywhere;
 }
 .order {
   padding: 18px 0;

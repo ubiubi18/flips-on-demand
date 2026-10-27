@@ -5,6 +5,8 @@ import {
   idna,
   suggestion,
   marketActions,
+  initialTradeLimit,
+  actionProgress,
   demoStatus,
   demoPurchasedPreview,
   purchasedTrades,
@@ -22,6 +24,22 @@ test('v9 starts at 500 iDNA and preview scenarios use coherent quotes and deposi
   assert.equal(demoStatus('pool', 9).market.sellQuote, (500n * ATOMS).toString())
   assert.equal(suggestion(demoStatus('waiting', 9).market), (750n * ATOMS).toString())
   assert.equal(demoStatus('ready', 8).market.buyQuote, '11111111111111111112')
+})
+test('seller trade limit starts high enough for sale capacity, including reserved deposit', () => {
+  const m = demoStatus('ready', 9).market
+  const quoted = terms(m)
+  assert.equal(initialTradeLimit(m, false), quoted.capacity)
+  assert.ok(BigInt(initialTradeLimit(m, false)) > BigInt(quoted.maximum))
+  assert.equal(initialTradeLimit(m, true), quoted.maximum)
+})
+test('transaction progress gives a state and an actionable next step', () => {
+  assert.deepEqual(actionProgress({ operation: 'queueSell', attempted: true }), {
+    state: 'Needs reconciliation',
+    next: 'Next: check the chain result before another action.',
+  })
+  assert.equal(actionProgress({ operation: 'queueSell', submission: { included: true, success: false } }).state, 'Failed on chain')
+  assert.equal(actionProgress({ operation: 'queueSell', attempted: true, submission: { transactionHash: '0xabc', included: false } }).state, 'Sent, awaiting a block')
+  assert.equal(actionProgress({ operation: 'depositStake', submission: { included: true, success: true } }).next, 'Next: return to Market to place an order.')
 })
 test('iDNA conversion preserves exact base units and rejects ambiguous amounts', () => {
   for (const amount of ['0', '17', '0.000000000000000001', '123456789012345678.123456789012345678'])

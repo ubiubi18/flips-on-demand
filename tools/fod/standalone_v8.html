@@ -46,6 +46,7 @@
           <div>
             <p class="eyebrow" id="epoch"></p>
             <h1 id="page-title">My flips</h1>
+            <p id="identity" class="small identity"></p>
           </div>
           <button id="refresh">Refresh</button>
         </div>
@@ -77,6 +78,7 @@
             <h2>Your packages</h2>
             <button id="collect">Collect & check</button>
           </div>
+          <p id="collect-error" class="action-error small" role="alert" hidden></p>
           <p class="muted" id="package-copy">
             Your flips are grouped by author and epoch. Original encrypted content stays on your
             computer.
@@ -92,8 +94,9 @@
               <label>Session bundle<input name="session" type="file" required /></label
               ><button>Verify & add</button>
             </form>
+            <p id="import-error" class="action-error small" role="alert" hidden></p>
             <p class="small">
-              Only evidence that matches your identity and canonical node headers is accepted.
+              Older sets need saved validation evidence. Only evidence that matches your identity and canonical node headers is accepted.
             </p>
           </details>
           <p class="small" id="capture"></p>
@@ -128,7 +131,8 @@
               <h2>Sell your package</h2>
               <label>Package<select id="sell-package"></select></label>
               <p id="sell-description"></p>
-              <button class="primary" id="sell">Join sell queue</button>
+              <button class="primary" id="sell" aria-describedby="sell-unavailable">Join sell queue</button>
+              <p id="sell-unavailable" class="small" hidden></p>
             </section>
           </div>
           <p id="collateral-note" class="small"></p>
@@ -143,6 +147,7 @@
             <section><h2 id="sell-queue">Open sell offers</h2><div id="sell-offers"></div></section>
             <section><h2 id="buy-queue">Open buy demand</h2><div id="buy-demand"></div></section>
           </div>
+          <p id="automatic-status" class="small"></p>
           <div id="unlock-area">
             <h2>Enable one-click trading</h2>
             <p id="unlock-copy">
@@ -164,7 +169,7 @@
                     name="perTrade"
                     value=""
                     inputmode="decimal"
-                    required /></label
+                    required /><span id="per-trade-help" class="field-help"></span></label
                 ><label
                   >Total purchase budget · iDNA<input
                     name="purchaseBudget"

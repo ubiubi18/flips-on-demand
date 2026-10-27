@@ -13,6 +13,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -106,6 +107,22 @@ func standaloneV8Fixture(t *testing.T) (*standaloneServer, *[]byte, *uint16) {
 		return nil, runBondedV8(args[1:])
 	}
 	return s, &blob, &epoch
+}
+
+func TestStandaloneSessionInventoryIgnoresNodeOrder(t *testing.T) {
+	a, b, c := cidRawSha256([]byte("a")), cidRawSha256([]byte("b")), cidRawSha256([]byte("c"))
+	ordered := []string{a, b, c}
+	sort.Strings(ordered)
+	fromNode := []string{ordered[2], ordered[0], ordered[1]}
+	if !sameCIDInventory(fromNode, ordered) {
+		t.Fatal("valid session inventory rejected because node order differs")
+	}
+	if sameCIDInventory([]string{ordered[2], ordered[0], ordered[0]}, ordered) {
+		t.Fatal("duplicate CID replaced a different original flip")
+	}
+	if sameCIDInventory(fromNode[:2], ordered) {
+		t.Fatal("incomplete CID inventory accepted")
+	}
 }
 
 func TestStandaloneV8PairingBoundaryAndPreviewIsolation(t *testing.T) {
@@ -374,6 +391,80 @@ func TestStandaloneV8AutomaticAuthorityIsBounded(t *testing.T) {
 	s.v8.Grant.Until = time.Now().Add(-time.Second)
 	if s.v8GrantValid(m.Identity) || s.v8.Grant != nil {
 		t.Fatal("expired signing permission retained")
+	}
+}
+
+func TestStandaloneV8WaitsForReceiptWithoutDroppingPermission(t *testing.T) {
+	s, _, _ := standaloneV8Fixture(t)
+	m, err := s.v8ReadMarket()
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := s.v8Prepare(context.Background(), m, bondedV8Request{
+		Caller: m.Identity, Operation: "depositStake", Amount: "17000000000000000000", Target: "17000000000000000000",
+	}, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir, _ := s.actionDir(a.ID)
+	if err := os.WriteFile(filepath.Join(dir, "attempted"), []byte("nonce=1\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	signed := SubmittedTransaction{Contract: s.cfg.Contract, Sender: a.Signer, AccountNonce: 1,
+		TxHash: "0x" + strings.Repeat("a", 64), Outcome: &SubmissionOutcome{Included: false}}
+	if err := writePrivateJSON(filepath.Join(dir, "signed.json"), &signed); err != nil {
+		t.Fatal(err)
+	}
+	s.nonceDir = filepath.Join(t.TempDir(), "nonce")
+	if err := standalonePrivateDir(s.nonceDir); err != nil {
+		t.Fatal(err)
+	}
+	checks := 0
+	node := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			Method string `json:"method"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Error(err)
+			return
+		}
+		var result any
+		switch request.Method {
+		case "bcn_txReceipt":
+			checks++
+			if checks >= 3 {
+				result = map[string]any{"success": true}
+			}
+		case "dna_getBalance":
+			result = map[string]any{"nonce": 0}
+		default:
+			t.Errorf("unexpected RPC %s", request.Method)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": 1, "result": result})
+	}))
+	defer node.Close()
+	s.client.url = node.URL
+	oldDelay := outcomeRetryDelay
+	outcomeRetryDelay = 0
+	t.Cleanup(func() { outcomeRetryDelay = oldDelay })
+	s.v8.Grant = &standaloneV8Grant{Identity: m.Identity, Until: time.Now().Add(time.Hour),
+		Fees: big.NewInt(100000000), PerTrade: big.NewInt(1000), Purchases: big.NewInt(2000)}
+	req := bondedV8Request{Caller: m.Identity, Operation: "queueBuy", Maximum: "1"}
+	if _, err := s.v8Execute(context.Background(), m, req); !errors.Is(err, errV8ReceiptPending) || s.v8.Grant == nil {
+		t.Fatalf("missing receipt revoked the grant or allowed another send: %v", err)
+	}
+	if _, err := s.v8Execute(context.Background(), m, req); !errors.Is(err, errV8ReceiptResolved) || s.v8.Grant == nil {
+		t.Fatalf("newly included receipt revoked the grant or used a stale snapshot: %v", err)
+	}
+	if err := s.v8CheckPending(); err != nil {
+		t.Fatalf("included receipt still blocked a fresh action: %v", err)
+	}
+	signed.Outcome = &SubmissionOutcome{Included: true, Success: false}
+	if err := writePrivateJSON(filepath.Join(dir, "signed.json"), &signed); err != nil {
+		t.Fatal(err)
+	}
+	if !s.v8Step(context.Background(), m) || s.v8.Grant != nil {
+		t.Fatal("a failed on-chain transaction did not pause automatic trading")
 	}
 }
 

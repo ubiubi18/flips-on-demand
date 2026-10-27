@@ -4,6 +4,8 @@ import {
   approximate,
   suggestion,
   marketActions,
+  initialTradeLimit,
+  actionProgress,
   eligibleBuys,
   eligibleSells,
   purchasedTrades,
@@ -14,11 +16,15 @@ import {
 const $ = (id) => document.getElementById(id)
 let token = '',
   preview = false,
+  ownNodeMode = false,
   protocolVersion = 8,
   status = null,
   selected = null,
   packageToProtect = '',
   limitsInitialized = false,
+  limitsMode = '',
+  pauseReason = '',
+  lastAutomatic = null,
   busy = false,
   tab = 'flips',
   buyerFirstRender = true,
@@ -82,14 +88,22 @@ async function api(path, body) {
   if (!r.ok) throw Error((await r.text()).slice(0, 350))
   return r.json()
 }
-async function perform(fn) {
+async function perform(fn, errorId) {
   if (busy) return
   busy = true
+  if (errorId) {
+    $(errorId).textContent = ''
+    $(errorId).hidden = true
+  }
   message('Working locally…')
   try {
     await fn()
   } catch (e) {
     message(e.message)
+    if (errorId) {
+      $(errorId).textContent = e.message
+      $(errorId).hidden = false
+    }
   } finally {
     busy = false
   }
@@ -263,6 +277,9 @@ function render() {
   $('packages').hidden = status.buyerOnly
   $('package-import').hidden = status.buyerOnly
   $('capture').hidden = status.buyerOnly
+  $('package-copy').textContent = status.sellerClient
+    ? 'Collect & check reads your current-epoch flips from the shared relay. Older sets need saved validation evidence from your archive or the shared relay; add a session bundle below if needed. Original encrypted content stays on this computer.'
+    : 'Collect & check reads your current-epoch flips from your node. Older sets need saved validation evidence; add a session bundle below. Original encrypted content stays on your computer.'
   $('sell-panel').hidden = status.buyerOnly
   $('sell-quote-box').hidden = status.buyerOnly
   $('relay-note').hidden = !status.buyerOnly && !status.sellerClient
@@ -276,6 +293,8 @@ function render() {
     ? 'This password protects saved flip keys. It is separate from your wallet key. Use at least 12 characters and keep it for future access.'
     : 'This local password protects saved flip keys. It is separate from your identity key. Use at least 12 characters; sellers use their existing saved-set password.'
   $('epoch').textContent = 'Epoch ' + status.epoch
+  $('identity').textContent = (status.buyerOnly ? 'Your buyer wallet' : status.sellerClient
+    ? 'Your seller identity on this computer' : 'Your node identity') + ': ' + m.identity
   const target = BigInt(suggestion(m)),
     balance = BigInt(m.account.balance),
     reserved = BigInt(m.account.reserved)
@@ -402,6 +421,16 @@ function render() {
   $('sell').textContent = a.sellLabel
   $('buy').disabled = preview || !status.automatic || !a.canBuy
   $('sell').disabled = preview || !status.automatic || !a.canSell || !$('sell-package').value
+  $('sell-unavailable').textContent = preview
+    ? 'Example only: selling is unavailable in this preview.'
+    : !status.automatic
+    ? 'Enable one-click trading first.'
+    : !a.canSell
+    ? 'Increase your available security deposit to cover this sale.'
+    : !$('sell-package').value
+    ? 'Collect and protect a sale-ready package first.'
+    : ''
+  $('sell-unavailable').hidden = !$('sell').disabled
   $('collateral-note').textContent =
     'Available security deposit: ' +
     approximate(a.free) +
@@ -419,12 +448,30 @@ function render() {
   $('unlock-area').hidden = status.automatic
   $('unlocked').hidden = !status.automatic
   $('unlock-form').querySelector('button').disabled = preview || !status.canSign || balance === 0n
-  if (!limitsInitialized) {
-    const maximum = idna(a.maximum)
-    $('unlock-form').elements.namedItem('perTrade').value = maximum
-    $('unlock-form').elements.namedItem('purchaseBudget').value = maximum
+  const mode = m.identity + ':' + status.buyerOnly
+  if (!limitsInitialized || limitsMode !== mode) {
+    pauseReason = ''
+    lastAutomatic = null
+    $('unlock-form').elements.namedItem('perTrade').value = idna(initialTradeLimit(m, status.buyerOnly))
+    $('unlock-form').elements.namedItem('purchaseBudget').value = idna(a.maximum)
     limitsInitialized = true
+    limitsMode = mode
   }
+  $('per-trade-help').textContent = status.buyerOnly
+    ? 'Covers the maximum purchase price for one trade.'
+    : 'The per-trade limit must cover a sale’s reserved security deposit. Current sale capacity: ' +
+      approximate(a.capacity) + ' iDNA; set this limit at least that high to sell.'
+  if (!status.automatic && status.pauseReason) pauseReason = status.pauseReason
+  if (lastAutomatic === true && !status.automatic && !pauseReason)
+    pauseReason = 'Authorization ended. It may have expired or stopped after a transaction issue.'
+  $('automatic-status').textContent = status.automatic
+    ? 'Automatic processing is on while this app stays open.'
+    : pauseReason
+    ? 'Paused: ' + pauseReason + ' Open orders may still have deadlines. Review Activity, then enter your saved-set password to resume with these limits.'
+    : 'One-click trading is off. Enable it to process open trades. Restarting the app requires a new password entry.'
+  $('unlock-form').querySelector('button').textContent = pauseReason
+    ? 'Resume within these limits' : 'Enable within these limits'
+  lastAutomatic = status.automatic
   $('budget').textContent = status.automatic
     ? 'Automatic processing enabled · ' +
       approximate(status.feeBudget) +
@@ -672,21 +719,16 @@ async function history() {
   const box = $('history')
   box.replaceChildren()
   for (const a of actions.sort((a, b) => b.preparedAt.localeCompare(a.preparedAt))) {
-    const row = el('div', undefined, 'order')
+    const row = el('div', undefined, 'order'),
+      progress = actionProgress(a)
     row.append(
-      el(
-        'p',
-        (operationLabels[a.operation] || a.operation) +
-          ' · ' +
-          (a.submission?.included
-            ? a.submission.success
-              ? 'Confirmed'
-              : 'Failed on chain'
-            : a.attempted
-            ? 'Needs reconciliation'
-            : 'Prepared, unsigned')
-      )
+      el('p', (operationLabels[a.operation] || a.operation) + ' · ' + progress.state),
+      el('p', progress.next, 'small')
     )
+    if (a.submission?.transactionHash)
+      row.append(el('p', 'Transaction: ' + a.submission.transactionHash, 'small tx-hash'))
+    if (a.submission?.note)
+      row.append(el('p', 'Chain note: ' + a.submission.note, 'small'))
     if (a.attempted && !a.submission?.included)
       row.append(
         button('Check chain result', async () => {
@@ -697,9 +739,28 @@ async function history() {
       )
     box.append(row)
   }
+  if (!actions.length) box.append(el('p', 'No transactions prepared yet.', 'small'))
 }
 async function refresh() {
-  const next = preview ? demoStatus($('scenario').value, protocolVersion) : await api('/api/market')
+  let next
+  try {
+    next = preview ? demoStatus($('scenario').value, protocolVersion) : await api('/api/market')
+  } catch (e) {
+    if (ownNodeMode && token && e.message.includes('v7 node is not confirmed synced')) {
+      $('workspace').hidden = true
+      $('pairing').hidden = false
+      $('pair-title').textContent = 'Waiting for your node to sync'
+      $('pair-copy').textContent = 'Pairing complete. This page checks every 20 seconds and opens your market when the node is confirmed synced.'
+      $('pair-form').hidden = true
+      throw Error('Your local node is still syncing. Market actions will be available after sync completes.')
+    }
+    if (token && $('workspace').hidden) {
+      $('pair-title').textContent = 'Local market unavailable'
+      $('pair-copy').textContent = 'Check the local app, then enter its pairing code to reconnect.'
+      $('pair-form').hidden = false
+    }
+    throw e
+  }
   if (
     purchasedPreview &&
     (status?.market.identity !== next.market.identity ||
@@ -737,7 +798,7 @@ $('collect').addEventListener('click', () =>
     await api('/api/v8/collect', {})
     await refresh()
     message('Package collection checked.')
-  })
+  }, 'collect-error')
 )
 $('scenario').addEventListener('change', () =>
   perform(async () => {
@@ -763,13 +824,14 @@ $('unlock-form').addEventListener('submit', (e) => {
   e.preventDefault()
   perform(async () => {
     const f = new FormData(e.target)
+    e.target.elements.passphrase.value = ''
     await api('/api/v8/unlock', {
       passphrase: f.get('passphrase'),
       perTrade: atoms(f.get('perTrade')).toString(),
       purchaseBudget: atoms(f.get('purchaseBudget')).toString(),
       feeBudget: atoms(f.get('feeBudget')).toString(),
     })
-    e.target.elements.passphrase.value = ''
+    pauseReason = ''
     await refresh()
     message('One-click trading enabled within your limits.')
   })
@@ -777,6 +839,7 @@ $('unlock-form').addEventListener('submit', (e) => {
 $('lock').addEventListener('click', () =>
   perform(async () => {
     await api('/api/v8/lock', {})
+    pauseReason = 'You paused automatic trading.'
     await refresh()
     message('Automatic processing paused. Keep track of open trade deadlines.')
   })
@@ -828,10 +891,14 @@ $('sign').addEventListener('click', () =>
     $('review').close()
     await api('/api/submit', { id: a.id, reviewHash: a.reviewHash, passphrase: $('sign-vault-passphrase').value })
     $('sign-vault-passphrase').value = ''
-    await api('/api/reconcile', { id: a.id })
+    const result = await api('/api/reconcile', { id: a.id })
     await refresh()
     navigate('activity')
-    message('Submission checked. See the confirmed chain result in transaction history.')
+    message(result.submission?.included
+      ? result.submission.success
+        ? 'Transaction confirmed in a block. See Activity.'
+        : 'Transaction failed on chain. See Activity.'
+      : 'Transaction sent. Waiting for a block receipt; see Activity.')
   })
 )
 $('protect-cancel').addEventListener('click', () => $('protect').close())
@@ -853,7 +920,7 @@ $('import-form').addEventListener('submit', (e) => {
     e.target.reset()
     await refresh()
     message('Canonical validation evidence added.')
-  })
+  }, 'import-error')
 })
 $('registration-form').addEventListener('submit', (e) => {
   e.preventDefault()
@@ -866,6 +933,7 @@ $('registration-form').addEventListener('submit', (e) => {
 try {
   const mode = await fetch('/api/mode', { cache: 'no-store' }).then((r) => r.json())
   preview = mode.preview === true
+  ownNodeMode = !preview && mode.buyerOnly !== true && mode.sellerClient !== true
   protocolVersion = mode.version === 9 ? 9 : 8
   if (mode.buyerOnly === true) {
     document.title = 'Flips on Demand · Buyer wallet'

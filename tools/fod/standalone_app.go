@@ -866,10 +866,11 @@ func (s *standaloneServer) handler() http.Handler {
 			return
 		}
 		writeStandaloneJSON(w, struct {
-			Preview   bool `json:"preview"`
-			BuyerOnly bool `json:"buyerOnly"`
-			Version   int  `json:"version"`
-		}{Preview: false, BuyerOnly: s.cfg.BuyerOnly, Version: s.cfg.Version})
+			Preview      bool `json:"preview"`
+			BuyerOnly    bool `json:"buyerOnly"`
+			SellerClient bool `json:"sellerClient"`
+			Version      int  `json:"version"`
+		}{Preview: false, BuyerOnly: s.cfg.BuyerOnly, SellerClient: s.cfg.SellerClient, Version: s.cfg.Version})
 	})
 	assets := map[string]string{"/": "standalone_app.html", "/app.js": "standalone_app.js", "/app.css": "standalone_app.css"}
 	if s.cfg.Version == 8 || s.cfg.Version == 9 {
@@ -1141,13 +1142,11 @@ func runStandaloneApp(cfg standaloneConfig) error {
 		return err
 	}
 	lockPath := filepath.Join(cfg.DataDir, "app.lock")
-	lock, err := os.OpenFile(lockPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	releaseLock, err := acquireStandaloneLock(lockPath)
 	if err != nil {
-		return errors.New("this app data directory is already in use or needs a reviewed stale-lock cleanup")
+		return fmt.Errorf("this app data directory is already in use or its lock is unsafe: %w", err)
 	}
-	_, _ = fmt.Fprintf(lock, "pid=%d\n", os.Getpid())
-	_ = lock.Close()
-	defer os.Remove(lockPath)
+	defer releaseLock()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return err

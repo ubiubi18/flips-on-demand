@@ -33,6 +33,26 @@ export function terms(m) {
     capacity: ((BigInt(m.buyQuote) * 150n + 99n) / 100n).toString(),
   }
 }
+export function initialTradeLimit(m, buyerOnly = false) {
+  const t = terms(m)
+  return buyerOnly || BigInt(t.maximum) >= BigInt(t.capacity) ? t.maximum : t.capacity
+}
+export function actionProgress(action) {
+  if (action.submission?.included)
+    return action.submission.success
+      ? {
+          state: 'Confirmed on chain',
+          next: action.operation === 'depositStake'
+            ? 'Next: return to Market to place an order.'
+            : 'Next: review the updated order or trade above.',
+        }
+      : { state: 'Failed on chain', next: 'Next: review the chain note and retry the action only if still needed.' }
+  if (action.attempted)
+    return action.submission?.transactionHash
+      ? { state: 'Sent, awaiting a block', next: 'Next: wait for inclusion; use Check chain result if it takes more than a few blocks.' }
+      : { state: 'Needs reconciliation', next: 'Next: check the chain result before another action.' }
+  return { state: 'Prepared, unsigned', next: 'No transaction was sent. Start the action again if still needed.' }
+}
 export function eligibleSells(m) {
   return m.sells.filter((s) => (s.state === 1 || s.state === 2) && s.expires > m.height)
 }

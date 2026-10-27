@@ -35,6 +35,7 @@ type standaloneV8Grant struct {
 type standaloneV8Runtime struct {
 	Grant       *standaloneV8Grant
 	Message     string
+	PauseReason string
 	Capture     string
 	PoolSales   map[string]bool
 	RetryAfter  time.Time
@@ -48,6 +49,7 @@ type standaloneV8Status struct {
 	CanSign        bool                `json:"canSign"`
 	Automatic      bool                `json:"automatic"`
 	Message        string              `json:"message"`
+	PauseReason    string              `json:"pauseReason,omitempty"`
 	Capture        string              `json:"capture"`
 	FeeBudget      string              `json:"feeBudget,omitempty"`
 	PurchaseBudget string              `json:"purchaseBudget,omitempty"`
@@ -166,13 +168,18 @@ func runStandaloneBonded(args []string, version int) error {
 	if !filepath.IsAbs(*profile) || !filepath.IsAbs(cfg.DataDir) {
 		return errors.New("profile and app data paths must be absolute")
 	}
-	// A successful live read validates the saved connection before remembering it.
+	// Pin the deployed code before remembering the connection. An own node may
+	// still be syncing; market reads and trading remain blocked until it catches up.
 	probe, e := newStandaloneServer(cfg)
 	if e != nil {
 		return e
 	}
-	if _, e = readBondedV8Snapshot(probe.client, cfg.Contract, cfg.CodeHash); e != nil {
+	if _, e = readBondedV8Snapshot(probe.client, cfg.Contract, cfg.CodeHash); e != nil &&
+		!(!cfg.BuyerOnly && !cfg.SellerClient && errors.Is(e, errNodeNotSynced)) {
 		return e
+	}
+	if errors.Is(e, errNodeNotSynced) {
+		fmt.Println("Node is still syncing. The local app will open and retry market reads automatically.")
 	}
 	if e = standalonePrivateDir(filepath.Dir(*profile)); e != nil {
 		return e
@@ -211,7 +218,7 @@ func (s *standaloneServer) v8Status() (*standaloneV8Status, error) {
 			return nil, e
 		}
 	}
-	out := &standaloneV8Status{Market: m, Epoch: epoch.Epoch, Wallet: wallet.Balance, Packages: packages, CanSign: s.cfg.NodeKey != "" || s.cfg.BuyerOnly, Automatic: s.v8GrantValid(m.Identity), Message: s.v8.Message, Capture: s.v8.Capture, BuyerOnly: s.cfg.BuyerOnly, SellerClient: s.cfg.SellerClient}
+	out := &standaloneV8Status{Market: m, Epoch: epoch.Epoch, Wallet: wallet.Balance, Packages: packages, CanSign: s.cfg.NodeKey != "" || s.cfg.BuyerOnly, Automatic: s.v8GrantValid(m.Identity), Message: s.v8.Message, PauseReason: s.v8.PauseReason, Capture: s.v8.Capture, BuyerOnly: s.cfg.BuyerOnly, SellerClient: s.cfg.SellerClient}
 	if out.Automatic {
 		out.FeeBudget = s.v8.Grant.Fees.String()
 		out.PurchaseBudget = s.v8.Grant.Purchases.String()
@@ -231,16 +238,40 @@ func (s *standaloneServer) v8CheckPending() error {
 			continue
 		}
 		a, e := s.readAction(entry.Name())
-		if e != nil || !a.Attempted || a.Submission == nil || !a.Submission.Included {
+		if e != nil || !a.Attempted || a.Submission == nil {
 			return errors.New("reconcile the previous transaction in Activity before starting another")
 		}
+		if a.Submission.Included {
+			if !a.Submission.Success {
+				return errors.New("previous transaction failed on chain; review Activity before resuming")
+			}
+			continue
+		}
+		a, e = s.reconcile(a.ID)
+		if e != nil {
+			return fmt.Errorf("reconcile the previous transaction in Activity: %w", e)
+		}
+		if a.Submission == nil || !a.Submission.Included {
+			return errV8ReceiptPending
+		}
+		if !a.Submission.Success {
+			return errors.New("previous transaction failed on chain; review Activity before resuming")
+		}
+		return errV8ReceiptResolved // Read a fresh market snapshot before the next action.
 	}
 	return nil
 }
+
+var (
+	errV8ReceiptPending  = errors.New("transaction sent; waiting for a block receipt")
+	errV8ReceiptResolved = errors.New("transaction included; refreshing chain state")
+)
+
 func (s *standaloneServer) v8GrantValid(who string) bool {
 	g := s.v8.Grant
 	if g != nil && !time.Now().Before(g.Until) {
 		s.v8.Grant = nil
+		s.v8.PauseReason = "The eight-hour trading permission expired."
 		return false
 	}
 	return g != nil && g.Identity == who && time.Now().Before(g.Until) && g.Fees.Sign() > 0
@@ -572,7 +603,10 @@ func (s *standaloneServer) v8Execute(ctx context.Context, m *bondedV8Snapshot, r
 		return standaloneAction{}, errors.New("refill security deposit before opening new trades")
 	}
 	if e := s.v8CheckPending(); e != nil {
-		s.v8.Grant = nil
+		if !errors.Is(e, errV8ReceiptPending) && !errors.Is(e, errV8ReceiptResolved) {
+			s.v8.Grant = nil
+			s.v8.PauseReason = "An earlier transaction needs review in Activity."
+		}
 		return standaloneAction{}, e
 	}
 	if req.Operation == "queueBuy" {
@@ -606,12 +640,22 @@ func (s *standaloneServer) v8Execute(ctx context.Context, m *bondedV8Snapshot, r
 	a, e = s.submit(r)
 	if e != nil {
 		s.v8.Grant = nil
+		s.v8.PauseReason = "The signing or broadcast result is uncertain. Review Activity."
 		return a, e
 	}
 	a, e = s.reconcile(a.ID)
-	if e != nil || a.Submission == nil || !a.Submission.Included || !a.Submission.Success {
+	if e != nil || a.Submission == nil {
 		s.v8.Grant = nil
+		s.v8.PauseReason = "Receipt or nonce reconciliation failed. Review Activity."
 		return a, errors.New("transaction needs reconciliation; automatic actions paused")
+	}
+	if !a.Submission.Included {
+		return a, nil // The send was acknowledged; background checks inclusion later.
+	}
+	if !a.Submission.Success {
+		s.v8.Grant = nil
+		s.v8.PauseReason = "A transaction failed on chain. Review Activity."
+		return a, errors.New("transaction failed on chain; automatic actions paused")
 	}
 	return a, nil
 }
@@ -715,9 +759,14 @@ func (s *standaloneServer) v8Routes(mux *http.ServeMux) {
 			return nil, errors.New("set up your deposit first")
 		}
 		s.v8.Grant = &standaloneV8Grant{m.Identity, time.Now().Add(8 * time.Hour), in.Passphrase, fees, per, purchases}
+		s.v8.PauseReason = ""
 		return map[string]bool{"automatic": true}, nil
 	})
-	route("/api/v8/lock", func(r *http.Request) (any, error) { s.v8.Grant = nil; return map[string]bool{"automatic": false}, nil })
+	route("/api/v8/lock", func(r *http.Request) (any, error) {
+		s.v8.Grant = nil
+		s.v8.PauseReason = "You paused one-click trading."
+		return map[string]bool{"automatic": false}, nil
+	})
 	route("/api/v8/order", func(r *http.Request) (any, error) {
 		var in struct {
 			Side     string `json:"side"`
@@ -887,24 +936,30 @@ func (s *standaloneServer) v8Background(ctx context.Context) {
 				s.v8.Message = "Market unavailable: check your local node."
 			}
 		} else if s.cfg.BuyerOnly {
-			s.v8.Message = "Buyer wallet connected through the relay."
+			handled := false
 			if s.v8GrantValid(m.Identity) {
-				s.v8Step(ctx, m)
+				handled = s.v8Step(ctx, m)
+			}
+			if !handled {
+				s.v8.Message = "Buyer wallet connected through the relay."
 			}
 		} else {
 			// A remote evidence fetch can wait on the shared service. Handle
 			// already matched trades before collection so their deadlines keep
 			// priority when that service is slow.
+			handled := false
 			if s.v8GrantValid(m.Identity) {
-				s.v8Step(ctx, m)
+				handled = s.v8Step(ctx, m)
 			}
 			if _, e = s.v8Collect(m); e != nil {
-				if s.cfg.SellerClient {
-					s.v8.Message = "Collection waiting: check the relay and saved evidence."
-				} else {
-					s.v8.Message = "Collection waiting: check your local node and saved evidence."
+				if !handled {
+					if s.cfg.SellerClient {
+						s.v8.Message = "Collection waiting: check the relay and saved evidence."
+					} else {
+						s.v8.Message = "Collection waiting: check your local node and saved evidence."
+					}
 				}
-			} else {
+			} else if !handled {
 				s.v8.Message = "Encrypted flips checked locally."
 			}
 		}
@@ -916,9 +971,17 @@ func (s *standaloneServer) v8Background(ctx context.Context) {
 		}
 	}
 }
-func (s *standaloneServer) v8Step(ctx context.Context, m *bondedV8Snapshot) {
+func (s *standaloneServer) v8Step(ctx context.Context, m *bondedV8Snapshot) bool {
 	if time.Now().Before(s.v8.RetryAfter) {
-		return
+		return true
+	}
+	if e := s.v8CheckPending(); e != nil {
+		s.v8.Message = e.Error()
+		if !errors.Is(e, errV8ReceiptPending) && !errors.Is(e, errV8ReceiptResolved) {
+			s.v8.Grant = nil
+			s.v8.PauseReason = "An earlier transaction needs review in Activity."
+		}
+		return true
 	}
 	req := bondedV8Request{Caller: m.Identity}
 	for _, t := range m.Trades {
@@ -950,7 +1013,7 @@ func (s *standaloneServer) v8Step(ctx context.Context, m *bondedV8Snapshot) {
 			eligible, e := s.v8AccountEligible(buy.Buyer)
 			if e != nil {
 				s.v8.Message = "Queue account check unavailable."
-				return
+				return true
 			}
 			if !eligible {
 				continue
@@ -971,7 +1034,7 @@ func (s *standaloneServer) v8Step(ctx context.Context, m *bondedV8Snapshot) {
 				eligible, e := s.v8AccountEligible(sell.Seller)
 				if e != nil {
 					s.v8.Message = "Queue account check unavailable."
-					return
+					return true
 				}
 				if !eligible {
 					continue
@@ -1002,7 +1065,7 @@ func (s *standaloneServer) v8Step(ctx context.Context, m *bondedV8Snapshot) {
 			eligible, e := s.v8AccountEligible(sell.Seller)
 			if e != nil {
 				s.v8.Message = "Queue account check unavailable."
-				return
+				return true
 			}
 			if !eligible {
 				continue
@@ -1014,13 +1077,19 @@ func (s *standaloneServer) v8Step(ctx context.Context, m *bondedV8Snapshot) {
 		}
 	}
 	if req.Operation != "" {
-		if _, e := s.v8Execute(ctx, m, req); e != nil {
+		if action, e := s.v8Execute(ctx, m, req); e != nil {
 			s.v8.Message = e.Error()
-			s.v8.RetryAfter = time.Now().Add(time.Minute)
+			if !errors.Is(e, errV8ReceiptPending) && !errors.Is(e, errV8ReceiptResolved) {
+				s.v8.RetryAfter = time.Now().Add(time.Minute)
+			}
+		} else if action.Submission != nil && !action.Submission.Included {
+			s.v8.Message = "Transaction sent; waiting for a block receipt."
 		} else {
 			s.v8.Message = "Trade advanced after local verification."
 		}
+		return true
 	}
+	return false
 }
 
 func (s *standaloneServer) v8AccountEligible(who string) (bool, error) {
