@@ -4,6 +4,8 @@ Flips on Demand sells access to the **original encrypted flips** from one Idena 
 
 ![Four-step v9 seller flow from original flips and validation evidence to an on-chain offer, encrypted key delivery and buyer acceptance](visuals/v9-seller-flow.svg)
 
+[PNG version for sharing](visuals/v9-seller-flow.png).
+
 ## Before listing
 
 You need a compatible, synced Idena node for the author identity, authenticated loopback RPC, its owner-only local signing key, the original encrypted flip files, and a canonical capture of that epoch's validation session. Follow the [standalone connection guide](STANDALONE_V8.md#connect-once) with **`app-v9`**, a separate v9 profile, and independently checked v9 contract and code pins. IdenaAI's v9 market page is another client for the same contract. The read-only preview uses synthetic data and cannot trade.
