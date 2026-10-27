@@ -27,6 +27,16 @@ The command opens a local browser page. Add `-no-browser` to print its URL inste
 
 The ciphertext is visible on chain, but only the buyer's separate delivery key can open it. The market does not send an idena.social message. Access to keys is copyable and is not exclusive; historical human agreement does not guarantee that a puzzle resists AI.
 
+## Sell your flip set
+
+Only the author can sell their own validated set from one epoch (1–32 flips). The package is built from the original encrypted flips and their CIDs, the keys that open them, and a canonical validation-session record. A ZIP of pictures or a list of CIDs alone cannot be listed.
+
+![Four-step v9 seller flow: retain original encrypted flips, verify validation and protect keys locally, bond and list on chain, then deliver buyer-encrypted keys for settlement](docs/visuals/v9-seller-flow.svg)
+
+In the live client, **My flips → Collect & check** fetches and CID-checks your node's original flips. **Protect package** opens them with your identity locally and saves their keys in a password-encrypted vault. Import the matching canonical session under **Add saved validation evidence → Verify & add**, or connect an existing capture archive. Once the set is ready, fund a reusable security deposit and choose **Market → Sell your package → Join sell queue**. The v9 `queueSell` transaction binds the verified inventory and session while reserving collateral; it needs no upfront proof registration. A queued offer is not yet a sale.
+
+After a compatible buyer order matches, the buyer first confirms that the encrypted flip files are available. Your client then encrypts the opening keys for that buyer and delivers the ciphertext through the contract. The buyer opens every original flip and accepts the valid delivery to release your proceeds. Keep your app, node and private vault available through delivery; do not send keys through idena.social. For capture setup, signing boundaries, matching, expiry and dispute steps, use the [v9 seller guide](docs/SELLER_GUIDE_V9.md).
+
 ## Connect to the live market
 
 The standalone client does **not** require IdenaAI. Real trading currently requires a compatible, synced Idena node with authenticated loopback RPC, independently verified v9 contract and code pins, and an owner-only local identity key for signing. An app.idena.io login alone is not a connection to this client. Follow the [standalone setup and safety steps](docs/STANDALONE_V8.md#connect-once), using `app-v9` and a separate v9 profile as explained in the [v9 guide](docs/OPTIMISTIC_BONDED_MARKET_V9.md#standalone-preview).

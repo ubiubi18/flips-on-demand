@@ -4,6 +4,8 @@ The `fod app-v8` executable serves a browser interface on your own computer. It 
 
 For the current optimistic market use `fod app-v9` in the commands below, with independently verified v9 contract pins and a separate profile. V9 needs no upfront proof registration for normal sales; the registration step below applies only to v8. Both versions share the local browser interface.
 
+For the v9 seller path, follow [Sell a validated flip set](SELLER_GUIDE_V9.md) instead of the v8 proof-registration step in this page.
+
 ## Explore the interface
 
 Build the CLI using the [repository build instructions](../README.md#build-the-cli), then run from `tools/fod`:

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 420" role="img" aria-labelledby="title desc">
+  <title id="title">How a v9 flip set is sold</title>
+  <desc id="desc">Four steps: retain your own original encrypted flips and CIDs; verify the canonical validation session and protect the opening keys in a local vault; deposit collateral and list the package with queueSell; after a match and buyer readiness, deliver buyer-encrypted keys through the contract, then the buyer verifies and accepts.</desc>
+  <rect width="1260" height="420" fill="#F7FAFC"/>
+  <text x="40" y="53" fill="#17324D" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="700">Sell a validated flip set</text>
+  <text x="1210" y="52" text-anchor="end" fill="#52718A" font-family="Arial, Helvetica, sans-serif" font-size="17">Flips on Demand v9</text>
+
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="40" y="89" width="270" height="235" rx="14" fill="#FFFFFF" stroke="#C9D9E5" stroke-width="2"/>
+    <path d="M54 90 H296" stroke="#3578A6" stroke-width="5"/>
+    <circle cx="75" cy="128" r="19" fill="#E3F0F9"/>
+    <text x="75" y="135" text-anchor="middle" fill="#175B89" font-size="20" font-weight="700">1</text>
+    <text x="57" y="183" fill="#17324D" font-size="22" font-weight="700">Make &amp; retain</text>
+    <text x="57" y="218" fill="#334F65" font-size="17">Your own Idena flips</text>
+    <text x="57" y="244" fill="#334F65" font-size="17">Original encrypted files</text>
+    <text x="57" y="270" fill="#334F65" font-size="17">and their CIDs</text>
+    <text x="57" y="305" fill="#4E6F88" font-size="14">Stored with your node</text>
+
+    <rect x="340" y="89" width="270" height="235" rx="14" fill="#FFFFFF" stroke="#C9D9E5" stroke-width="2"/>
+    <path d="M354 90 H596" stroke="#3578A6" stroke-width="5"/>
+    <circle cx="375" cy="128" r="19" fill="#E3F0F9"/>
+    <text x="375" y="135" text-anchor="middle" fill="#175B89" font-size="20" font-weight="700">2</text>
+    <text x="357" y="183" fill="#17324D" font-size="22" font-weight="700">Verify &amp; protect</text>
+    <text x="357" y="218" fill="#334F65" font-size="17">Canonical session</text>
+    <text x="357" y="244" fill="#334F65" font-size="17">and clean verdict</text>
+    <text x="357" y="270" fill="#334F65" font-size="17">Keys in local vault</text>
+    <text x="357" y="305" fill="#4E6F88" font-size="14">Private until delivery</text>
+
+    <rect x="640" y="89" width="270" height="235" rx="14" fill="#FFFFFF" stroke="#D7CBAE" stroke-width="2"/>
+    <path d="M654 90 H896" stroke="#B27725" stroke-width="5"/>
+    <circle cx="675" cy="128" r="19" fill="#FAEBD2"/>
+    <text x="675" y="135" text-anchor="middle" fill="#8A591C" font-size="20" font-weight="700">3</text>
+    <text x="657" y="183" fill="#17324D" font-size="22" font-weight="700">Bond &amp; list</text>
+    <text x="657" y="218" fill="#334F65" font-size="17">queueSell checks session</text>
+    <text x="657" y="244" fill="#334F65" font-size="17">and CID commitment</text>
+    <text x="657" y="270" fill="#334F65" font-size="17">Collateral is reserved</text>
+    <text x="657" y="305" fill="#7F633D" font-size="14">Offer awaits a match</text>
+
+    <rect x="940" y="89" width="270" height="235" rx="14" fill="#FFFFFF" stroke="#C5DCD3" stroke-width="2"/>
+    <path d="M954 90 H1196" stroke="#31806B" stroke-width="5"/>
+    <circle cx="975" cy="128" r="19" fill="#DFF1EB"/>
+    <text x="975" y="135" text-anchor="middle" fill="#236754" font-size="20" font-weight="700">4</text>
+    <text x="957" y="183" fill="#17324D" font-size="22" font-weight="700">Deliver &amp; settle</text>
+    <text x="957" y="218" fill="#334F65" font-size="17">Buyer signals readiness</text>
+    <text x="957" y="244" fill="#334F65" font-size="17">Encrypted keys go on chain</text>
+    <text x="957" y="270" fill="#334F65" font-size="17">Buyer checks, then accepts</text>
+    <text x="957" y="305" fill="#4B7366" font-size="14">Valid sale releases proceeds</text>
+  </g>
+
+  <g stroke="#627E96" stroke-width="3" fill="#627E96">
+    <path d="M314 206 H326 M614 206 H626 M914 206 H926"/>
+    <path d="M325 199 L337 206 L325 213 Z" stroke="none"/>
+    <path d="M625 199 L637 206 L625 213 Z" stroke="none"/>
+    <path d="M925 199 L937 206 L925 213 Z" stroke="none"/>
+  </g>
+  <text x="40" y="372" fill="#334F65" font-family="Arial, Helvetica, sans-serif" font-size="16">Original encrypted flips are CID-addressed; plain opening keys and the vault stay local.</text>
+  <text x="40" y="399" fill="#607B91" font-family="Arial, Helvetica, sans-serif" font-size="15">On chain: commitments, collateral, order escrow and buyer-encrypted keys. No upfront content proof for a normal sale.</text>
+</svg>

@@ -1,5 +1,7 @@
 # Optimistic bonded market v9
 
+For a practical seller walkthrough, including package preparation and encrypted key delivery, see [Sell a validated flip set](SELLER_GUIDE_V9.md).
+
 25 October 2026. **Deployed and verified on all three native nodes.** The two original five-flip offers were purchased and settled. Three other buy orders remained stored as queued, but a later read on 25 October found that all three had passed their block expiry and were no longer matchable. These were common-operator pilot trades, not evidence of independent demand. See the [settlement evidence](evidence/v9-two-purchases-completed.json) and [purchased-preview verification](evidence/v9-native-purchased-previews.json). The earlier [deployment and queue evidence](evidence/v9-deployment-and-queue-preparation.json) and candidate manifest preserve their historical setup snapshot.
 
 ## Normal trade
