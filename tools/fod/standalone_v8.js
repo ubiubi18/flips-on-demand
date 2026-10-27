@@ -21,6 +21,7 @@ let token = '',
   limitsInitialized = false,
   busy = false,
   tab = 'flips',
+  buyerFirstRender = true,
   purchasedPreview = null,
   purchasedIndex = 0
 const labels = {
@@ -29,6 +30,7 @@ const labels = {
   protect: 'Protect keys',
   prepare: 'Needs proof',
   missing: 'Missing data',
+  unqualified: 'Not eligible to sell',
   ready: 'Ready to sell',
   queued: 'Sale in progress',
   sold: 'Sold',
@@ -101,7 +103,8 @@ function navigate(next) {
     else b.removeAttribute('aria-current')
   }
   $('page-title').textContent = {
-    flips: 'My flips', market: 'Market', activity: 'Activity', community: 'Community',
+    flips: status?.buyerOnly ? 'My purchases' : 'My flips',
+    market: 'Market', activity: 'Activity', community: 'Community',
   }[next]
   if (next === 'community' && !$('social-frame').firstChild) {
     const frame = el('iframe')
@@ -123,6 +126,20 @@ function renderNextStep() {
     balance = BigInt(m.account.balance),
     a = marketActions(m)
   $('next-step').hidden = tab === 'community'
+  if (status.buyerOnly) {
+    $('next-step').textContent = tab === 'market'
+      ? balance === 0n || m.account.needsTopup || !a.canBuy
+        ? 'Set up your reusable security deposit before placing a buy order.'
+        : !status.automatic
+        ? 'Set your local spending limits, then place a buy order.'
+        : 'Buy a set now or leave your funded order in the queue.'
+      : tab === 'activity'
+      ? 'Track your orders, delivery deadlines and confirmed transactions here.'
+      : purchasedTrades(m).length
+      ? 'Your completed purchases are ready to view below.'
+      : 'Your purchases will appear here after delivery is verified.'
+    return
+  }
   if (tab === 'market') {
     $('next-step').textContent = balance === 0n || m.account.needsTopup || (!a.canBuy && !a.canSell)
       ? 'Next: set or refill your security deposit before trading.'
@@ -140,7 +157,9 @@ function renderNextStep() {
   } else if (packages.some((p) => p.status === 'ready')) {
     $('next-step').textContent = 'Your package is ready. Set your security deposit, then open Market to sell.'
   } else if (packages.some((p) => p.status === 'waiting' || p.status === 'collecting')) {
-    $('next-step').textContent = 'Next: keep your node and this app running through validation.'
+    $('next-step').textContent = status.sellerClient
+      ? 'Next: wait for the shared service to capture validation evidence.'
+      : 'Next: keep your node and this app running through validation.'
   } else {
     $('next-step').textContent = 'Collect your own flips here, or open Market to buy a set.'
   }
@@ -227,10 +246,35 @@ function render() {
   if (!status) return
   const m = status.market,
     a = marketActions(m)
+  if (status.buyerOnly && buyerFirstRender) {
+    tab = 'market'
+    buyerFirstRender = false
+  }
+  document.body.classList.toggle('buyer-only', status.buyerOnly === true)
   $('pairing').hidden = true
   $('workspace').hidden = false
   $('registration-form').closest('details').hidden = status.market.version === 9
-  $('connection').textContent = preview ? 'Preview · Example data' : 'Connected to your node · v' + status.market.version
+  $('connection').textContent = preview ? 'Preview · Example data' : status.buyerOnly
+    ? 'Buyer wallet · v' + status.market.version : status.sellerClient
+      ? 'Seller via shared node · v' + status.market.version : 'Connected to your node · v' + status.market.version
+  document.querySelector('[data-tab="flips"]').textContent = status.buyerOnly ? 'My purchases' : 'My flips'
+  $('package-heading').hidden = status.buyerOnly
+  $('package-copy').hidden = status.buyerOnly
+  $('packages').hidden = status.buyerOnly
+  $('package-import').hidden = status.buyerOnly
+  $('capture').hidden = status.buyerOnly
+  $('sell-panel').hidden = status.buyerOnly
+  $('sell-quote-box').hidden = status.buyerOnly
+  $('relay-note').hidden = !status.buyerOnly && !status.sellerClient
+  $('service-label').textContent = status.buyerOnly || status.sellerClient
+    ? 'Chain and encrypted flips via your configured relay · Keys stay on this computer'
+    : 'Local node · No hosted market service'
+  $('unlock-copy').textContent = status.buyerOnly
+    ? 'For eight hours, this app can place the buy orders you click and advance your purchases within the limits below. It accepts only after every original flip opens and the encrypted keys are saved. Keep the app open through delivery.'
+    : 'For eight hours, this local app may place orders you click, advance the shared queues, deliver your encrypted keys and accept purchases only after every flip decrypts and is saved. Keep it open for automatic processing.'
+  $('vault-copy').textContent = status.buyerOnly
+    ? 'This password protects saved flip keys. It is separate from your wallet key. Use at least 12 characters and keep it for future access.'
+    : 'This local password protects saved flip keys. It is separate from your identity key. Use at least 12 characters; sellers use their existing saved-set password.'
   $('epoch').textContent = 'Epoch ' + status.epoch
   const target = BigInt(suggestion(m)),
     balance = BigInt(m.account.balance),
@@ -270,7 +314,7 @@ function render() {
           p.cids.length +
           ' encrypted flips checked' +
           (p.vault ? ' · Keys protected locally' : '') +
-          (p.session ? ' · Validation verified' : ''),
+          (p.session ? ' · Session evidence verified' : ''),
         'small'
       )
     )
@@ -310,7 +354,9 @@ function render() {
     box.append(
       el(
         'p',
-        'No packages found yet. Submit flips with your node, or add saved validation evidence.',
+        status.sellerClient
+          ? 'No packages found yet. Submit flips with your Idena app; the shared service can collect their public evidence.'
+          : 'No packages found yet. Submit flips with your node, or add saved validation evidence.',
         'empty'
       )
     )
@@ -389,7 +435,9 @@ function render() {
   $('readonly').textContent = preview
     ? 'Example only: transaction buttons are disabled.'
     : !status.canSign
-    ? 'Read-only connection. Configure the local owner key to enable signing.'
+    ? status.buyerOnly
+      ? 'Read-only connection. Configure a local wallet key to enable buying.'
+      : 'Read-only connection. Configure the local owner key to enable signing.'
     : ''
   $('wallet').textContent = 'Wallet: ' + status.wallet + ' iDNA'
   $('block').textContent = (preview ? 'Example' : 'Synced') + ' block ' + m.height
@@ -677,7 +725,7 @@ $('pair-form').addEventListener('submit', (e) => {
 $('refresh').addEventListener('click', () =>
   perform(async () => {
     await refresh()
-    message('Updated from your local node.')
+    message(status.sellerClient || status.buyerOnly ? 'Updated from the relay.' : 'Updated from your local node.')
   })
 )
 $('collect').addEventListener('click', () =>
@@ -819,6 +867,12 @@ try {
   const mode = await fetch('/api/mode', { cache: 'no-store' }).then((r) => r.json())
   preview = mode.preview === true
   protocolVersion = mode.version === 9 ? 9 : 8
+  if (mode.buyerOnly === true) {
+    document.title = 'Flips on Demand · Buyer wallet'
+    $('pair-kicker').textContent = 'BUY FLIP KEYS'
+    $('pair-title').textContent = 'Connect your buyer wallet'
+    $('pair-copy').textContent = 'Enter the pairing code shown by the app on this computer. Your wallet key stays here.'
+  }
   if (preview) {
     $('preview').hidden = false
     await refresh()

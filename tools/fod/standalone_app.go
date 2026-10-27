@@ -52,6 +52,9 @@ type standaloneConfig struct {
 	NoBrowser                                          bool `json:"-"`
 	RPC, KeyFile, Contract, CodeHash, NodeKey, DataDir string
 	Version                                            int    `json:"version,omitempty"`
+	BuyerOnly                                          bool   `json:"buyerOnly,omitempty"`
+	SellerClient                                       bool   `json:"sellerClient,omitempty"`
+	WalletKey                                          string `json:"walletKey,omitempty"`
 	ArchiveDir                                         string `json:"archiveDir,omitempty"`
 	NodeDataDir                                        string `json:"nodeDataDir,omitempty"`
 }
@@ -139,8 +142,52 @@ func standalonePrivateDir(path string) error {
 	return nil
 }
 
+func buyerWalletAddress(path string) (string, error) {
+	if !filepath.IsAbs(path) {
+		return "", errors.New("buyer wallet key path must be absolute")
+	}
+	raw, err := readBondedV8Private(path, 128)
+	if err != nil {
+		return "", fmt.Errorf("read owner-only buyer wallet key: %w", err)
+	}
+	defer clear(raw)
+	key, err := crypto.HexToECDSA(strings.TrimSpace(string(raw)))
+	if err != nil {
+		return "", errors.New("invalid buyer wallet key")
+	}
+	return nodekeyAddressOf(key)
+}
+
+func sellerIdentityAddress(path string) (string, error) {
+	if !filepath.IsAbs(path) {
+		return "", errors.New("seller identity key path must be absolute")
+	}
+	raw, err := readBondedV8Private(path, 128)
+	if err != nil {
+		return "", fmt.Errorf("read owner-only seller identity key: %w", err)
+	}
+	defer clear(raw)
+	key, err := crypto.HexToECDSA(strings.TrimSpace(string(raw)))
+	if err != nil {
+		return "", errors.New("invalid seller identity key")
+	}
+	return nodekeyAddressOf(key)
+}
+
 func newStandaloneServer(cfg standaloneConfig) (*standaloneServer, error) {
-	if !directLocalRPC(cfg.RPC) {
+	if cfg.BuyerOnly && cfg.SellerClient {
+		return nil, errors.New("choose one remote connection mode")
+	}
+	if cfg.SellerClient {
+		if cfg.Version != 9 || !buyerRelayURL(cfg.RPC) || cfg.KeyFile != "" || cfg.WalletKey != "" ||
+			cfg.NodeDataDir != "" || cfg.NodeKey == "" {
+			return nil, errors.New("seller-client v9 needs an HTTPS /rpc relay and a local identity key, without node RPC options")
+		}
+	} else if cfg.BuyerOnly {
+		if cfg.Version != 9 || !buyerRelayURL(cfg.RPC) || cfg.KeyFile != "" || cfg.NodeKey != "" || cfg.NodeDataDir != "" || cfg.ArchiveDir != "" {
+			return nil, errors.New("buyer-only v9 needs an HTTPS /rpc relay, wallet key, and no node or seller data")
+		}
+	} else if !directLocalRPC(cfg.RPC) || cfg.WalletKey != "" {
 		return nil, errors.New("standalone app requires loopback node RPC")
 	}
 	contract, err := directAddress(cfg.Contract)
@@ -152,10 +199,18 @@ func newStandaloneServer(cfg standaloneConfig) (*standaloneServer, error) {
 	}
 	cfg.Contract = contract
 	cfg.CodeHash = strings.ToLower(strings.TrimPrefix(cfg.CodeHash, "0x"))
-	if cfg.KeyFile == "" {
-		return nil, errors.New("node RPC key file is required")
+	key := ""
+	wallet := ""
+	if cfg.SellerClient {
+		wallet, err = sellerIdentityAddress(cfg.NodeKey)
+	} else if cfg.BuyerOnly {
+		wallet, err = buyerWalletAddress(cfg.WalletKey)
+	} else {
+		if cfg.KeyFile == "" {
+			return nil, errors.New("node RPC key file is required")
+		}
+		key, err = resolveRPCKey(cfg.KeyFile, true)
 	}
-	key, err := resolveRPCKey(cfg.KeyFile, true)
 	if err != nil {
 		return nil, err
 	}
@@ -180,9 +235,21 @@ func newStandaloneServer(cfg standaloneConfig) (*standaloneServer, error) {
 	if err := standalonePrivateDir(filepath.Join(cfg.DataDir, "private")); err != nil {
 		return nil, err
 	}
-	c := &client{url: cfg.RPC, key: key, http: newHTTPClient(), bondedVersion: cfg.Version}
+	c := &client{url: cfg.RPC, key: key, http: newHTTPClient(), bondedVersion: cfg.Version, buyerOnly: cfg.BuyerOnly, wallet: wallet}
+	if cfg.SellerClient {
+		c.wallet = ""
+		c.sellerClient, c.author, c.authorKeyPath = true, wallet, cfg.NodeKey
+	}
 	if err := checkBuyTarget(c, contract, contract, cfg.CodeHash); err != nil {
 		return nil, err
+	}
+	if cfg.SellerClient {
+		var identity struct {
+			Flips []string `json:"flips"`
+		}
+		if err := c.call("dna_identity", []any{"0x" + c.author}, &identity); err != nil {
+			return nil, fmt.Errorf("seller relay identity read unavailable: %w", err)
+		}
 	}
 	token, err := randomStandaloneID()
 	if err != nil {
@@ -193,7 +260,7 @@ func newStandaloneServer(cfg standaloneConfig) (*standaloneServer, error) {
 		return nil, err
 	}
 	s := &standaloneServer{cfg: cfg, client: c, token: token, pairCode: pairCode}
-	if cfg.NodeKey != "" {
+	if cfg.NodeKey != "" || cfg.BuyerOnly {
 		base, err := os.UserConfigDir()
 		if err != nil {
 			return nil, fmt.Errorf("nonce journal directory unavailable: %w", err)
@@ -332,6 +399,16 @@ func (s *standaloneServer) privateDir(id string) (string, error) {
 }
 
 func (s *standaloneServer) commonArgs(command string) []string {
+	if s.cfg.BuyerOnly {
+		return []string{command, "-rpc", s.cfg.RPC, "-buyer-only",
+			"-network", NetworkNamePinned, "-contract", s.cfg.Contract,
+			"-code-hash", s.cfg.CodeHash}
+	}
+	if s.cfg.SellerClient {
+		return []string{command, "-rpc", s.cfg.RPC, "-seller-client",
+			"-network", NetworkNamePinned, "-contract", s.cfg.Contract,
+			"-code-hash", s.cfg.CodeHash}
+	}
 	return []string{command, "-rpc", s.cfg.RPC, "-key-file", s.cfg.KeyFile,
 		"-network", NetworkNamePinned, "-contract", s.cfg.Contract,
 		"-code-hash", s.cfg.CodeHash, "-direct-version", "7"}
@@ -632,7 +709,11 @@ func (s *standaloneServer) readAction(id string) (standaloneAction, error) {
 }
 
 func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
-	if s.cfg.NodeKey == "" {
+	keyPath := s.cfg.NodeKey
+	if s.cfg.BuyerOnly {
+		keyPath = s.cfg.WalletKey
+	}
+	if keyPath == "" {
 		return standaloneAction{}, errors.New("start the app with your nodekey file to enable signing")
 	}
 	var request struct {
@@ -646,6 +727,12 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 	a, err := s.readAction(request.ID)
 	if err != nil {
 		return standaloneAction{}, err
+	}
+	if s.cfg.BuyerOnly && !buyerBondedOperation(a.Operation) {
+		return standaloneAction{}, errors.New("buyer-only mode refuses this operation")
+	}
+	if s.cfg.SellerClient && !sellerClientBondedOperation(a.Operation) {
+		return standaloneAction{}, errors.New("seller-client mode refuses this operation")
 	}
 	signingPassphrase := ""
 	if s.cfg.Version == 9 && a.Operation == "queueSell" {
@@ -663,18 +750,24 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 	if a.Attempted {
 		return standaloneAction{}, errors.New("this action was already attempted; reconcile its saved hash and chain state before any new transaction")
 	}
-	var active string
-	if err := s.client.call("dna_getCoinbaseAddr", []any{}, &active); err != nil {
-		return standaloneAction{}, err
-	}
-	identity, err := directAddress(active)
+	identity, err := s.client.bondedIdentity()
 	if err != nil {
 		return standaloneAction{}, err
 	}
 	if identity != a.Signer {
 		return standaloneAction{}, errors.New("active identity changed since preparation")
 	}
-	key, err := crypto.LoadECDSA(s.cfg.NodeKey)
+	if s.cfg.BuyerOnly {
+		if address, err := buyerWalletAddress(keyPath); err != nil || address != identity {
+			return standaloneAction{}, errors.New("buyer wallet key changed or is no longer owner-only")
+		}
+	}
+	if s.cfg.SellerClient {
+		if address, err := sellerIdentityAddress(keyPath); err != nil || address != identity {
+			return standaloneAction{}, errors.New("seller identity key changed or is no longer owner-only")
+		}
+	}
+	key, err := crypto.LoadECDSA(keyPath)
 	if err != nil {
 		return standaloneAction{}, fmt.Errorf("load signing key: %w", err)
 	}
@@ -718,7 +811,7 @@ func (s *standaloneServer) submit(r *http.Request) (standaloneAction, error) {
 		return standaloneAction{}, err
 	}
 	args := s.commonArgs("submit")
-	args = append(args, "-prepared", filepath.Join(dir, "prepared.json"), "-nodekey", s.cfg.NodeKey,
+	args = append(args, "-prepared", filepath.Join(dir, "prepared.json"), "-nodekey", keyPath,
 		"-nonce", strconv.FormatUint(uint64(account.Nonce+1), 10), "-tx-epoch", strconv.FormatUint(uint64(chainEpoch.Epoch), 10),
 		"-max-fee", a.MaximumFee, "-signed", filepath.Join(dir, "signed.json"), "-broadcast")
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Minute)
@@ -773,8 +866,10 @@ func (s *standaloneServer) handler() http.Handler {
 			return
 		}
 		writeStandaloneJSON(w, struct {
-			Preview bool `json:"preview"`
-		}{Preview: false})
+			Preview   bool `json:"preview"`
+			BuyerOnly bool `json:"buyerOnly"`
+			Version   int  `json:"version"`
+		}{Preview: false, BuyerOnly: s.cfg.BuyerOnly, Version: s.cfg.Version})
 	})
 	assets := map[string]string{"/": "standalone_app.html", "/app.js": "standalone_app.js", "/app.css": "standalone_app.css"}
 	if s.cfg.Version == 8 || s.cfg.Version == 9 {
@@ -1062,7 +1157,13 @@ func runStandaloneApp(cfg standaloneConfig) error {
 	fmt.Println("Flips on Demand local app:", s.origin)
 	fmt.Println("Enter this pairing code in the browser:", s.pairCode)
 	if cfg.Version == 8 || cfg.Version == 9 {
-		fmt.Println("The page uses your own node. Trading requires your explicit review or a bounded automatic-trading permission. Keep this app open for delivery.")
+		if cfg.BuyerOnly {
+			fmt.Println("The page uses your local buyer wallet and an HTTPS relay. Keep this app open for delivery.")
+		} else if cfg.SellerClient {
+			fmt.Println("The page uses your local seller identity key and an HTTPS relay. Keep this app open for delivery.")
+		} else {
+			fmt.Println("The page uses your own node. Trading requires your explicit review or a bounded automatic-trading permission. Keep this app open for delivery.")
+		}
 	} else {
 		fmt.Println("The page uses your own node. Keep this terminal open; no transaction is sent without the review and submit step.")
 	}
@@ -1074,7 +1175,9 @@ func runStandaloneApp(cfg standaloneConfig) error {
 	server := &http.Server{Handler: s.handler(), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second}
 	if cfg.Version == 8 || cfg.Version == 9 {
 		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-		s.startV8Capture(ctx)
+		if !cfg.BuyerOnly && !cfg.SellerClient {
+			s.startV8Capture(ctx)
+		}
 		defer func() {
 			cancel()
 			if s.v8.CaptureDone != nil {

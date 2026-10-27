@@ -30,6 +30,9 @@ func retainBondedV8(c *client, contract string, t *bondedV8Trade, b *bondedV8Bun
 	for _, cid := range b.CIDs {
 		blob, e := ipfsFetch(c)(cid)
 		if e != nil {
+			if c.buyerOnly {
+				return nil, errors.New("encrypted flip unavailable from the relay; readiness was not sent")
+			}
 			return nil, errors.New("encrypted flip unavailable from the local node; readiness was not sent")
 		}
 		if len(blob) > maxRetainedFlipBytes {

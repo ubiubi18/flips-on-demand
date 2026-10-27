@@ -81,7 +81,7 @@ type rpcRequest struct {
 	Method string `json:"method"`
 	Params any    `json:"params"`
 	ID     int    `json:"id"`
-	Key    string `json:"key"`
+	Key    string `json:"key,omitempty"`
 }
 
 type rpcResponse struct {

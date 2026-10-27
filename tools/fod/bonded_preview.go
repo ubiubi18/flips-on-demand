@@ -95,11 +95,7 @@ func readBondedPreview(c *client, contract string, t *bondedV8Trade, b *bondedV8
 	if request.Operation != "preview" || request.Caller != t.Buyer || t.State != 5 {
 		return nil, errors.New("only the buyer can preview a completed purchase")
 	}
-	var coinbase string
-	if err := c.call("dna_getCoinbaseAddr", []any{}, &coinbase); err != nil {
-		return nil, err
-	}
-	owner, err := directAddress(coinbase)
+	owner, err := c.bondedIdentity()
 	if err != nil || owner != t.Buyer {
 		return nil, errors.New("purchase belongs to another active identity")
 	}

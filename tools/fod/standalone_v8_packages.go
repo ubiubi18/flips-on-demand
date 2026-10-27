@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/idena-network/idena-go/crypto"
 )
@@ -134,13 +137,9 @@ func (s *standaloneServer) v8Collect(m *bondedV8Snapshot) (any, error) {
 	if e := s.client.call("dna_epoch", []any{}, &after); e != nil {
 		return nil, e
 	}
-	var who string
-	if e := s.client.call("dna_getCoinbaseAddr", []any{}, &who); e != nil {
-		return nil, e
-	}
-	who, e := directAddress(who)
+	who, e := s.client.bondedIdentity()
 	if e != nil || who != m.Identity || after.Epoch != epoch.Epoch {
-		return nil, errors.New("node epoch or identity changed during discovery; retry")
+		return nil, errors.New("epoch or identity changed during discovery; retry")
 	}
 	p, e := s.canonicalPackage(m.Identity, epoch.Epoch, identity.Flips)
 	if e != nil {
@@ -199,6 +198,24 @@ func (s *standaloneServer) v8Collect(m *bondedV8Snapshot) (any, error) {
 			}
 		}
 	}
+	if s.cfg.SellerClient && epoch.Epoch > 1 {
+		available, err := s.v9SharedEpochs(m.Identity)
+		if err != nil {
+			return nil, err
+		}
+		for _, oldEpoch := range available {
+			if oldEpoch >= epoch.Epoch {
+				continue
+			}
+			attempted, err := s.v9FetchSharedEvidence(m.Identity, oldEpoch)
+			if err != nil {
+				return nil, err
+			}
+			if attempted {
+				break // Bound collection to one remote session per cycle.
+			}
+		}
+	}
 	entries, e := os.ReadDir(filepath.Join(s.cfg.DataDir, "packages"))
 	if e != nil {
 		return nil, e
@@ -233,6 +250,167 @@ func (s *standaloneServer) v8Collect(m *bondedV8Snapshot) (any, error) {
 		}
 	}
 	return map[string]any{"collected": len(p.CIDs), "epoch": epoch.Epoch}, nil
+}
+
+func (s *standaloneServer) v9SharedEpochs(author string) ([]uint16, error) {
+	if !s.cfg.SellerClient || !isHex(author, addressBytes) || author != strings.ToLower(author) ||
+		!s.client.bondedRPCAllowed() {
+		return nil, errors.New("seller shared evidence needs the local identity and v9 HTTPS relay")
+	}
+	if who, err := s.client.bondedIdentity(); err != nil || who != author {
+		return nil, errors.New("seller identity changed before shared evidence discovery")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	raw, status, err := s.v9SharedGET(ctx, "/evidence/v1/authors/"+author+"/epochs", 8<<10)
+	if status == http.StatusNotFound && err == nil {
+		return nil, errors.New("shared relay has no author evidence index; update the relay")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("shared evidence index unavailable: %w", err)
+	}
+	var index struct {
+		Epochs []uint16 `json:"epochs"`
+	}
+	if err := decodeStrict(raw, &index); err != nil || len(index.Epochs) > 256 {
+		return nil, errors.New("shared evidence index is invalid")
+	}
+	for i, n := range index.Epochs {
+		if n == 0 || (i > 0 && n >= index.Epochs[i-1]) {
+			return nil, errors.New("shared evidence index is not ordered")
+		}
+	}
+	return index.Epochs, nil
+}
+
+// Fetch only public session evidence and original ciphertext from the same
+// HTTPS relay as /rpc. Keys, vaults, and passphrases never cross this boundary.
+// The first result reports whether a remote fetch was attempted this cycle.
+func (s *standaloneServer) v9FetchSharedEvidence(author string, epoch uint16) (bool, error) {
+	if !s.cfg.SellerClient || epoch == 0 || !s.client.bondedRPCAllowed() {
+		return false, errors.New("seller shared evidence needs the local identity and v9 HTTPS relay")
+	}
+	if who, err := s.client.bondedIdentity(); err != nil || who != author {
+		return false, errors.New("seller identity changed before shared evidence collection")
+	}
+	id := bondedBundleID(9, author, epoch)
+	dir, err := s.packageDir(id)
+	if err != nil {
+		return false, err
+	}
+	var saved SessionBundle
+	savedRaw, savedErr := readBondedV8Private(filepath.Join(dir, "session.json"), 8<<20)
+	if savedErr == nil {
+		if decodeStrict(savedRaw, &saved) != nil || saved.Format != sessionBundleFormat ||
+			saved.Version != sessionBundleVersion || saved.Author != author || saved.Epoch != epoch {
+			return false, errors.New("existing session evidence is invalid; original preserved")
+		}
+		verified, err := sessionBundleFromAnchors(author, &saved.Inventory, &saved.Verdict)
+		if err != nil || verified.Epoch != epoch || !sameStrings(verified.Manifest, saved.Manifest) {
+			return false, errors.New("existing session evidence is invalid; original preserved")
+		}
+		complete := true
+		for _, cid := range saved.Manifest {
+			blob, err := readBondedV8Private(filepath.Join(dir, "blobs", cid), maxRetainedFlipBytes)
+			if err != nil {
+				complete = false
+				break
+			}
+			if ok, _ := verifyBlobCID(cid, blob, nil); !ok {
+				complete = false
+				break
+			}
+		}
+		if complete {
+			return false, nil
+		}
+	} else if !os.IsNotExist(savedErr) {
+		return false, savedErr
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	base := "/evidence/v1/epochs/" + fmt.Sprint(epoch) + "/authors/" + author + "/"
+	raw, status, err := s.v9SharedGET(ctx, base+"session", 8<<20)
+	if status == http.StatusNotFound && err == nil {
+		return true, nil // The advertised session disappeared; retry next cycle.
+	}
+	if err != nil {
+		return true, fmt.Errorf("shared session evidence unavailable: %w", err)
+	}
+	var session SessionBundle
+	if err := decodeStrict(raw, &session); err != nil || session.Format != sessionBundleFormat ||
+		session.Version != sessionBundleVersion || session.Author != author || session.Epoch != epoch {
+		return true, errors.New("shared session belongs to another author or epoch")
+	}
+	if _, err := s.canonicalPackage(author, epoch, session.Manifest); err != nil {
+		return true, err
+	}
+	if err := directVerifiedSession(s.client, &session); err != nil {
+		return true, fmt.Errorf("shared session failed canonical header verification: %w", err)
+	}
+	if savedErr == nil && (saved.Inventory.RootHex != session.Inventory.RootHex ||
+		saved.Verdict.RootHex != session.Verdict.RootHex || !sameStrings(saved.Manifest, session.Manifest)) {
+		return true, errors.New("shared session differs from existing evidence; original preserved")
+	}
+	blobs := make(map[string][]byte, len(session.Manifest))
+	for _, cid := range session.Manifest {
+		blob, _, err := s.v9SharedGET(ctx, base+"blobs/"+cid, maxRetainedFlipBytes)
+		if err != nil {
+			return true, fmt.Errorf("shared encrypted flip unavailable: %w", err)
+		}
+		if len(blob) == 0 {
+			return true, errors.New("shared encrypted flip is empty")
+		}
+		if ok, _ := verifyBlobCID(cid, blob, nil); !ok {
+			return true, errors.New("shared encrypted flip failed CID verification")
+		}
+		blobs[cid] = blob
+	}
+	if err := s.v8SaveSession(&session, raw); err != nil {
+		return true, err
+	}
+	for _, cid := range session.Manifest {
+		path := filepath.Join(dir, "blobs", cid)
+		if existing, err := readBondedV8Private(path, maxRetainedFlipBytes); err == nil {
+			if ok, _ := verifyBlobCID(cid, existing, nil); !ok {
+				return true, errors.New("existing encrypted flip failed CID verification; original preserved")
+			}
+			continue
+		} else if !os.IsNotExist(err) {
+			return true, err
+		}
+		if err := writeNewPoolV7PrivateFile(path, blobs[cid]); err != nil {
+			return true, err
+		}
+	}
+	return true, nil
+}
+
+func (s *standaloneServer) v9SharedGET(ctx context.Context, path string, limit int64) ([]byte, int, error) {
+	u, err := url.Parse(s.cfg.RPC)
+	if err != nil || !buyerRelayURL(s.cfg.RPC) {
+		return nil, 0, errors.New("seller relay URL is invalid")
+	}
+	u.Path, u.RawPath = path, ""
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	httpClient := *s.client.http.client
+	httpClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, resp.StatusCode, nil
+		}
+		return nil, resp.StatusCode, fmt.Errorf("shared evidence answered HTTP %d", resp.StatusCode)
+	}
+	raw, err := readBoundedResponse(resp, limit)
+	return raw, resp.StatusCode, err
 }
 func (s *standaloneServer) v8ImportArchive(root, who string) error {
 	entries, e := os.ReadDir(root)
@@ -365,10 +543,15 @@ func (s *standaloneServer) v8Packages(m *bondedV8Snapshot, epoch uint16) ([]stan
 		p.Witness = e == nil
 		_, e = readBondedV8Private(filepath.Join(dir, "keys.vault"), 1<<20)
 		p.Vault = e == nil
+		qualified := false
 		if raw, e := readBondedV8Private(filepath.Join(dir, "session.json"), 8<<20); e == nil {
 			var session SessionBundle
 			if json.Unmarshal(raw, &session) == nil && session.Author == p.Author && session.Epoch == p.Epoch && sameStrings(session.Manifest, p.CIDs) && directVerifiedSession(s.client, &session) == nil {
 				p.Session = true
+				if s.cfg.Version == 9 {
+					verdict, err := readBondedV9SessionVerdict(&session)
+					qualified = err == nil && verdict.Clean && int(verdict.Flips) == len(p.CIDs)
+				}
 			}
 		}
 		p.Status = "collecting"
@@ -376,6 +559,9 @@ func (s *standaloneServer) v8Packages(m *bondedV8Snapshot, epoch uint16) ([]stan
 		if p.Retained == len(p.CIDs) {
 			p.Status = "waiting"
 			p.Reason = "Waiting for validation. Keep your node and this app open."
+			if s.cfg.SellerClient {
+				p.Reason = "Waiting for validation evidence. Keep this app open."
+			}
 			if p.Epoch < epoch {
 				p.Status = "missing"
 				p.Reason = "Canonical validation evidence is missing. Import the saved session archive."
@@ -388,9 +574,17 @@ func (s *standaloneServer) v8Packages(m *bondedV8Snapshot, epoch uint16) ([]stan
 				p.Status = "prepare"
 				p.Reason = "Validation verified. Add the contract-bound content proof to register this package."
 				if s.cfg.Version == 9 {
-					p.Status = "ready"
-					p.Reason = "Validation verified. Ready to sell with your deposit."
+					if qualified {
+						p.Status = "ready"
+						p.Reason = "Canonical validation result and encrypted flips checked. Keys are protected locally."
+					} else {
+						p.Status = "unqualified"
+						p.Reason = "This session does not have a clean, matching validation result for a v9 listing."
+					}
 				}
+			} else if p.Session && s.cfg.Version == 9 && !qualified {
+				p.Status = "unqualified"
+				p.Reason = "This session does not have a clean, matching validation result for a v9 listing."
 			}
 		}
 		for _, b := range m.Bundles {

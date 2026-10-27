@@ -77,6 +77,16 @@ def node_arg(value):
     return {"name": parts[0], "port": port, "datadir": parts[2]}
 
 
+def author_arg(value):
+    parts = value.split(":", 1)
+    if len(parts) != 2 or not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", parts[0]):
+        raise argparse.ArgumentTypeError("--author must be LABEL:ADDRESS")
+    try:
+        return parts[0], address(parts[1])
+    except CaptureError as exc:
+        raise argparse.ArgumentTypeError("invalid --author address") from exc
+
+
 def rpc(node, method, params=None, limit=1_000_000):
     # The credential never appears in process arguments, files or error text.
     key = (Path(node["datadir"]) / "api.key").read_text().strip()
@@ -306,6 +316,38 @@ def cli_json(cli, args, path, validate, limit=1_000_000):
             os.unlink(temporary)
 
 
+def private_json_once(path, value):
+    """Publish immutable evidence without replacing an existing file."""
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if path.exists() or path.is_symlink():
+        if read_json(path, 8_000_000) != value:
+            raise CaptureError("saved-public-evidence-disagrees")
+        return
+    fd, temporary = tempfile.mkstemp(prefix=".write-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w") as stream:
+            json.dump(value, stream, sort_keys=True, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(temporary, path)
+        except FileExistsError:
+            if read_json(path, 8_000_000) != value:
+                raise CaptureError("saved-public-evidence-disagrees")
+    finally:
+        os.unlink(temporary)
+
+
+def cli_json_once(cli, args, path, validate):
+    """Recheck saved proofs through fod, then publish only if absent."""
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".check-", dir=path.parent) as work:
+        result = cli_json(cli, args, Path(work) / "result.json", validate)
+    private_json_once(path, result)
+    return result
+
+
 def capture_lottery(cli, nodes, archive, epoch, source_datadir=None):
     """Keep the public lottery order before the node clears its epoch store.
 
@@ -437,6 +479,214 @@ def capture_boundary(cli, nodes, archive, epoch, start_block, authors, source_da
     return done
 
 
+def checked_inventory(cids):
+    if (not isinstance(cids, list) or len(cids) > 32
+            or any(not isinstance(cid, str) or not CID.fullmatch(cid) for cid in cids)
+            or len(cids) != len(set(cids))):
+        raise CaptureError("invalid-encrypted-inventory")
+    return cids
+
+
+def public_manifests(nodes, archive, epoch, authors):
+    """Preliminary current inventories; final CIDs come from state proofs."""
+    manifests = {}
+    for label, author in authors.items():
+        identity = rpc(nodes[0], "dna_identity", ["0x" + author])
+        if not isinstance(identity, dict):
+            raise CaptureError("identity-inventory-unavailable")
+        cids = checked_inventory(identity.get("flips"))
+        manifests[label] = cids
+        private_json(archive / f"epoch-{epoch}" / "authors" / label / "live-inventory.json",
+                     {"epoch": epoch, "author": author, "observer": nodes[0]["name"],
+                      "manifest": cids})
+    return manifests
+
+
+def retain_public_blobs(nodes, archive, epoch, authors, manifests, final=False):
+    results = {}
+    for label, author in authors.items():
+        cids = checked_inventory(manifests[label])
+        destination = archive / f"epoch-{epoch}" / "authors" / label / "encrypted-blobs"
+        destination.mkdir(mode=0o700, parents=True, exist_ok=True)
+        blobs = {}
+        for cid in cids:
+            path = destination / cid
+            try:
+                blob = checked_blob(path, cid)
+                if blob is None:
+                    for node in nodes:
+                        try:
+                            response = rpc(node, "ipfs_get", [cid], limit=1_300_000)
+                            if not isinstance(response, str) or not response.startswith("0x"):
+                                raise CaptureError("invalid-encrypted-blob-response")
+                            blob = bytes.fromhex(response[2:])
+                            if flip_cid(blob) != cid:
+                                raise CaptureError("encrypted-blob-cid-mismatch")
+                            fd, temporary = tempfile.mkstemp(prefix=".blob-", dir=destination)
+                            try:
+                                with os.fdopen(fd, "wb") as stream:
+                                    stream.write(blob)
+                                    stream.flush()
+                                    os.fsync(stream.fileno())
+                                try:
+                                    os.link(temporary, path)
+                                except FileExistsError:
+                                    blob = checked_blob(path, cid)
+                            finally:
+                                os.unlink(temporary)
+                            break
+                        except (CaptureError, ValueError):
+                            blob = None
+                if blob is None:
+                    raise CaptureError("encrypted-blob-unavailable")
+                blobs[cid] = {"bytes": len(blob), "sha256": hashlib.sha256(blob).hexdigest()}
+            except (CaptureError, ValueError) as exc:
+                blobs[cid] = {"missing": True, "reason": str(exc)}
+        ready = final and bool(cids) and all("missing" not in item for item in blobs.values())
+        result = {"epoch": epoch, "author": author, "phase": "final" if final else "prefetch",
+                  "ready": ready, "blobs": blobs}
+        private_json(destination.parent / "blob-status.json", result)
+        results[label] = result
+    return results
+
+
+def capture_public_boundary(cli, nodes, archive, epoch, start_block, authors):
+    if start_block <= 1:
+        raise CaptureError("invalid-opening-block")
+    destination = archive / f"epoch-{epoch}"
+    destination.mkdir(mode=0o700, parents=True, exist_ok=True)
+    missing = []
+    for label in authors:
+        home = destination / "authors" / label
+        for phase, height in (("inventory", start_block - 1), ("verdict", start_block)):
+            path = home / f"{phase}.json"
+            if path.exists() or path.is_symlink():
+                anchor = read_json(path)
+                if anchor.get("height") != height:
+                    raise CaptureError("saved-anchor-wrong-height")
+                verify_header(nodes, anchor)
+            else:
+                missing.append((label, phase, height, path))
+    if missing:
+        work = snapshot(nodes[0], destination)
+        for label, phase, height, path in missing:
+            def check_anchor(anchor):
+                if anchor.get("height") != height:
+                    raise CaptureError("extracted-anchor-wrong-height")
+                verify_header(nodes, anchor)
+
+            cli_json_once(cli, ["session-anchor", "-datadir", str(work),
+                                "-state-height", str(height), "-author", authors[label]],
+                          path, check_anchor)
+        # Saved anchors suffice for retries even after the source is pruned.
+        shutil.rmtree(work)
+    if len(nodes) != 2:
+        return False  # One node can retain anchors; final bundles wait for two headers.
+    for label, author in authors.items():
+        home = destination / "authors" / label
+        anchors = {phase: read_json(home / f"{phase}.json")
+                   for phase in ("inventory", "verdict")}
+
+        def check_bundle(bundle):
+            if (bundle.get("epoch") != epoch or address(bundle.get("author")) != author
+                    or not checked_inventory(bundle.get("manifest"))):
+                raise CaptureError("bundle-identity-or-inventory-mismatch")
+            if any(bundle.get(phase) != anchors[phase] for phase in anchors):
+                raise CaptureError("bundle-anchor-mismatch")
+
+        cli_json_once(cli, ["session-bundle", "-inventory-anchor", str(home / "inventory.json"),
+                            "-verdict-anchor", str(home / "verdict.json"), "-author", author],
+                      home / "session-bundle.json", check_bundle)
+    return True
+
+
+def finish_public_epoch(cli, nodes, archive, epoch, authors):
+    if len(nodes) != 2:
+        raise CaptureError("two-observation-nodes-required-for-final-bundles")
+    destination = archive / f"epoch-{epoch}" / "authors"
+    bundles = {}
+    for label, author in authors.items():
+        home = destination / label
+        anchors = {phase: read_json(home / f"{phase}.json")
+                   for phase in ("inventory", "verdict")}
+        for anchor in anchors.values():
+            verify_header(nodes, anchor)
+
+        def check_bundle(bundle):
+            if (bundle.get("epoch") != epoch or address(bundle.get("author")) != author
+                    or not checked_inventory(bundle.get("manifest"))
+                    or any(bundle.get(phase) != anchors[phase] for phase in anchors)):
+                raise CaptureError("bundle-identity-or-anchor-mismatch")
+
+        bundles[label] = cli_json_once(
+            cli, ["session-bundle", "-inventory-anchor", str(home / "inventory.json"),
+                  "-verdict-anchor", str(home / "verdict.json"), "-author", author],
+            home / "session-bundle.json", check_bundle)
+    results = retain_public_blobs(nodes, archive, epoch, authors,
+                                  {label: bundle["manifest"] for label, bundle in bundles.items()},
+                                  final=True)
+    for label, result in results.items():
+        if not result["ready"]:
+            continue
+        home = destination / label
+        bundle_path = home / "session-bundle.json"
+        private_json_once(home / "ready.json", {
+            "format": "fod.shared-evidence-ready:v1", "epoch": epoch,
+            "author": authors[label], "bundleSha256": hashlib.sha256(bundle_path.read_bytes()).hexdigest(),
+            "manifest": bundles[label]["manifest"], "blobs": result["blobs"],
+            "headersCheckedAgainst": [node["name"] for node in nodes],
+        })
+    return results
+
+
+def observe_public(cli, nodes, archive, authors):
+    epoch, start, _, _ = canonical_view(nodes)
+    watch_file = archive / "watch.json"
+    if not watch_file.exists():
+        private_json(watch_file, {"epoch": epoch, "authors": authors, "pending": []})
+        return "armed", epoch
+    watch = read_json(watch_file)
+    if watch.get("authors") != authors:
+        raise CaptureError("public-author-enrollment-changed")
+    previous = int(watch["epoch"])
+    if epoch == previous:
+        return "waiting", epoch
+    if epoch < previous:
+        raise CaptureError("node-epoch-regressed")
+    if epoch > previous + 1:
+        private_json(archive / f"missed-after-{previous}.json",
+                     {"status": "missed_epoch", "from": previous, "to": epoch})
+        private_json(watch_file, {"epoch": epoch, "authors": authors,
+                                  "pending": watch.get("pending", [])})
+        return "missed", previous
+    bundled = capture_public_boundary(cli, nodes, archive, previous, start, authors)
+    private_json(watch_file, {"epoch": epoch, "authors": authors,
+                              "pending": [*watch.get("pending", []), previous]})
+    return ("captured" if bundled else "anchored"), previous
+
+
+def available_public_nodes(configured):
+    """Keep a boundary anchor when one configured node is temporarily down.
+
+    A live but disagreeing node is never ignored: canonical_view still checks
+    both headers when both nodes answer.
+    """
+    ready = []
+    for node in configured:
+        try:
+            rpc(node, "dna_epoch")
+            rpc(node, "bcn_lastBlock")
+        except (CaptureError, OSError) as exc:
+            if isinstance(exc, CaptureError) and str(exc) not in (
+                    "node-rpc-unavailable", "node-rpc-key-unavailable", "node-rpc-refused"):
+                raise
+            continue
+        ready.append(node)
+    if not ready:
+        raise CaptureError("no-observation-node-available")
+    return ready
+
+
 def observe(cli, nodes, archive):
     epoch, start, head, _ = canonical_view(nodes)
     watch_file = archive / "watch.json"
@@ -481,11 +731,100 @@ def observe(cli, nodes, archive):
     return "captured", previous
 
 
+def run_public(args, nodes, authors):
+    archive = args.archive / "public-authors"
+    archive.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(archive, 0o700)
+    if args.prefetch_blobs:
+        try:
+            nodes = available_public_nodes(nodes)
+            epoch, _, _, _ = canonical_view(nodes)
+            watch = read_json(archive / "watch.json")
+            if watch.get("epoch") != epoch or watch.get("authors") != authors:
+                raise CaptureError("public-watch-does-not-match-nodes-or-authors")
+            manifests = public_manifests(nodes, archive, epoch, authors)
+            results = retain_public_blobs(nodes, archive, epoch, authors, manifests)
+            counts = {label: len(manifests[label]) for label in authors}
+            print(f"indexer_public_prefetched_epoch={epoch} " +
+                  " ".join(f"{label}={sum('missing' not in item for item in results[label]['blobs'].values())}/{required}"
+                           for label, required in counts.items()), flush=True)
+            return 0 if all(required and all("missing" not in item for item in results[label]["blobs"].values())
+                            for label, required in counts.items()) else 1
+        except Exception as exc:
+            code = str(exc) if isinstance(exc, CaptureError) else type(exc).__name__
+            print(f"indexer_public_prefetch_failed:{code}", flush=True)
+            return 1
+    last_error = None
+    last_report = 0
+    last_lottery_attempt = 0
+    last_blob_attempt = 0
+    configured_nodes = nodes
+    while True:
+        try:
+            nodes = available_public_nodes(configured_nodes)
+            status, epoch = observe_public(args.cli, nodes, archive, authors)
+            last_error = None
+            if status != "waiting":
+                print(f"indexer_public_{status}_epoch={epoch}", flush=True)
+            watch_path = archive / "watch.json"
+            watch = read_json(watch_path)
+            active_epoch = watch["epoch"]
+            lottery = archive / f"epoch-{active_epoch}" / "lottery-ready.json"
+            if (len(nodes) == 2 and not lottery.exists()
+                    and time.monotonic() - last_lottery_attempt >= 30):
+                period = rpc(nodes[0], "dna_epoch").get("currentPeriod")
+                if period not in (None, "None", 0):
+                    last_lottery_attempt = time.monotonic()
+                    if capture_lottery(args.cli, nodes, archive, active_epoch):
+                        print(f"indexer_public_lottery_captured_epoch={active_epoch}", flush=True)
+            if (status in ("captured", "anchored") or (args.once and watch.get("pending"))
+                    or (not args.once and time.monotonic() - last_blob_attempt >= 300)):
+                last_blob_attempt = time.monotonic()
+                if len(nodes) == 2:
+                    pending = []
+                    for previous in watch.get("pending", []):
+                        homes = {label: archive / f"epoch-{previous}" / "authors" / label
+                                 for label in authors}
+                        if all((home / "ready.json").exists() for home in homes.values()):
+                            continue
+                        if not all((home / "session-bundle.json").exists() for home in homes.values()):
+                            opening = read_json(next(iter(homes.values())) / "verdict.json")["height"]
+                            capture_public_boundary(args.cli, nodes, archive, previous, opening, authors)
+                        already_ready = {label for label, home in homes.items()
+                                         if (home / "ready.json").exists()}
+                        results = finish_public_epoch(args.cli, nodes, archive, previous, authors)
+                        for label, result in results.items():
+                            if result["ready"] and label not in already_ready:
+                                print(f"indexer_public_ready_epoch={previous}_author={label}", flush=True)
+                        if not all(result["ready"] for result in results.values()):
+                            pending.append(previous)
+                    if pending != watch.get("pending", []):
+                        watch["pending"] = pending
+                        private_json(watch_path, watch)
+                if not args.once:
+                    manifests = public_manifests(nodes, archive, active_epoch, authors)
+                    if any(manifests.values()):
+                        retain_public_blobs(nodes, archive, active_epoch, authors, manifests)
+        except Exception as exc:
+            code = str(exc) if isinstance(exc, CaptureError) else type(exc).__name__
+            if code != last_error or time.monotonic() - last_report > 1800:
+                print(f"indexer_public_waiting_after:{code}", flush=True)
+                last_error = code
+                last_report = time.monotonic()
+            if args.once:
+                return 1
+        if args.once:
+            return 0
+        time.sleep(5)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cli", type=Path, required=True)
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--node", action="append", type=node_arg, required=True)
+    parser.add_argument("--author", action="append", type=author_arg,
+                        help="opt-in public author enrollment as LABEL:ADDRESS (repeatable)")
     parser.add_argument("--once", action="store_true", help="check once, then exit")
     parser.add_argument("--prefetch-blobs", action="store_true",
                         help="retain the current authors' CID-checked encrypted flips, then exit")
@@ -495,10 +834,16 @@ def main():
     nodes = args.node
     if len({node["name"] for node in nodes}) != len(nodes):
         parser.error("node names must be unique")
+    authors = dict(args.author or [])
+    if args.author and (len(nodes) > 2 or len(authors) != len(args.author)
+                        or len(set(authors.values())) != len(authors)):
+        parser.error("public mode needs 1-2 nodes and unique author labels and addresses")
     if args.once and args.prefetch_blobs:
         parser.error("--once and --prefetch-blobs are separate checks")
     args.archive.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(args.archive, 0o700)
+    if args.author:
+        return run_public(args, nodes, authors)
     if args.prefetch_blobs:
         try:
             epoch, _, _, _ = canonical_view(nodes)

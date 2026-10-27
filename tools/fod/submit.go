@@ -612,12 +612,52 @@ func maxFeeShortfall(operation string, signedBytes uint64, feePerGas, maxFee *bi
 	return nil
 }
 
-func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, maxFee, tips *big.Int, outPath string, broadcast bool, rpcURL, apiKey string, feePerGas *big.Int, approvedContract, approvedCodeHash string) {
+func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, maxFee, tips *big.Int, outPath string, broadcast bool, rpcURL, apiKey string, feePerGas *big.Int, approvedContract, approvedCodeHash string, remoteFlags ...bool) {
+	buyerOnly := len(remoteFlags) > 0 && remoteFlags[0]
+	sellerClient := len(remoteFlags) > 1 && remoteFlags[1]
 	explicitFeePerGas := feePerGas
 	prepared, err := loadPreparedAction(preparedPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "prepared action refused: %v\n", err)
 		os.Exit(1)
+	}
+	wallet := ""
+	if buyerOnly && sellerClient {
+		fmt.Fprintln(os.Stderr, "choose one remote connection mode")
+		os.Exit(1)
+	}
+	if buyerOnly {
+		if !buyerRelayURL(rpcURL) || apiKey != "" || prepared.BondedV8 == nil || prepared.BondedV8.version() != 9 ||
+			prepared.Format != bondedFormat(9)+prepared.Operation || !buyerBondedOperation(prepared.Operation) {
+			fmt.Fprintln(os.Stderr, "buyer-only submit requires a v9 buyer action and an HTTPS /rpc relay without a node API key")
+			os.Exit(1)
+		}
+		wallet, err = buyerWalletAddress(nodeKeyPath)
+		if err != nil || wallet != prepared.BondedV8.Caller {
+			fmt.Fprintln(os.Stderr, "buyer-only submit key does not match the prepared caller")
+			os.Exit(1)
+		}
+	}
+	author := ""
+	if sellerClient {
+		if !buyerRelayURL(rpcURL) || apiKey != "" || prepared.BondedV8 == nil || prepared.BondedV8.version() != 9 ||
+			prepared.Format != bondedFormat(9)+prepared.Operation || !sellerClientBondedOperation(prepared.Operation) {
+			fmt.Fprintln(os.Stderr, "seller-client submit requires a supported v9 action and an HTTPS /rpc relay without a node API key")
+			os.Exit(1)
+		}
+		author, err = sellerIdentityAddress(nodeKeyPath)
+		if err != nil || author != prepared.BondedV8.Caller {
+			fmt.Fprintln(os.Stderr, "seller-client identity key does not match the prepared caller")
+			os.Exit(1)
+		}
+	}
+	submitVersion := 0
+	if prepared.BondedV8 != nil {
+		submitVersion = prepared.BondedV8.version()
+	}
+	submitClient := func() *client {
+		return &client{url: rpcURL, key: apiKey, http: newHTTPClient(), bondedVersion: submitVersion,
+			buyerOnly: buyerOnly, wallet: wallet, sellerClient: sellerClient, author: author, authorKeyPath: nodeKeyPath}
 	}
 	if prepared.Operation == operationReveal && outPath == "" {
 		fmt.Fprintln(os.Stderr, "reveal refused: -out FILE is required to keep unrevealed keys out of terminal output")
@@ -632,7 +672,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 		os.Exit(1)
 	}
 	if prepared.Operation == operationBuy || isDirectFormat(prepared.Format) || isPoolV7Format(prepared.Format) || isBondedV8Format(prepared.Format) {
-		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		c := submitClient()
 		if isPoolV7Format(prepared.Format) {
 			if err := validatePoolV7ApprovedHash(prepared, approvedCodeHash); err != nil {
 				fmt.Fprintf(os.Stderr, "v7 pool refused before signing: %v\n", err)
@@ -650,7 +690,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 		os.Exit(1)
 	}
 	if prepared.Operation == operationBuy && !isDirectFormat(prepared.Format) && !isPoolV7Format(prepared.Format) {
-		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		c := submitClient()
 		if err := validatePreparedBuy(c, prepared); err != nil {
 			fmt.Fprintf(os.Stderr, "purchase refused before signing: %v\n", err)
 			os.Exit(1)
@@ -658,18 +698,18 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 		prepared.buyTargetValidated = prepared.Contract
 	}
 	if prepared.Operation == operationConfirm && !isDirectFormat(prepared.Format) && !isPoolV7Format(prepared.Format) {
-		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		c := submitClient()
 		if err := validatePreparedConfirm(c, prepared, identity); err != nil {
 			fmt.Fprintf(os.Stderr, "confirmation refused before signing: %v\n", err)
 			os.Exit(1)
 		}
 	}
-	if err := validatePreparedDisclosure(&client{url: rpcURL, key: apiKey, http: newHTTPClient()}, prepared); err != nil {
+	if err := validatePreparedDisclosure(submitClient(), prepared); err != nil {
 		fmt.Fprintf(os.Stderr, "disclosure refused before signing: %v\n", err)
 		os.Exit(1)
 	}
 	if isDirectFormat(prepared.Format) {
-		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		c := submitClient()
 		if err := validatePreparedDirect(c, prepared, identity); err != nil {
 			fmt.Fprintf(os.Stderr, "direct sale refused before signing: %v\n", err)
 			os.Exit(1)
@@ -687,7 +727,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 		}
 	}
 	if isPoolV7Format(prepared.Format) {
-		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		c := submitClient()
 		if err := validatePreparedPoolV7(c, prepared, identity); err != nil {
 			fmt.Fprintf(os.Stderr, "v7 pool refused before signing: %v\n", err)
 			os.Exit(1)
@@ -715,7 +755,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 	}
 
 	if isBondedV8Format(prepared.Format) {
-		c := &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		c := submitClient()
 		if err := validatePoolV7ApprovedHash(prepared, approvedCodeHash); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -756,7 +796,7 @@ func runSubmit(preparedPath, nodeKeyPath string, nonce uint32, epoch uint16, max
 	// left to the caller to look up. An explicit -fee-per-gas still wins.
 	var node *client
 	if broadcast {
-		node = &client{url: rpcURL, key: apiKey, http: newHTTPClient()}
+		node = submitClient()
 		if feePerGas == nil {
 			var chainFee big.Int
 			if err := node.call("bcn_feePerGas", []any{}, &chainFee); err == nil && chainFee.Sign() > 0 {

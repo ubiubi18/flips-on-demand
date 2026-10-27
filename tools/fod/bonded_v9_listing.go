@@ -32,6 +32,13 @@ func fillBondedV9Listing(c *client, contract string, r *bondedV8Request, pass st
 	if e = directVerifiedSession(c, session); e != nil {
 		return e
 	}
+	verdict, e := readBondedV9SessionVerdict(session)
+	if e != nil {
+		return e
+	}
+	if !verdict.Clean || int(verdict.Flips) != len(session.Manifest) {
+		return errors.New("validation result does not qualify this flip set for v9 listing")
+	}
 	if session.Author != r.Caller {
 		return errors.New("only the canonical author can list this package")
 	}
@@ -97,7 +104,7 @@ func fillBondedV9Listing(c *client, contract string, r *bondedV8Request, pass st
 	put(36, contract)
 	put(56, session.Author)
 	binary.BigEndian.PutUint16(j[76:78], session.Epoch)
-	binary.BigEndian.PutUint16(j[78:80], uint16(len(session.Manifest)))
+	binary.BigEndian.PutUint16(j[78:80], verdict.Flips)
 	put(80, labelDigest(ConsensusVersionPinned))
 	put(112, labelDigest(EligibilityPolicyV1))
 	put(144, inventoryCommitment(session.Author, session.Epoch, session.Manifest))

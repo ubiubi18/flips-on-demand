@@ -16,14 +16,19 @@ package main
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"math/big"
+	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/idena-network/idena-go/blockchain/attachments"
 	"github.com/idena-network/idena-go/blockchain/types"
@@ -59,10 +64,137 @@ type client struct {
 	key           string
 	http          *httpClient
 	bondedVersion int
+	buyerOnly     bool
+	wallet        string
+	sellerClient  bool
+	author        string
+	authorKeyPath string
 }
 
 func (c *client) call(method string, params any, result any) error {
 	return c.http.call(c.url, c.key, method, params, result)
+}
+
+func buyerRelayURL(endpoint string) bool {
+	u, err := url.Parse(endpoint)
+	return err == nil && u.Scheme == "https" && u.Hostname() != "" && u.User == nil &&
+		u.Opaque == "" && u.Path == "/rpc" && u.RawQuery == "" && u.Fragment == ""
+}
+
+func (c *client) bondedRPCAllowed() bool {
+	if c == nil || c.http == nil {
+		return false
+	}
+	if c.sellerClient {
+		author, err := directAddress(c.author)
+		if c.buyerOnly || c.bondedVersion != 9 || !buyerRelayURL(c.url) || c.key != "" ||
+			c.wallet != "" || !filepath.IsAbs(c.authorKeyPath) || err != nil || author != c.author {
+			return false
+		}
+		current, err := sellerIdentityAddress(c.authorKeyPath)
+		return err == nil && current == author
+	}
+	if c.buyerOnly {
+		wallet, err := directAddress(c.wallet)
+		return c.bondedVersion == 9 && buyerRelayURL(c.url) && c.key == "" && err == nil && wallet == c.wallet
+	}
+	return directLocalRPC(c.url) && c.key != ""
+}
+
+func (c *client) bondedIdentity() (string, error) {
+	if !c.bondedRPCAllowed() {
+		return "", fmt.Errorf("bonded RPC connection is not allowed")
+	}
+	if c.buyerOnly {
+		return c.wallet, nil
+	}
+	if c.sellerClient {
+		author, err := sellerIdentityAddress(c.authorKeyPath)
+		if err != nil || author != c.author {
+			return "", errors.New("seller identity key changed or is no longer owner-only")
+		}
+		return author, nil
+	}
+	var who string
+	if err := c.call("dna_getCoinbaseAddr", []any{}, &who); err != nil {
+		return "", err
+	}
+	return directAddress(who)
+}
+
+func runBuyerWalletCreate(args []string) error {
+	f := flag.NewFlagSet("buyer-wallet-create", flag.ContinueOnError)
+	out := f.String("out", "", "new owner-only wallet key file")
+	if err := f.Parse(args); err != nil {
+		return err
+	}
+	if f.NArg() != 0 || !filepath.IsAbs(*out) {
+		return fmt.Errorf("buyer-wallet-create needs -out ABSOLUTE_FILE")
+	}
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		return err
+	}
+	secret := crypto.FromECDSA(key)
+	defer clear(secret)
+	if err := writeNewPoolV7PrivateFile(*out, []byte(hex.EncodeToString(secret))); err != nil {
+		return err
+	}
+	address, err := nodekeyAddressOf(key)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Buyer wallet address: 0x" + address)
+	return nil
+}
+
+func runBuyerRelay(args []string) error {
+	f := flag.NewFlagSet("buyer-relay", flag.ContinueOnError)
+	rpc := f.String("rpc", "", "keyed loopback node RPC URL")
+	keyFile := f.String("key-file", "", "owner-only node RPC key file")
+	contract := f.String("contract", "", "pinned v9 contract address")
+	codeHash := f.String("code-hash", "", "independently verified v9 deployed code hash for shared mode")
+	sharedArchive := f.String("shared-archive-dir", "", "existing local validation archive to share with seller clients")
+	listen := f.String("listen", "127.0.0.1:9069", "loopback listen address")
+	if err := f.Parse(args); err != nil {
+		return err
+	}
+	if f.NArg() != 0 || !directLocalRPC(*rpc) {
+		return fmt.Errorf("buyer-relay requires a loopback node -rpc URL")
+	}
+	if (*sharedArchive == "") != (*codeHash == "") {
+		return errors.New("shared market mode needs both -shared-archive-dir and -code-hash")
+	}
+	host, _, err := net.SplitHostPort(*listen)
+	if err != nil || net.ParseIP(host) == nil || !net.ParseIP(host).IsLoopback() {
+		return fmt.Errorf("buyer-relay -listen must use a loopback IP and port")
+	}
+	apiKey, err := resolveRPCKey(*keyFile, true)
+	if err != nil {
+		return err
+	}
+	node := &client{url: *rpc, key: apiKey, http: newHTTPClient()}
+	var handler http.Handler
+	if *sharedArchive != "" {
+		handler, err = newSharedMarketHandler(node, *contract, *codeHash, *sharedArchive)
+	} else {
+		handler, err = newBuyerRelayHandler(node, *contract)
+	}
+	if err != nil {
+		return err
+	}
+	listener, err := net.Listen("tcp", *listen)
+	if err != nil {
+		return err
+	}
+	defer listener.Close()
+	if *sharedArchive != "" {
+		fmt.Println("Shared market relay listening on http://" + listener.Addr().String() + "/rpc")
+	} else {
+		fmt.Println("Buyer relay listening on http://" + listener.Addr().String() + "/rpc")
+	}
+	server := &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second}
+	return server.Serve(listener)
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +257,27 @@ type TxSummary struct {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "import-idena-backup" {
+		if err := runImportIdenaBackup(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "buyer-relay" {
+		if err := runBuyerRelay(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "buyer-wallet-create" {
+		if err := runBuyerWalletCreate(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) > 1 && (os.Args[1] == "app-v8" || os.Args[1] == "app-v9") {
 		version := 8
 		if os.Args[1] == "app-v9" {
@@ -150,6 +303,8 @@ func main() {
 	var (
 		rpcURL              = flag.String("rpc", "http://127.0.0.1:9019", "node RPC URL")
 		apiKeyFile          = flag.String("key-file", "", "owner-only file containing the node RPC API key")
+		buyerOnlySubmit     = flag.Bool("buyer-only", false, "v9 buyer-only submission through an HTTPS /rpc relay")
+		sellerClientSubmit  = flag.Bool("seller-client", false, "v9 seller-client submission through an HTTPS /rpc relay")
 		from                = flag.Uint64("from", 0, "first block height (inclusive)")
 		to                  = flag.Uint64("to", 0, "last block height (inclusive)")
 		epochFilter         = flag.Int("epoch", -1, "only keep transactions of this epoch (-1 = all)")
@@ -253,6 +408,14 @@ func main() {
 	// Command form: `fod <command> [flags]`. normalizeArgs maps the command to
 	// the internal mode and keeps the older `-mode` flag working.
 	flag.CommandLine.Parse(normalizeArgs(os.Args[1:]))
+	if *buyerOnlySubmit && (*mode != "submit" || !buyerRelayURL(*rpcURL) || flagWasSet("key-file")) {
+		fmt.Fprintln(os.Stderr, "-buyer-only is limited to v9 submit with an HTTPS /rpc relay and no node API key")
+		os.Exit(2)
+	}
+	if *sellerClientSubmit && (*buyerOnlySubmit || *mode != "submit" || !buyerRelayURL(*rpcURL) || flagWasSet("key-file")) {
+		fmt.Fprintln(os.Stderr, "-seller-client is limited to v9 submit with an HTTPS /rpc relay and no node API key")
+		os.Exit(2)
+	}
 	if *mode == "app" && *appPreviewFlag {
 		if err := runStandaloneDemo(); err != nil {
 			fmt.Fprintf(os.Stderr, "synthetic app preview refused: %v\n", err)
@@ -559,7 +722,7 @@ func main() {
 			}
 			feePerGas = parsed
 		}
-		runSubmit(*preparedPath, *nodeKeyPath, nonce, epoch, maxFee, tips, *signedPath, *broadcastFlag, *rpcURL, apiKey, feePerGas, *contractFlag, *codeHashFlag)
+		runSubmit(*preparedPath, *nodeKeyPath, nonce, epoch, maxFee, tips, *signedPath, *broadcastFlag, *rpcURL, apiKey, feePerGas, *contractFlag, *codeHashFlag, *buyerOnlySubmit, *sellerClientSubmit)
 		return
 	}
 

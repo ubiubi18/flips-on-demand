@@ -13,9 +13,9 @@
     </header>
     <main>
       <section id="pairing">
-        <p class="eyebrow">YOUR NODE. YOUR MARKET.</p>
-        <h1>Connect your local market</h1>
-        <p>Enter the pairing code shown by the app on this computer.</p>
+        <p class="eyebrow" id="pair-kicker">YOUR NODE. YOUR MARKET.</p>
+        <h1 id="pair-title">Connect your local market</h1>
+        <p id="pair-copy">Enter the pairing code shown by the app on this computer.</p>
         <form id="pair-form">
           <label>Pairing code<input id="pair-code" autocomplete="off" required /></label
           ><button class="primary">Connect</button>
@@ -33,6 +33,7 @@
               <option value="pool">Ready · funded pool</option>
               <option value="refill">Deposit needs refill</option>
               <option value="purchased">Completed purchase · view flips</option>
+              <option value="buyer">Buyer without a node · market</option>
             </select></label
           >
         </div>
@@ -72,11 +73,11 @@
           </p>
         </section>
         <section id="tab-flips">
-          <div class="section-heading">
+          <div class="section-heading" id="package-heading">
             <h2>Your packages</h2>
             <button id="collect">Collect & check</button>
           </div>
-          <p class="muted">
+          <p class="muted" id="package-copy">
             Your flips are grouped by author and epoch. Original encrypted content stays on your
             computer.
           </p>
@@ -85,7 +86,7 @@
             <h2>Recent purchased sets</h2>
           </div>
           <div id="purchased"></div>
-          <details>
+          <details id="package-import">
             <summary>Add saved validation evidence</summary>
             <form id="import-form">
               <label>Session bundle<input name="session" type="file" required /></label
@@ -100,11 +101,15 @@
         <section id="tab-market" hidden>
           <div class="quotes">
             <div><span>Buy a package</span><strong id="buy-quote">—</strong></div>
-            <div><span>Sell a package</span><strong id="sell-quote">—</strong></div>
+            <div id="sell-quote-box"><span>Sell a package</span><strong id="sell-quote">—</strong></div>
           </div>
           <p class="small">
             Live curve quotes. Final amounts can move within your approved limits; queues do not
             guarantee a fill.
+          </p>
+          <p id="relay-note" class="small" hidden>
+            Your configured relay supplies chain data and encrypted flip files. It sees your
+            address and orders, but your signing and flip keys stay on this computer.
           </p>
           <section class="market-history" aria-labelledby="history-title">
             <div class="section-heading">
@@ -119,7 +124,7 @@
               <p id="buy-description"></p>
               <button class="primary" id="buy">Join buy queue</button>
             </section>
-            <section>
+            <section id="sell-panel">
               <h2>Sell your package</h2>
               <label>Package<select id="sell-package"></select></label>
               <p id="sell-description"></p>
@@ -140,7 +145,7 @@
           </div>
           <div id="unlock-area">
             <h2>Enable one-click trading</h2>
-            <p>
+            <p id="unlock-copy">
               For eight hours, this local app may place orders you click, advance the shared queues,
               deliver your encrypted keys and accept purchases only after every flip decrypts and is
               saved. Keep it open for automatic processing.
@@ -174,7 +179,7 @@
                     required
                 /></label>
               </div>
-              <p class="small">
+              <p class="small" id="vault-copy">
                 This local password protects saved flip keys. It is separate from your wallet
                 password. Use at least 12 characters; sellers use their existing saved-set password.
               </p>
@@ -233,7 +238,7 @@
         </section>
         <footer>
           <span id="wallet"></span><span id="block"></span
-          ><span>Local node · No hosted market service</span>
+          ><span id="service-label">Local node · No hosted market service</span>
         </footer>
       </div>
       <dialog id="review">

@@ -159,6 +159,10 @@ export function demoStatus(scenario = 'waiting', version = 8) {
     m.trades = [{ id: '7', buyer: m.identity, seller: 'example-seller', state: 5,
       price: version === 9 ? (500n * ATOMS).toString() : (12n * ATOMS).toString() }]
   }
+  if (scenario === 'buyer') {
+    m.sells = [{ id: '2', seller: 'example-seller', minimum: (475n * ATOMS).toString(),
+      capacity: (750n * ATOMS).toString(), expires: 5320, state: 1 }]
+  }
   if (version === 9) {
     if (scenario !== 'waiting') {
       m.account.target = (1500n * ATOMS).toString()
@@ -166,6 +170,10 @@ export function demoStatus(scenario = 'waiting', version = 8) {
     }
     if (scenario === 'demand') m.buys[0].maximum = (600n * ATOMS).toString()
     if (scenario === 'pool') m.reserve = (1000n * ATOMS).toString()
+    if (scenario === 'buyer') {
+      m.account.target = (750n * ATOMS).toString()
+      m.account.balance = (750n * ATOMS).toString()
+    }
     const numerator = (BigInt(m.reserve) + 4500n * ATOMS) * 100n
     const units = BigInt(m.inventory) + 1000n
     m.buyQuote = ((numerator + units - 101n) / (units - 100n)).toString()
@@ -175,9 +183,10 @@ export function demoStatus(scenario = 'waiting', version = 8) {
   if (scenario === 'demand') m.escrow = m.buys[0].maximum
   return {
     market: m,
+    buyerOnly: scenario === 'buyer',
     epoch: 233,
     wallet: version === 9 ? '5000' : '100',
-    packages: [p],
+    packages: scenario === 'buyer' ? [] : [p],
     canSign: false,
     automatic: false,
     message: 'Example data only. Nothing is connected.',

@@ -35,6 +35,94 @@ func isBondedV8Format(s string) bool {
 	return strings.HasPrefix(s, bondedV8Format) || strings.HasPrefix(s, bondedFormat(9))
 }
 func bondedFormat(version int) string { return "fod.prepared-bonded-v" + strconv.Itoa(version) + "-" }
+
+func buyerBondedOperation(op string) bool {
+	switch op {
+	case "depositStake", "withdrawStake", "queueBuy", "cancelBuy", "matchNext", "ready", "accept", "challenge", "expireTrade":
+		return true
+	}
+	return false
+}
+
+func sellerClientBondedOperation(op string) bool {
+	if buyerBondedOperation(op) {
+		return true
+	}
+	switch op {
+	case "queueSell", "cancelSell", "acquire", "deliver", "proveDelivery":
+		return true
+	}
+	return false
+}
+
+func verifySellerClientBondedAction(c *client, contract string, req *bondedV8Request) error {
+	if !c.sellerClient {
+		return nil
+	}
+	if req.version() != 9 || !sellerClientBondedOperation(req.Operation) || req.Caller != c.author {
+		return errors.New("seller-client action differs from the local identity key or supported v9 operations")
+	}
+	switch req.Operation {
+	case "cancelSell":
+		raw, err := v8record(c, contract, bondedPrefix(c)+"sell/", req.ID, 117)
+		if err != nil {
+			return err
+		}
+		if hex.EncodeToString(raw[32:52]) != c.author {
+			return errors.New("sell order belongs to another identity")
+		}
+	case "cancelBuy":
+		raw, err := v8record(c, contract, bondedPrefix(c)+"buy/", req.ID, 110)
+		if err != nil {
+			return err
+		}
+		if hex.EncodeToString(raw[:20]) != c.author {
+			return errors.New("buy order belongs to another identity")
+		}
+	case "deliver", "proveDelivery", "challenge", "expireTrade":
+		trade, err := readBondedV8Trade(c, contract, req.ID)
+		if err != nil {
+			return err
+		}
+		if req.Operation == "deliver" || req.Operation == "proveDelivery" {
+			if trade.Seller != c.author {
+				return errors.New("trade belongs to another seller")
+			}
+		} else if req.Operation == "challenge" && trade.Buyer != c.author ||
+			req.Operation == "expireTrade" && trade.Seller != c.author && trade.Buyer != c.author {
+			return errors.New("trade belongs to another identity")
+		}
+	}
+	return nil
+}
+
+func verifyBuyerBondedAction(c *client, contract string, req *bondedV8Request) error {
+	if !c.buyerOnly {
+		return nil
+	}
+	if !buyerBondedOperation(req.Operation) || req.version() != 9 || req.Caller != c.wallet {
+		return errors.New("buyer-only action differs from the local wallet")
+	}
+	switch req.Operation {
+	case "cancelBuy":
+		raw, err := v8record(c, contract, bondedPrefix(c)+"buy/", req.ID, 110)
+		if err != nil {
+			return err
+		}
+		if hex.EncodeToString(raw[:20]) != c.wallet {
+			return errors.New("buy order belongs to another wallet")
+		}
+	case "challenge", "expireTrade":
+		trade, err := readBondedV8Trade(c, contract, req.ID)
+		if err != nil {
+			return err
+		}
+		if trade.Buyer != c.wallet {
+			return errors.New("trade belongs to another buyer")
+		}
+	}
+	return nil
+}
 func bondedVersion(c *client) int {
 	if c != nil && c.bondedVersion == 9 {
 		return 9
@@ -285,8 +373,8 @@ func bondedQuotes(version int, reserve, inventory *big.Int) (buy, sell *big.Int,
 	return
 }
 func readBondedV8Snapshot(c *client, contract, pin string) (*bondedV8Snapshot, error) {
-	if c == nil || !directLocalRPC(c.url) || c.key == "" {
-		return nil, errors.New("v8 requires keyed loopback RPC")
+	if !c.bondedRPCAllowed() {
+		return nil, errors.New("bonded market requires an approved RPC connection")
 	}
 	if _, e := v8hex(contract, 20); e != nil {
 		return nil, e
@@ -301,11 +389,7 @@ func readBondedV8Snapshot(c *client, contract, pin string) (*bondedV8Snapshot, e
 	if e = checkBuyTarget(c, contract, contract, pin); e != nil {
 		return nil, e
 	}
-	var identity string
-	if e = c.call("dna_getCoinbaseAddr", []any{}, &identity); e != nil {
-		return nil, e
-	}
-	identity, e = directAddress(identity)
+	identity, e := c.bondedIdentity()
 	if e != nil {
 		return nil, e
 	}
@@ -571,6 +655,9 @@ func validatePreparedBondedV8(c *client, p *preparedAction, identity *ecdsa.Priv
 	if sender != p.BondedV8.Caller {
 		return errors.New("v8 signing identity mismatch")
 	}
+	if c.buyerOnly && (!buyerBondedOperation(p.Operation) || p.BondedV8.version() != 9) {
+		return errors.New("buyer-only signing refuses this operation")
+	}
 	data, amount, e := encodeBondedV8(p.BondedV8)
 	if e != nil {
 		return e
@@ -578,16 +665,22 @@ func validatePreparedBondedV8(c *client, p *preparedAction, identity *ecdsa.Priv
 	if p.Amount != amount || p.Calldata != hex.EncodeToString(data) {
 		return errors.New("v8 terms differ from signed call")
 	}
-	if !directLocalRPC(c.url) || c.key == "" {
-		return errors.New("v8 signing requires keyed loopback RPC")
+	if !c.bondedRPCAllowed() {
+		return errors.New("bonded signing requires an approved RPC connection")
 	}
 	if e = checkBuyTarget(c, p.Contract, p.Contract, p.CodeHash); e != nil {
+		return e
+	}
+	if e = verifySellerClientBondedAction(c, p.Contract, p.BondedV8); e != nil {
 		return e
 	}
 	if _, e = readPoolV7SyncedHead(c); e != nil {
 		return e
 	}
 	if e = verifyBondedV8LocalAction(c, p.Contract, p.BondedV8); e != nil {
+		return e
+	}
+	if e = verifyBuyerBondedAction(c, p.Contract, p.BondedV8); e != nil {
 		return e
 	}
 	p.bondedV8Validated = true
@@ -604,6 +697,10 @@ func runBonded(args []string, version int) error {
 	command := f.String("command", "status", "status, prepare, listing, contentWitness, retain, receive, delivery, preview")
 	rpc := f.String("rpc", "", "keyed loopback node RPC")
 	keyFile := f.String("key-file", "", "private RPC key file")
+	buyerOnly := f.Bool("buyer-only", false, "v9 buyer-only relay connection")
+	sellerClient := f.Bool("seller-client", false, "v9 seller identity through an HTTPS relay")
+	walletKey := f.String("wallet-key", "", "owner-only buyer wallet key file")
+	nodeKey := f.String("nodekey", "", "owner-only seller identity key file")
 	contract := f.String("contract", "", "independent deployment pin")
 	pin := f.String("code-hash", "", "independent code pin")
 	input := f.String("request", "", "owner-only request JSON")
@@ -615,13 +712,41 @@ func runBonded(args []string, version int) error {
 	if f.NArg() != 0 || *out == "" {
 		return errors.New("v8 requires output file and named options")
 	}
-	api, e := resolveRPCKey(*keyFile, true)
-	if e != nil {
-		return e
+	var e error
+	c := &client{url: *rpc, http: newHTTPClient(), bondedVersion: version, buyerOnly: *buyerOnly, sellerClient: *sellerClient}
+	if *buyerOnly && *sellerClient {
+		return errors.New("choose one remote connection mode")
 	}
-	c := &client{url: *rpc, key: api, http: newHTTPClient(), bondedVersion: version}
-	if !directLocalRPC(c.url) || c.key == "" {
-		return errors.New("v8 requires keyed loopback RPC")
+	if *sellerClient {
+		if version != 9 || *keyFile != "" || *walletKey != "" {
+			return errors.New("seller-client requires v9, a local identity key and no node RPC key")
+		}
+		author, err := sellerIdentityAddress(*nodeKey)
+		if err != nil {
+			return err
+		}
+		c.author, c.authorKeyPath = author, *nodeKey
+	} else if *buyerOnly {
+		if version != 9 || *keyFile != "" || *nodeKey != "" {
+			return errors.New("buyer-only requires v9 and no node RPC key")
+		}
+		wallet, err := buyerWalletAddress(*walletKey)
+		if err != nil {
+			return err
+		}
+		c.wallet = wallet
+	} else {
+		if *walletKey != "" || *nodeKey != "" {
+			return errors.New("wallet-key is only for v9 buyer-only mode")
+		}
+		api, err := resolveRPCKey(*keyFile, true)
+		if err != nil {
+			return err
+		}
+		c.key = api
+	}
+	if !c.bondedRPCAllowed() {
+		return errors.New("bonded command requires an approved RPC connection")
 	}
 	if *command == "status" {
 		s, e := readBondedV8Snapshot(c, *contract, *pin)
@@ -647,6 +772,25 @@ func runBonded(args []string, version int) error {
 	if req.version() != version {
 		return errors.New("request protocol differs from selected market")
 	}
+	if c.buyerOnly && (*command == "prepare" && !buyerBondedOperation(req.Operation) ||
+		*command != "prepare" && !map[string]bool{"retain": true, "receive": true, "preview": true}[*command]) {
+		return errors.New("buyer-only command refuses seller or unsupported work")
+	}
+	if c.sellerClient && (*command == "prepare" && !sellerClientBondedOperation(req.Operation) ||
+		*command != "prepare" && !map[string]bool{"listing": true, "contentWitness": true, "retain": true, "receive": true, "delivery": true, "preview": true}[*command]) {
+		return errors.New("seller-client command refuses unsupported work")
+	}
+	if c.buyerOnly && req.Caller != c.wallet {
+		return errors.New("buyer request differs from wallet key")
+	}
+	if c.sellerClient && req.Caller != c.author {
+		return errors.New("seller request differs from identity key")
+	}
+	if c.sellerClient {
+		if _, err := c.bondedIdentity(); err != nil {
+			return err
+		}
+	}
 	if *command != "prepare" {
 		return runBondedV8Content(c, *contract, *command, &req, *out)
 	}
@@ -657,15 +801,17 @@ func runBonded(args []string, version int) error {
 	if _, e = readPoolV7SyncedHead(c); e != nil {
 		return e
 	}
-	var who string
-	if e = c.call("dna_getCoinbaseAddr", []any{}, &who); e != nil {
-		return e
-	}
-	who, e = directAddress(who)
+	who, e := c.bondedIdentity()
 	if e != nil || who != req.Caller {
 		return errors.New("v8 request differs from active identity")
 	}
 	if e = verifyBondedV8LocalAction(c, *contract, &req); e != nil {
+		return e
+	}
+	if e = verifyBuyerBondedAction(c, *contract, &req); e != nil {
+		return e
+	}
+	if e = verifySellerClientBondedAction(c, *contract, &req); e != nil {
 		return e
 	}
 	p := &preparedAction{Format: bondedFormat(version) + req.Operation, Version: 1, Operation: req.Operation, Network: NetworkNamePinned, Contract: *contract, CodeHash: *pin, Amount: amount, Calldata: hex.EncodeToString(data), PreparedAt: time.Now().UTC().Format(time.RFC3339), BondedV8: &req}

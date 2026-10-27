@@ -51,6 +51,8 @@ type standaloneV8Status struct {
 	Capture        string              `json:"capture"`
 	FeeBudget      string              `json:"feeBudget,omitempty"`
 	PurchaseBudget string              `json:"purchaseBudget,omitempty"`
+	BuyerOnly      bool                `json:"buyerOnly"`
+	SellerClient   bool                `json:"sellerClient,omitempty"`
 }
 
 func v8Assets() map[string]string {
@@ -63,11 +65,15 @@ func runStandaloneBonded(args []string, version int) error {
 	if e != nil {
 		return e
 	}
-	profile := f.String("profile", filepath.Join(base, "Flips on Demand v"+strconv.Itoa(version), "connection.json"), "owner-only saved local connection")
+	buyerOnly := f.Bool("buyer-only", false, "v9 buyer wallet through an HTTPS relay")
+	sellerClient := f.Bool("seller-client", false, "v9 seller identity key through an HTTPS relay")
+	profile := f.String("profile", "", "owner-only saved connection")
 	preview := f.Bool("read-only-preview", false, "synthetic UI without a node or transaction endpoints")
 	noBrowser := f.Bool("no-browser", false, "print the local URL without launching a browser")
 	rpc := f.String("rpc", "", "loopback RPC URL")
+	relay := f.String("relay", "", "HTTPS market relay ending in /rpc")
 	key := f.String("key-file", "", "owner-only node RPC key file")
+	walletKey := f.String("wallet-key", "", "owner-only buyer wallet key file")
 	contract := f.String("contract", "", "verified v8 contract")
 	code := f.String("code-hash", "", "verified deployed code hash")
 	nodekey := f.String("nodekey", "", "owner-only identity key")
@@ -81,10 +87,31 @@ func runStandaloneBonded(args []string, version int) error {
 	if f.NArg() != 0 {
 		return errors.New("use named app-v8 options")
 	}
+	if *buyerOnly && *sellerClient {
+		return errors.New("choose one remote connection mode")
+	}
+	if (*buyerOnly || *sellerClient) && version != 9 || !*buyerOnly && !*sellerClient && (*relay != "" || *walletKey != "") {
+		return errors.New("relay connections are only available with app-v9")
+	}
+	if *buyerOnly && (*rpc != "" || *key != "" || *nodekey != "" || *nodeData != "" || *archive != "" || *readOnly) {
+		return errors.New("buyer-only mode accepts a relay and wallet key, not local node or seller options")
+	}
+	if *sellerClient && (*rpc != "" || *key != "" || *walletKey != "" || *nodeData != "" || *readOnly) {
+		return errors.New("seller-client mode accepts a relay and local identity key, not node RPC options")
+	}
+	if *profile == "" {
+		folder := "Flips on Demand v" + strconv.Itoa(version)
+		if *buyerOnly {
+			folder += " buyer"
+		} else if *sellerClient {
+			folder += " seller"
+		}
+		*profile = filepath.Join(base, folder, "connection.json")
+	}
 	if *preview {
 		return runStandaloneBondedPreview(*noBrowser, version)
 	}
-	cfg := standaloneConfig{Version: version}
+	cfg := standaloneConfig{Version: version, BuyerOnly: *buyerOnly, SellerClient: *sellerClient}
 	if _, e = os.Lstat(*profile); e == nil {
 		raw, e := readBondedV8Private(*profile, 16384)
 		if e != nil {
@@ -92,6 +119,9 @@ func runStandaloneBonded(args []string, version int) error {
 		}
 		if e = decodeStrict(raw, &cfg); e != nil {
 			return e
+		}
+		if cfg.BuyerOnly != *buyerOnly || cfg.SellerClient != *sellerClient {
+			return errors.New("saved profile belongs to a different connection mode")
 		}
 	} else if !os.IsNotExist(e) {
 		return e
@@ -104,6 +134,12 @@ func runStandaloneBonded(args []string, version int) error {
 			*v.dst = v.value
 		}
 	}
+	if *relay != "" {
+		cfg.RPC = *relay
+	}
+	if *walletKey != "" {
+		cfg.WalletKey = *walletKey
+	}
 	if cfg.Version != version {
 		return errors.New("profile belongs to a different market version")
 	}
@@ -115,7 +151,14 @@ func runStandaloneBonded(args []string, version int) error {
 	if cfg.DataDir == "" {
 		cfg.DataDir = filepath.Dir(*profile)
 	}
-	if cfg.RPC == "" || cfg.KeyFile == "" || cfg.Contract == "" || cfg.CodeHash == "" {
+	if cfg.RPC == "" || (!cfg.BuyerOnly && !cfg.SellerClient && cfg.KeyFile == "") ||
+		(cfg.BuyerOnly && cfg.WalletKey == "") || (cfg.SellerClient && cfg.NodeKey == "") || cfg.Contract == "" || cfg.CodeHash == "" {
+		if cfg.BuyerOnly {
+			return errors.New("first buyer connection needs -relay, -wallet-key, -contract and -code-hash; these are remembered in the owner-only buyer profile")
+		}
+		if cfg.SellerClient {
+			return errors.New("first seller connection needs -relay, -nodekey, -contract and -code-hash; these are remembered in the owner-only seller profile")
+		}
 		return errors.New("first connection needs -rpc, -key-file, -contract and -code-hash; these are remembered in the owner-only profile. Use -read-only-preview to explore without a node")
 	}
 	cfg.Contract = strings.TrimPrefix(strings.ToLower(cfg.Contract), "0x")
@@ -161,11 +204,14 @@ func (s *standaloneServer) v8Status() (*standaloneV8Status, error) {
 	if e = s.client.call("dna_getBalance", []any{"0x" + m.Identity}, &wallet); e != nil {
 		return nil, e
 	}
-	packages, e := s.v8Packages(m, epoch.Epoch)
-	if e != nil {
-		return nil, e
+	packages := []standalonePackage{}
+	if !s.cfg.BuyerOnly {
+		packages, e = s.v8Packages(m, epoch.Epoch)
+		if e != nil {
+			return nil, e
+		}
 	}
-	out := &standaloneV8Status{Market: m, Epoch: epoch.Epoch, Wallet: wallet.Balance, Packages: packages, CanSign: s.cfg.NodeKey != "", Automatic: s.v8GrantValid(m.Identity), Message: s.v8.Message, Capture: s.v8.Capture}
+	out := &standaloneV8Status{Market: m, Epoch: epoch.Epoch, Wallet: wallet.Balance, Packages: packages, CanSign: s.cfg.NodeKey != "" || s.cfg.BuyerOnly, Automatic: s.v8GrantValid(m.Identity), Message: s.v8.Message, Capture: s.v8.Capture, BuyerOnly: s.cfg.BuyerOnly, SellerClient: s.cfg.SellerClient}
 	if out.Automatic {
 		out.FeeBudget = s.v8.Grant.Fees.String()
 		out.PurchaseBudget = s.v8.Grant.Purchases.String()
@@ -226,7 +272,14 @@ func (s *standaloneServer) v8CLI(ctx context.Context, command string, req *bonde
 		return e
 	}
 	req.ProtocolVersion = s.cfg.Version
-	args := []string{"v" + strconv.Itoa(s.cfg.Version), "-command", command, "-rpc", s.cfg.RPC, "-key-file", s.cfg.KeyFile, "-contract", s.cfg.Contract, "-code-hash", s.cfg.CodeHash, "-request", input, "-out", out}
+	args := []string{"v" + strconv.Itoa(s.cfg.Version), "-command", command, "-rpc", s.cfg.RPC, "-contract", s.cfg.Contract, "-code-hash", s.cfg.CodeHash, "-request", input, "-out", out}
+	if s.cfg.BuyerOnly {
+		args = append(args, "-buyer-only", "-wallet-key", s.cfg.WalletKey)
+	} else if s.cfg.SellerClient {
+		args = append(args, "-seller-client", "-nodekey", s.cfg.NodeKey)
+	} else {
+		args = append(args, "-key-file", s.cfg.KeyFile)
+	}
 	if fee != "" {
 		args = append(args, "-max-fee", fee)
 	}
@@ -239,6 +292,12 @@ func (s *standaloneServer) v8CLI(ctx context.Context, command string, req *bonde
 func (s *standaloneServer) v8Prepare(ctx context.Context, m *bondedV8Snapshot, req bondedV8Request, pass string, upload *http.Request) (standaloneAction, error) {
 	zero := standaloneAction{}
 	req.ProtocolVersion = s.cfg.Version
+	if s.cfg.BuyerOnly && !buyerBondedOperation(req.Operation) {
+		return zero, errors.New("buyer-only mode refuses seller or unsupported operations")
+	}
+	if s.cfg.SellerClient && !sellerClientBondedOperation(req.Operation) {
+		return zero, errors.New("seller-client mode refuses unsupported operations")
+	}
 	if s.cfg.Version == 9 && req.Operation == "registerBundle" {
 		return zero, errors.New("list the package directly; no proof registration is needed")
 	}
@@ -499,6 +558,12 @@ func (s *standaloneServer) v8Execute(ctx context.Context, m *bondedV8Snapshot, r
 	if !s.v8GrantValid(m.Identity) {
 		return standaloneAction{}, errors.New("enable local automatic trading first")
 	}
+	if s.cfg.BuyerOnly && !map[string]bool{"queueBuy": true, "matchNext": true, "ready": true, "accept": true}[req.Operation] {
+		return standaloneAction{}, errors.New("buyer-only automatic trading refuses this operation")
+	}
+	if s.cfg.SellerClient && !sellerClientBondedOperation(req.Operation) {
+		return standaloneAction{}, errors.New("seller-client automatic trading refuses this operation")
+	}
 	g := s.v8.Grant
 	if !map[string]bool{"queueBuy": true, "queueSell": true, "matchNext": true, "acquire": true, "ready": true, "deliver": true, "accept": true}[req.Operation] {
 		return standaloneAction{}, errors.New("operation requires a separate transaction review")
@@ -576,15 +641,28 @@ func (s *standaloneServer) v8Routes(mux *http.ServeMux) {
 		})
 	}
 	route("/api/v8/collect", func(r *http.Request) (any, error) {
+		if s.cfg.BuyerOnly {
+			return nil, errors.New("package collection is unavailable in buyer-only mode")
+		}
 		m, e := s.v8ReadMarket()
 		if e != nil {
 			return nil, e
 		}
 		return s.v8Collect(m)
 	})
-	route("/api/v8/protect", s.v8Protect)
+	route("/api/v8/protect", func(r *http.Request) (any, error) {
+		if s.cfg.BuyerOnly {
+			return nil, errors.New("seller protection is unavailable in buyer-only mode")
+		}
+		return s.v8Protect(r)
+	})
 	route("/api/v8/purchased-preview", s.v8PurchasedPreview)
-	route("/api/v8/import", s.v8Import)
+	route("/api/v8/import", func(r *http.Request) (any, error) {
+		if s.cfg.BuyerOnly {
+			return nil, errors.New("seller import is unavailable in buyer-only mode")
+		}
+		return s.v8Import(r)
+	})
 	route("/api/v8/unlock", func(r *http.Request) (any, error) {
 		var in struct {
 			Passphrase     string `json:"passphrase"`
@@ -595,14 +673,25 @@ func (s *standaloneServer) v8Routes(mux *http.ServeMux) {
 		if e := v8JSON(r, &in); e != nil {
 			return nil, e
 		}
-		if s.cfg.NodeKey == "" || len(in.Passphrase) < 12 || len(in.Passphrase) > 1024 {
+		if s.cfg.NodeKey == "" && !s.cfg.BuyerOnly || len(in.Passphrase) < 12 || len(in.Passphrase) > 1024 {
 			return nil, errors.New("signing configuration and a vault passphrase of at least 12 characters are required")
 		}
 		m, e := s.v8ReadMarket()
 		if e != nil {
 			return nil, e
 		}
-		key, e := crypto.LoadECDSA(s.cfg.NodeKey)
+		keyPath := s.cfg.NodeKey
+		if s.cfg.BuyerOnly {
+			if address, err := buyerWalletAddress(s.cfg.WalletKey); err != nil || address != m.Identity {
+				return nil, errors.New("buyer wallet key changed or is no longer owner-only")
+			}
+			keyPath = s.cfg.WalletKey
+		} else if s.cfg.SellerClient {
+			if address, err := sellerIdentityAddress(s.cfg.NodeKey); err != nil || address != m.Identity {
+				return nil, errors.New("seller identity key changed or is no longer owner-only")
+			}
+		}
+		key, e := crypto.LoadECDSA(keyPath)
 		if e != nil {
 			return nil, errors.New("signing key unavailable")
 		}
@@ -639,6 +728,9 @@ func (s *standaloneServer) v8Routes(mux *http.ServeMux) {
 		}
 		if e := v8JSON(r, &in); e != nil {
 			return nil, e
+		}
+		if s.cfg.BuyerOnly && in.Side != "buy" {
+			return nil, errors.New("buyer-only mode accepts only buy orders")
 		}
 		m, e := s.v8ReadMarket()
 		if e != nil {
@@ -704,11 +796,7 @@ func (s *standaloneServer) v8PurchasedPreview(r *http.Request) (any, error) {
 	if e != nil {
 		return nil, e
 	}
-	var coinbase string
-	if e = s.client.call("dna_getCoinbaseAddr", []any{}, &coinbase); e != nil {
-		return nil, e
-	}
-	owner, e := directAddress(coinbase)
+	owner, e := s.client.bondedIdentity()
 	if e != nil || owner != m.Identity {
 		return nil, errors.New("active identity changed; refresh before opening a purchase")
 	}
@@ -729,7 +817,11 @@ func (s *standaloneServer) v8Download(w http.ResponseWriter, r *http.Request) {
 	}
 	m, e := s.v8ReadMarket()
 	if e != nil {
-		http.Error(w, "node unavailable", 503)
+		if s.cfg.BuyerOnly {
+			http.Error(w, "relay unavailable", 503)
+		} else {
+			http.Error(w, "node unavailable", 503)
+		}
 		return
 	}
 	var trade *bondedV8Trade
@@ -789,17 +881,31 @@ func (s *standaloneServer) v8Background(ctx context.Context) {
 		s.mu.Lock()
 		m, e := s.v8ReadMarket()
 		if e != nil {
-			s.v8.Message = "Market unavailable: check your local node."
-		} else {
-			if _, e = s.v8Collect(m); e != nil {
-				s.v8.Message = "Collection waiting: check your local node and saved evidence."
+			if s.cfg.BuyerOnly || s.cfg.SellerClient {
+				s.v8.Message = "Market unavailable: check the relay."
 			} else {
-				s.v8.Message = "Encrypted flips checked locally."
+				s.v8.Message = "Market unavailable: check your local node."
 			}
-			// A missing current-epoch blob must not stall an older trade's
-			// deadline. Each trade action independently rechecks its own data.
+		} else if s.cfg.BuyerOnly {
+			s.v8.Message = "Buyer wallet connected through the relay."
 			if s.v8GrantValid(m.Identity) {
 				s.v8Step(ctx, m)
+			}
+		} else {
+			// A remote evidence fetch can wait on the shared service. Handle
+			// already matched trades before collection so their deadlines keep
+			// priority when that service is slow.
+			if s.v8GrantValid(m.Identity) {
+				s.v8Step(ctx, m)
+			}
+			if _, e = s.v8Collect(m); e != nil {
+				if s.cfg.SellerClient {
+					s.v8.Message = "Collection waiting: check the relay and saved evidence."
+				} else {
+					s.v8.Message = "Collection waiting: check your local node and saved evidence."
+				}
+			} else {
+				s.v8.Message = "Encrypted flips checked locally."
 			}
 		}
 		s.mu.Unlock()

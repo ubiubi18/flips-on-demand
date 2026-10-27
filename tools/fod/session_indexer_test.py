@@ -30,6 +30,32 @@ with open(args[args.index('-out') + 1], 'w') as output:
     json.dump(value, output)
 """
 
+PUBLIC_CLI = """#!/usr/bin/env python3
+import json, os, sys
+args = sys.argv[1:]
+mode = args[0]
+author = args[args.index('-author') + 1]
+cids = json.loads(os.environ['FOD_TEST_PUBLIC_CIDS'])
+if author not in cids:
+    raise SystemExit(2)
+if mode == 'session-anchor':
+    value = {'height': int(args[args.index('-state-height') + 1]),
+             'rootHex': 'a' * 64, 'identity': {'keyHex': author}}
+elif mode == 'session-bundle':
+    with open(args[args.index('-inventory-anchor') + 1]) as stream:
+        inventory = json.load(stream)
+    with open(args[args.index('-verdict-anchor') + 1]) as stream:
+        verdict = json.load(stream)
+    if inventory['identity']['keyHex'] != author or verdict['identity']['keyHex'] != author:
+        raise SystemExit(3)
+    value = {'epoch': 229, 'author': author, 'manifest': [cids[author]],
+             'inventory': inventory, 'verdict': verdict}
+else:
+    raise SystemExit(4)
+with open(args[args.index('-out') + 1], 'w') as output:
+    json.dump(value, output)
+"""
+
 
 class SessionIndexerLotteryTests(unittest.TestCase):
     def setUp(self):
@@ -160,6 +186,122 @@ class SessionIndexerLotteryTests(unittest.TestCase):
         self.assertFalse(result["ready"])
         self.assertEqual(result["counts"]["a"], {"retained": 0, "required": 1})
         self.assertFalse((self.archive / "epoch-230" / "encrypted-blobs" / "a" / cid).exists())
+
+    def test_public_third_party_authors_keep_distinct_identity_and_immutable_evidence(self):
+        self.cli.write_text(PUBLIC_CLI)
+        blobs = {"third": b"original-third-party-ciphertext",
+                 "fourth": b"original-fourth-party-ciphertext"}
+        authors = {"third": "3" * 40, "fourth": "4" * 40}
+        cids = {authors[label]: indexer.flip_cid(blob) for label, blob in blobs.items()}
+        by_cid = {indexer.flip_cid(blob): blob for blob in blobs.values()}
+        public = self.archive / "public-authors"
+
+        def answer(node, method, params=None, limit=1_000_000):
+            if method == "dna_identity":
+                self.assertIn(params[0][2:], authors.values())
+                return {"flips": [cids[params[0][2:]]]}
+            if method == "ipfs_get":
+                return "0x" + by_cid[params[0]].hex()
+            if method == "bcn_blockAt":
+                return {"root": "0x" + "a" * 64, "hash": "0x" + "b" * 64}
+            raise AssertionError(method)
+
+        with patch.dict(os.environ, {"FOD_TEST_PUBLIC_CIDS": json.dumps(cids)}):
+            with patch.object(indexer, "rpc", side_effect=answer):
+                current = indexer.public_manifests(self.nodes, public, 229, authors)
+                self.assertEqual(current, {label: [cids[author]] for label, author in authors.items()})
+                indexer.retain_public_blobs(self.nodes, public, 229, authors, current)
+                indexer.capture_public_boundary(self.cli, self.nodes, public, 229, 101, authors)
+                completed = indexer.finish_public_epoch(self.cli, self.nodes, public, 229, authors)
+                self.assertTrue(all(result["ready"] for result in completed.values()))
+
+                saved = {}
+                for label, author in authors.items():
+                    home = public / "epoch-229" / "authors" / label
+                    self.assertEqual((home / "encrypted-blobs" / cids[author]).read_bytes(), blobs[label])
+                    bundle = json.loads((home / "session-bundle.json").read_text())
+                    self.assertEqual(bundle["author"], author)
+                    self.assertEqual(bundle["inventory"]["identity"]["keyHex"], author)
+                    marker = json.loads((home / "ready.json").read_text())
+                    self.assertEqual(marker["format"], "fod.shared-evidence-ready:v1")
+                    self.assertEqual(marker["manifest"], [cids[author]])
+                    self.assertEqual(marker["blobs"][cids[author]]["bytes"], len(blobs[label]))
+                    self.assertEqual(marker["headersCheckedAgainst"], ["a", "b"])
+                    saved[label] = {name: ((home / name).read_bytes(), (home / name).stat().st_ino)
+                                    for name in ("inventory.json", "verdict.json",
+                                                 "session-bundle.json", "ready.json")}
+
+                indexer.capture_public_boundary(self.cli, self.nodes, public, 229, 101, authors)
+                indexer.finish_public_epoch(self.cli, self.nodes, public, 229, authors)
+                for label in authors:
+                    home = public / "epoch-229" / "authors" / label
+                    for name, evidence in saved[label].items():
+                        self.assertEqual(((home / name).read_bytes(), (home / name).stat().st_ino),
+                                         evidence)
+
+        changed = dict(cids)
+        changed[authors["third"]] = indexer.flip_cid(b"substituted")
+        with patch.dict(os.environ, {"FOD_TEST_PUBLIC_CIDS": json.dumps(changed)}):
+            with patch.object(indexer, "rpc", side_effect=answer):
+                with self.assertRaisesRegex(indexer.CaptureError, "saved-public-evidence-disagrees"):
+                    indexer.capture_public_boundary(self.cli, self.nodes, public, 229, 101, authors)
+        home = public / "epoch-229" / "authors" / "third"
+        self.assertEqual((home / "session-bundle.json").read_bytes(),
+                         saved["third"]["session-bundle.json"][0])
+
+    def test_public_final_requires_two_headers_and_all_cid_checked_bytes(self):
+        self.cli.write_text(PUBLIC_CLI)
+        author = "3" * 40
+        authors = {"third": author}
+        cid = indexer.flip_cid(b"expected ciphertext")
+        public = self.archive / "public-authors"
+
+        def answer(node, method, params=None, limit=1_000_000):
+            if method == "bcn_blockAt":
+                return {"root": "0x" + "a" * 64, "hash": "0x" + "b" * 64}
+            if method == "ipfs_get":
+                return "0x" + b"wrong ciphertext".hex()
+            raise AssertionError(method)
+
+        with patch.dict(os.environ, {"FOD_TEST_PUBLIC_CIDS": json.dumps({author: cid})}):
+            with patch.object(indexer, "rpc", side_effect=answer):
+                with patch.object(indexer, "canonical_view", side_effect=[
+                        (229, 10, 99, "0x" + "b" * 64),
+                        (230, 101, 101, "0x" + "b" * 64)]):
+                    self.assertEqual(indexer.observe_public(self.cli, self.nodes[:1], public, authors),
+                                     ("armed", 229))
+                    self.assertEqual(indexer.observe_public(self.cli, self.nodes[:1], public, authors),
+                                     ("anchored", 229))
+                home = public / "epoch-229" / "authors" / "third"
+                self.assertTrue((home / "inventory.json").exists())
+                self.assertFalse((home / "session-bundle.json").exists())
+                self.assertEqual(json.loads((public / "watch.json").read_text())["pending"], [229])
+
+                def forked(node, method, params=None, limit=1_000_000):
+                    if method == "bcn_blockAt" and node["name"] == "b":
+                        return {"root": "0x" + "c" * 64, "hash": "0x" + "d" * 64}
+                    return answer(node, method, params, limit)
+
+                with patch.object(indexer, "rpc", side_effect=forked):
+                    with self.assertRaisesRegex(indexer.CaptureError, "anchor-header-root-mismatch"):
+                        indexer.capture_public_boundary(self.cli, self.nodes, public, 229, 101, authors)
+                self.assertFalse((home / "session-bundle.json").exists())
+                indexer.capture_public_boundary(self.cli, self.nodes, public, 229, 101, authors)
+                result = indexer.finish_public_epoch(self.cli, self.nodes, public, 229, authors)
+        self.assertFalse(result["third"]["ready"])
+        self.assertFalse((public / "epoch-229" / "authors" / "third" / "ready.json").exists())
+
+    def test_public_keeps_one_observer_when_the_other_node_is_unavailable(self):
+        def unavailable(node, method, params=None, limit=1_000_000):
+            if node["name"] == "b":
+                raise indexer.CaptureError("node-rpc-unavailable")
+            return {"epoch": 229} if method == "dna_epoch" else {"height": 100}
+
+        with patch.object(indexer, "rpc", side_effect=unavailable):
+            self.assertEqual(indexer.available_public_nodes(self.nodes), self.nodes[:1])
+
+        with patch.object(indexer, "rpc", return_value={"height": 100}):
+            self.assertEqual(indexer.available_public_nodes(self.nodes), self.nodes)
 
 
 if __name__ == "__main__":

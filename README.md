@@ -2,28 +2,18 @@
 
 An experimental market for access to historical Idena picture puzzles (*flips*). An author can offer a validated set from one epoch; a buyer can unlock and check the original pictures. A future CAPTCHA service could use those puzzles on a website. That service is not part of this repository.
 
-![Standalone v9 market preview with synthetic prices, history and buy and sell queues](docs/visuals/standalone-v9-market-preview.jpg)
+## Live pilot
 
-*Standalone v9 preview with synthetic data. These are not live offers, trades or prices.*
+The [live v9 pilot](docs/LIVE_PILOT_V9.md) connects a local desktop client to the real contract through a restricted HTTPS relay. Buyers need a funded wallet but no validated identity, IdenaAI installation or personal node. Authors can opt in before validation to have the shared nodes retain their original encrypted flips and session evidence. The relay never receives a buyer wallet key, author identity key or vault password. The pilot guide gives the verified connection details, current capture status and practical FAQ.
 
-## Try the interface
-
-The standalone browser preview runs on your computer. It needs no IdenaAI installation, node, wallet, keys or funds, and it cannot send transactions. Choose an example at the top to explore a waiting buyer, funded trade or completed purchase.
-
-After [building `fod`](#build-the-cli), run from `tools/fod`:
-
-```bash
-./fod app-v9 -read-only-preview
-```
-
-The command opens a local browser page. Add `-no-browser` to print its URL instead. The examples are synthetic, including their flip pictures and balances.
+The relay is an API rather than a hosted trading website. The client opens the market interface locally; a source build is currently required. A queued order or enrolled author does not imply a ready offer or a completed purchase.
 
 ## How a real purchase works
 
-1. **Seller prepares a set.** The local client checks the original encrypted flips, their author and CIDs, and the canonical validation result. The seller keeps the unlocking keys in an encrypted local vault and posts a reusable security deposit before offering the set.
+1. **Seller prepares a set.** The local client checks the original encrypted flips, their author and CIDs, and canonical session evidence. The contract checks the final validation result when the set is listed. The seller keeps the unlocking keys in an encrypted local vault and posts a reusable security deposit before offering the set.
 2. **Buyer joins the queue.** The buyer posts separate purchase escrow and security collateral. The market matches compatible buy and sell orders at its current curve quote. A set starts at a 500 iDNA buy quote only in the empty reference market; the live quote, collateral and network fees must be checked before trading.
 3. **Keys are delivered and checked.** The buyer retains the original encrypted flips. After the buyer signals readiness, the seller encrypts the keys for that buyer and posts the ciphertext to the contract. The buyer's local client decrypts it, opens every original flip, saves an encrypted local copy and accepts only after verification. Normal v9 sales need no upfront content proof; disputed delivery needs separate proofs.
-4. **Buyer views the set.** A completed purchase appears under **My flips**, where the buyer can preview the original picture sequences or save an encrypted package.
+4. **Buyer views the set.** A completed purchase appears under **My purchases**, where the buyer can preview the original picture sequences or save an encrypted package.
 
 The ciphertext is visible on chain, but only the buyer's separate delivery key can open it. The market does not send an idena.social message. Access to keys is copyable and is not exclusive; historical human agreement does not guarantee that a puzzle resists AI.
 
@@ -33,15 +23,15 @@ Only the author can sell their own validated set from one epoch (1–32 flips). 
 
 ![Four-step v9 seller flow: retain original encrypted flips, verify validation and protect keys locally, bond and list on chain, then deliver buyer-encrypted keys for settlement](docs/visuals/v9-seller-flow.svg)
 
-In the live client, **My flips → Collect & check** fetches and CID-checks your node's original flips. **Protect package** opens them with your identity locally and saves their keys in a password-encrypted vault. Import the matching canonical session under **Add saved validation evidence → Verify & add**, or connect an existing capture archive. Once the set is ready, fund a reusable security deposit and choose **Market → Sell your package → Join sell queue**. The v9 `queueSell` transaction binds the verified inventory and session while reserving collateral; it needs no upfront proof registration. A queued offer is not yet a sale.
+In the live client, **My flips → Collect & check** fetches and CID-checks the original encrypted flips from your node or the shared service. **Protect package** opens them with your identity locally and saves their keys in a password-encrypted vault. Import the matching canonical session under **Add saved validation evidence → Verify & add**, or connect an existing capture archive. Once the set is ready, fund a reusable security deposit and choose **Market → Sell your package → Join sell queue**. The v9 `queueSell` transaction binds the verified inventory and session while reserving collateral; it needs no upfront proof registration. A queued offer is not yet a sale.
 
-After a compatible buyer order matches, the buyer first confirms that the encrypted flip files are available. Your client then encrypts the opening keys for that buyer and delivers the ciphertext through the contract. The buyer opens every original flip and accepts the valid delivery to release your proceeds. Keep your app, node and private vault available through delivery; do not send keys through idena.social. For capture setup, signing boundaries, matching, expiry and dispute steps, use the [v9 seller guide](docs/SELLER_GUIDE_V9.md).
+After a compatible buyer order matches, the buyer first confirms that the encrypted flip files are available. Your client then encrypts the opening keys for that buyer and delivers the ciphertext through the contract. The buyer opens every original flip and accepts the valid delivery to release your proceeds. Keep your app and private vault available through delivery, with either your own node or the shared service online; do not send keys through idena.social. For capture setup, signing boundaries, matching, expiry and dispute steps, use the [v9 seller guide](docs/SELLER_GUIDE_V9.md).
 
 ## Connect to the live market
 
-The standalone client does **not** require IdenaAI. Real trading currently requires a compatible, synced Idena node with authenticated loopback RPC, independently verified v9 contract and code pins, and an owner-only local identity key for signing. An app.idena.io login alone is not a connection to this client. Follow the [standalone setup and safety steps](docs/STANDALONE_V8.md#connect-once), using `app-v9` and a separate v9 profile as explained in the [v9 guide](docs/OPTIMISTIC_BONDED_MARKET_V9.md#standalone-preview).
+The standalone client does **not** require IdenaAI. A seller keeps an owner-only local identity key and can use either a compatible, synced personal node or an opt-in [shared node pilot](docs/SHARED_NODE_PILOT_V9.md) over HTTPS. A buyer can use an unvalidated, funded wallet without a personal node through the [buyer-only desktop client](docs/BUYER_ONLY_V9.md). The [live pilot](docs/LIVE_PILOT_V9.md) publishes the current relay and contract pins. Both paths require independently verified v9 contract and code pins. An app.idena.io login alone is not a connection to this client. For the local-node path, follow the [standalone setup and safety steps](docs/STANDALONE_V8.md#connect-once), using `app-v9` and a separate v9 profile as explained in the [v9 guide](docs/OPTIMISTIC_BONDED_MARKET_V9.md#standalone-preview).
 
-Buy and sell orders start with the owner's action. Matching and delivery can continue locally while an approved, bounded trading session is active and the app and node are running. Deposits, withdrawals, disputes and proof generation require separate review. A stalled or uncertain transaction must be reconciled before another is sent.
+Buy and sell orders start with the owner's action. Matching and delivery can continue while an approved, bounded trading session is active and the relevant app is running; sellers need their own node or the shared service online. Deposits, withdrawals, disputes and proof generation require separate review. A stalled or uncertain transaction must be reconciled before another is sent.
 
 ## Pilot status and limits
 
