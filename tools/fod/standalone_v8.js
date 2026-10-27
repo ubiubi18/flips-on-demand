@@ -935,11 +935,18 @@ try {
   preview = mode.preview === true
   ownNodeMode = !preview && mode.buyerOnly !== true && mode.sellerClient !== true
   protocolVersion = mode.version === 9 ? 9 : 8
+  $('connection').textContent = (mode.buyerOnly === true ? 'Buyer wallet' : mode.sellerClient === true
+    ? 'Seller via shared node' : 'Local market') + ' · v' + protocolVersion
   if (mode.buyerOnly === true) {
     document.title = 'Flips on Demand · Buyer wallet'
     $('pair-kicker').textContent = 'BUY FLIP KEYS'
     $('pair-title').textContent = 'Connect your buyer wallet'
     $('pair-copy').textContent = 'Enter the pairing code shown by the app on this computer. Your wallet key stays here.'
+  } else if (mode.sellerClient === true) {
+    document.title = 'Flips on Demand · Seller'
+    $('pair-kicker').textContent = 'SELL YOUR FLIPS'
+    $('pair-title').textContent = 'Connect your seller app'
+    $('pair-copy').textContent = 'Enter the pairing code shown by the app on this computer. Your identity key stays here.'
   }
   if (preview) {
     $('preview').hidden = false
