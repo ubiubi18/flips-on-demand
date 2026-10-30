@@ -30,6 +30,9 @@ TABLE = re.compile(r"[0-9]+\.(?:ldb|sst)\Z")
 META = re.compile(r"(?:[0-9]+\.log|MANIFEST-[0-9]+|CURRENT)\Z")
 MAX_FLIP_BYTES = 614_400
 UNIXFS_CHUNK = 262_144
+# Session evidence must yield to the live identities sharing this filesystem.
+MIN_FREE_DISK_BYTES = 12 * 1024**3
+COPY_CHUNK_BYTES = 1024**2
 
 
 class CaptureError(Exception):
@@ -266,6 +269,15 @@ def verify_header(nodes, anchor):
         raise CaptureError("nodes-disagree-on-anchor-block")
 
 
+def copy_with_disk_reserve(source, target):
+    """Bound each write, including a growing WAL or a cross-device table copy."""
+    with open(source, "rb") as incoming, open(target, "xb") as outgoing:
+        while chunk := incoming.read(COPY_CHUNK_BYTES):
+            if shutil.disk_usage(target.parent).free - len(chunk) < MIN_FREE_DISK_BYTES:
+                raise CaptureError("insufficient-free-disk")
+            outgoing.write(chunk)
+
+
 def snapshot(node, destination):
     source = Path(node["datadir"]) / "idenachain.db"
     kept = destination / ".state-snapshot"
@@ -273,7 +285,7 @@ def snapshot(node, destination):
         return kept
     if kept.exists():
         raise CaptureError("incomplete-kept-state-snapshot")
-    if shutil.disk_usage(destination).free < 2 * 1024**3:
+    if shutil.disk_usage(destination).free < MIN_FREE_DISK_BYTES:
         raise CaptureError("insufficient-free-disk")
     work = Path(tempfile.mkdtemp(prefix=".state-staging-", dir=destination))
     target = work / "idenachain.db"
@@ -286,9 +298,9 @@ def snapshot(node, destination):
                 except OSError as exc:
                     if exc.errno != errno.EXDEV:
                         raise
-                    shutil.copyfile(entry, target / entry.name)
+                    copy_with_disk_reserve(entry, target / entry.name)
             elif META.fullmatch(entry.name):
-                shutil.copyfile(entry, target / entry.name)
+                copy_with_disk_reserve(entry, target / entry.name)
         if not (target / "CURRENT").exists() or not list(target.glob("MANIFEST-*")):
             raise CaptureError("incomplete-state-snapshot")
         os.replace(work, kept)

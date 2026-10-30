@@ -98,6 +98,39 @@ class SessionIndexerLotteryTests(unittest.TestCase):
         self.assertFalse((self.archive / ".state-snapshot").exists())
         self.assertEqual(list(self.archive.glob(".state-staging-*")), [])
 
+    def test_snapshot_refuses_to_spend_identity_disk_reserve(self):
+        with patch.object(indexer.shutil, "disk_usage") as usage:
+            usage.return_value.free = 11 * 1024**3
+            with self.assertRaisesRegex(indexer.CaptureError, "insufficient-free-disk"):
+                indexer.snapshot(self.nodes[0], self.archive)
+        self.assertFalse((self.archive / ".state-snapshot").exists())
+        self.assertEqual(list(self.archive.glob(".state-staging-*")), [])
+
+    def test_snapshot_aborts_and_cleans_if_other_writer_consumes_reserve(self):
+        from types import SimpleNamespace
+        with patch.object(indexer.shutil, "disk_usage", side_effect=[
+            SimpleNamespace(free=13 * 1024**3),
+            SimpleNamespace(free=indexer.MIN_FREE_DISK_BYTES),
+        ]):
+            with self.assertRaisesRegex(indexer.CaptureError, "insufficient-free-disk"):
+                indexer.snapshot(self.nodes[0], self.archive)
+        self.assertFalse((self.archive / ".state-snapshot").exists())
+        self.assertEqual(list(self.archive.glob(".state-staging-*")), [])
+
+    def test_cross_device_table_copy_checks_reserve_for_every_chunk(self):
+        from types import SimpleNamespace
+        source = Path(self.nodes[0]["datadir"]) / "idenachain.db" / "000001.ldb"
+        source.write_bytes(b"x" * (indexer.COPY_CHUNK_BYTES + 1))
+        target = self.archive / "copy.ldb"
+        with patch.object(indexer.shutil, "disk_usage", side_effect=[
+            SimpleNamespace(free=indexer.MIN_FREE_DISK_BYTES + indexer.COPY_CHUNK_BYTES),
+            SimpleNamespace(free=indexer.MIN_FREE_DISK_BYTES),
+        ]):
+            with self.assertRaisesRegex(indexer.CaptureError, "insufficient-free-disk"):
+                indexer.copy_with_disk_reserve(source, target)
+        self.assertEqual(source.stat().st_size, indexer.COPY_CHUNK_BYTES + 1)
+        self.assertEqual(target.stat().st_size, indexer.COPY_CHUNK_BYTES)
+
     def test_not_ready_retains_no_early_lottery_claim(self):
         with patch.dict(os.environ, {"FOD_TEST_LOTTERY": "not-ready"}):
             self.assertFalse(indexer.capture_lottery(self.cli, self.nodes, self.archive, 229))
