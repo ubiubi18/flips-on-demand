@@ -1,5 +1,11 @@
 # Flips on Demand
 
+### Reliability and consensus
+
+Please treat the software in this repository as potentially unreliable. To the best of my knowledge, concerns relevant to Idena’s consensus security remain unresolved upstream.
+
+As long as the chain continues to operate under its current rules, I will not change those rules on my own. I welcome working with upstream maintainers, node operators, and the wider Idena community to review any proposed consensus change and coordinate its adoption.
+
 An experimental market for access to historical Idena picture puzzles (*flips*). An author can offer a validated set from one epoch; a buyer can unlock and check the original pictures. A future CAPTCHA service could use those puzzles on a website. That service is not part of this repository.
 
 ## Live pilot
